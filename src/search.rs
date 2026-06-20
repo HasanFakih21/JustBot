@@ -250,7 +250,8 @@ pub fn search<Node: NodeType>(
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
         move_count += 1;
-        let is_quiet = m.get_kind().is_quiet();
+        let is_direct_check = data.board.is_direct_check(m);
+        let is_quiet = m.get_kind().is_quiet(); 
 
         if !Node::ROOT && !mated(best_score) {
             //Late Move Pruning (LMP)
@@ -264,7 +265,7 @@ pub fn search<Node: NodeType>(
             }
 
             //Futility Pruning (FP)
-            if !in_check && is_quiet && depth < 6 && static_eval + 100 * depth + 150 <= alpha {
+            if !in_check && !is_direct_check && is_quiet && depth < 6 && static_eval + 100 * depth + 150 <= alpha {
                 skip_quiets = true;
                 continue;
             }
