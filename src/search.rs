@@ -228,7 +228,7 @@ pub fn search<Node: NodeType>(
     let static_eval = if in_check {
         -INFINITY
     } else if let Some(e) = tt_entry {
-        e.get_score()
+        e.get_eval()
     } else {
         data.nnue_evaluate()
     };
@@ -317,7 +317,7 @@ pub fn search<Node: NodeType>(
         //Late Move Reductions (LMR)
         if depth > 3 && move_count > 1 && !Node::PV {
             let mut r = LMR_TABLE[is_quiet as usize][depth as usize][move_count];
-            r += 800 * !improving as i32;
+            r += 200 * !improving as i32;
 
             let reduction = r / 1024;
             let reduced_depth = (depth - 1) - reduction;

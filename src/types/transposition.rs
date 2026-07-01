@@ -92,6 +92,10 @@ impl Entry {
     pub fn get_depth(&self) -> i32 {
         self.depth as i32
     }
+
+    pub fn get_eval(&self) -> i32 {
+        self.eval as i32
+    }
 }
 
 #[repr(align(32))]
