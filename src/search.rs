@@ -166,14 +166,14 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
 
 pub fn search<Node: NodeType>(
     data: &mut SearchData,
-    depth: u8,
+    depth: i32,
     mut alpha: i32,
     beta: i32,
     ply: isize,
 ) -> i32 {
     let stm = data.board.state.side_to_move;
 
-    if depth == 0 {
+    if depth <= 0 {
         if data.board.king_in_check() {
             return search_checks(data, alpha, beta, ply);
         } else {
@@ -246,7 +246,7 @@ pub fn search<Node: NodeType>(
 
     //Reverse Futillity Pruning (RFP)
     if !in_check && !Node::PV && depth < 7 {
-        let margin = 150 * depth as i32 - (100 * improving as i32);
+        let margin = 150 * depth - (100 * improving as i32);
         if static_eval >= beta + margin {
             return static_eval;
         }
@@ -304,8 +304,7 @@ pub fn search<Node: NodeType>(
             }
 
             //Futility Pruning (FP)
-            if !in_check && is_quiet && depth < 6 && static_eval + 100 * depth as i32 + 150 <= alpha
-            {
+            if !in_check && is_quiet && depth < 6 && static_eval + 100 * depth + 150 <= alpha {
                 skip_quiets = true;
                 continue;
             }
@@ -316,12 +315,12 @@ pub fn search<Node: NodeType>(
         let mut score = -INFINITY;
 
         //Late Move Reductions (LMR)
-        if depth > 3 && !Node::PV {
+        if depth > 3 && move_count > 1 && !Node::PV {
             let mut r = LMR_TABLE[is_quiet as usize][depth as usize][move_count];
             r += 800 * !improving as i32;
 
-            let reduction = (r / 1024) as u8;
-            let reduced_depth = (depth - 1).saturating_sub(reduction);
+            let reduction = r / 1024;
+            let reduced_depth = (depth - 1) - reduction;
 
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1);
             if score > alpha && reduced_depth < depth - 1 {
@@ -356,14 +355,14 @@ pub fn search<Node: NodeType>(
 
         //Cutoff
         if score >= beta {
-            let quiet_bonus = 300 * depth as i32 - 250;
-            let quiet_malus = 300 * depth as i32 - 250;
+            let quiet_bonus = 300 * depth - 250;
+            let quiet_malus = 300 * depth - 250;
 
-            let noisy_bonus = (250 * depth as i32).min(1000) - 250;
-            let noisy_malus = (300 * depth as i32).min(1000) - 250;
+            let noisy_bonus = (250 * depth).min(1000) - 250;
+            let noisy_malus = (300 * depth).min(1000) - 250;
 
-            let cont_bonus = (350 * depth as i32).min(1000) - 250;
-            let cont_malus = (250 * depth as i32).min(1000) - 250;
+            let cont_bonus = (350 * depth).min(1000) - 250;
+            let cont_malus = (250 * depth).min(1000) - 250;
 
             let threats = data.board.state.threats;
 
