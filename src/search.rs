@@ -178,7 +178,15 @@ pub fn search<Node: NodeType>(
     beta: i32,
     ply: isize,
 ) -> i32 {
-    let stm = data.board.state.side_to_move;
+    if data.time.hard_limit(data.nodes)
+        || data.shared.status.get() == Status::STOPPED
+        || data
+            .time
+            .node_limit()
+            .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+    {
+        return TIMEOUT_SCORE;
+    }
 
     if depth <= 0 {
         if data.board.king_in_check() {
@@ -281,6 +289,7 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    let stm = data.board.state.side_to_move;
     let mut move_count = 0;
     let mut best_score = -INFINITY;
     let mut best_move: Option<Move> = None;
@@ -345,16 +354,6 @@ pub fn search<Node: NodeType>(
 
         //Unmake Move
         data.unmake_move(m);
-
-        if data.time.hard_limit(data.nodes)
-            || data.shared.status.get() == Status::STOPPED
-            || data
-                .time
-                .node_limit()
-                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
-        {
-            return TIMEOUT_SCORE;
-        }
 
         if score > alpha {
             bound = Bound::Exact;
@@ -498,6 +497,16 @@ pub fn search<Node: NodeType>(
 }
 
 pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> i32 {
+    if data.time.hard_limit(data.nodes)
+        || data.shared.status.get() == Status::STOPPED
+        || data
+            .time
+            .node_limit()
+            .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+    {
+        return TIMEOUT_SCORE;
+    }
+
     data.increment_nodes();
     let mut best_score = data.nnue_evaluate();
 
@@ -530,16 +539,6 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
         let score = -quiesce(data, -beta, -alpha, ply + 1);
         data.unmake_move(m);
 
-        if data.time.hard_limit(data.nodes)
-            || data.shared.status.get() == Status::STOPPED
-            || data
-                .time
-                .node_limit()
-                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
-        {
-            return TIMEOUT_SCORE;
-        }
-
         if score >= beta {
             //Add noisy bonus to history
             let piece = data.board.get_piece_at_square(m.get_from());
@@ -567,6 +566,16 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
 }
 
 pub fn search_checks(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> i32 {
+    if data.time.hard_limit(data.nodes)
+        || data.shared.status.get() == Status::STOPPED
+        || data
+            .time
+            .node_limit()
+            .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+    {
+        return TIMEOUT_SCORE;
+    }
+
     let mut best_score = -INFINITY;
     let mut move_count = 0;
 
@@ -608,16 +617,6 @@ pub fn search_checks(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isiz
         let score = -search_checks(data, -beta, -alpha, ply + 1);
 
         data.unmake_move(m);
-
-        if data.time.hard_limit(data.nodes)
-            || data.shared.status.get() == Status::STOPPED
-            || data
-                .time
-                .node_limit()
-                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
-        {
-            return TIMEOUT_SCORE;
-        }
 
         if score >= beta {
             //Add noisy bonus to history
