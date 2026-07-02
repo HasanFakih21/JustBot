@@ -128,9 +128,10 @@ impl MovePicker {
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
-            let conthistory_score = data.get_conthistory(mv, ply, 1) + data.get_conthistory(mv, ply, 2);
+            let conthistory_score = 1600 * data.get_conthistory(mv, ply, 1) / 1024 
+                + 1000 * data.get_conthistory(mv, ply, 2) / 1024;
 
-            entry.score = (data.quiet_history.get(threats, side, mv) + conthistory_score) / 2;
+            entry.score = data.quiet_history.get(threats, side, mv) + conthistory_score;
         }
     }
 
