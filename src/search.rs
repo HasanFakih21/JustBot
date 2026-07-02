@@ -61,10 +61,9 @@ impl NodeType for Root {
 pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
     data.reset_pv();
     data.start_time();
-    data.time.set_depth_limit();
-
     data.clear_features();
     data.initialize_nnue();
+    data.nodes = 0;
 
     let mut depth = 1;
 
@@ -107,7 +106,11 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
     loop {
         data.ply_table = PlyTable::new();
 
-        if data.over_limit()
+        if data.time.hard_limit(data.nodes)
+            || data
+                .time
+                .node_limit()
+                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
             || depth > data.time.depth_limit()
             || data.shared.status.get() == Status::STOPPED
         {
@@ -159,6 +162,10 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
                 data.shared.tt.hashfull()
             );
         }
+
+        if data.time.soft_limit() {
+            break;
+        }
     }
 
     Some(best_move)
@@ -181,7 +188,8 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    data.shared.add_nodes(1);
+    data.increment_nodes();
+
     if Node::PV && !Node::ROOT {
         data.clear_pv(ply);
     }
@@ -338,7 +346,13 @@ pub fn search<Node: NodeType>(
         //Unmake Move
         data.unmake_move(m);
 
-        if data.over_limit() || data.shared.status.get() == Status::STOPPED {
+        if data.time.hard_limit(data.nodes)
+            || data.shared.status.get() == Status::STOPPED
+            || data
+                .time
+                .node_limit()
+                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+        {
             return TIMEOUT_SCORE;
         }
 
@@ -484,7 +498,7 @@ pub fn search<Node: NodeType>(
 }
 
 pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> i32 {
-    data.shared.add_nodes(1);
+    data.increment_nodes();
     let mut best_score = data.nnue_evaluate();
 
     if ply >= MAX_PLY as isize - 1 {
@@ -516,7 +530,13 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
         let score = -quiesce(data, -beta, -alpha, ply + 1);
         data.unmake_move(m);
 
-        if data.over_limit() || data.shared.status.get() == Status::STOPPED {
+        if data.time.hard_limit(data.nodes)
+            || data.shared.status.get() == Status::STOPPED
+            || data
+                .time
+                .node_limit()
+                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+        {
             return TIMEOUT_SCORE;
         }
 
@@ -550,7 +570,7 @@ pub fn search_checks(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isiz
     let mut best_score = -INFINITY;
     let mut move_count = 0;
 
-    data.shared.add_nodes(1);
+    data.increment_nodes();
 
     if data.board.state.half_move_clock > 4 {
         //50 move rule
@@ -589,7 +609,13 @@ pub fn search_checks(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isiz
 
         data.unmake_move(m);
 
-        if data.over_limit() || data.shared.status.get() == Status::STOPPED {
+        if data.time.hard_limit(data.nodes)
+            || data.shared.status.get() == Status::STOPPED
+            || data
+                .time
+                .node_limit()
+                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+        {
             return TIMEOUT_SCORE;
         }
 

@@ -47,7 +47,7 @@ pub fn input_loop(cli_args: String) {
                 pool = SearchThreads::new(shared.clone(), thread_count);
             }
             "go" => {
-                time.clear_settings();
+                time.clear_limits();
                 shared.status.run();
 
                 if let Some(m) = go(args, &mut pool, &mut board, &mut time, &shared, false) {
@@ -190,17 +190,18 @@ pub fn go(
         "depth" => {
             let (depth, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.depth = depth.trim().parse().unwrap_or(MAX_PLY as i32 - 1);
+            time.set_depth_limit();
             go(args, pool, board, time, shared, mute)
         }
         "wtime" => {
             //Example: go wtime 900000 btime 900000 winc 0 binc 0
             let (wtime, args) = args.split_once(" ").unwrap_or((args, ""));
-            time.settings.wtime = wtime.trim().parse().unwrap_or(500);
+            time.settings.wtime = Some(wtime.trim().parse().unwrap_or(500));
             go(args, pool, board, time, shared, mute)
         }
         "btime" => {
             let (btime, args) = args.split_once(" ").unwrap_or((args, ""));
-            time.settings.btime = btime.trim().parse().unwrap_or(500);
+            time.settings.btime = Some(btime.trim().parse().unwrap_or(500));
             go(args, pool, board, time, shared, mute)
         }
         "winc" => {
