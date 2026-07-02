@@ -390,15 +390,7 @@ pub fn search<Node: NodeType>(
                         .update(threats, stm, *quiet_move, -quiet_malus);
 
                     //Conthistory malus
-                    let prev_ply = data.ply_table[ply - 1];
-                    unsafe {
-                        data.conthistory.update(
-                            prev_ply.conthistory,
-                            data.board.get_piece_at_square(quiet_move.get_from()),
-                            quiet_move.get_to(),
-                            -cont_malus,
-                        );
-                    }
+                    data.update_conthistories(*quiet_move, ply, -cont_malus);
                 }
             } else {
                 //Add noisy bonus to history
@@ -424,15 +416,7 @@ pub fn search<Node: NodeType>(
                     .update(piece, to, captured, threats, -noisy_malus);
 
                 //Conthistory malus
-                let prev_ply = data.ply_table[ply - 1];
-                unsafe {
-                    data.conthistory.update(
-                        prev_ply.conthistory,
-                        data.board.get_piece_at_square(m.get_from()),
-                        m.get_to(),
-                        -cont_malus,
-                    );
-                }
+                data.update_conthistories(*m, ply, -cont_malus);
             }
 
             //Add TT entry
@@ -451,16 +435,7 @@ pub fn search<Node: NodeType>(
             }
 
             //Conthistory Bonus
-            let prev_ply = data.ply_table[ply - 1];
-            unsafe {
-                data.conthistory.update(
-                    prev_ply.conthistory,
-                    data.board.get_piece_at_square(m.get_from()),
-                    m.get_to(),
-                    cont_bonus,
-                );
-            }
-
+            data.update_conthistories(m, ply, cont_bonus);
             return best_score;
         }
 

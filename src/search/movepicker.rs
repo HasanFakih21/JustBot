@@ -128,14 +128,7 @@ impl MovePicker {
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
-            let conthistory_score = unsafe {
-                let prev_ply = data.ply_table[ply - 1];
-                data.conthistory.get(
-                    prev_ply.conthistory,
-                    data.board.get_piece_at_square(mv.get_from()),
-                    mv.get_to(),
-                )
-            };
+            let conthistory_score = data.get_conthistory(mv, ply, 1) + data.get_conthistory(mv, ply, 2);
 
             entry.score = (data.quiet_history.get(threats, side, mv) + conthistory_score) / 2;
         }

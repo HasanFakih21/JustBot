@@ -155,6 +155,34 @@ impl SearchData {
         self.pv = vec![MoveList::new(); 128];
     }
 
+    pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
+        unsafe {
+            self.conthistory.update(
+                self.ply_table[ply - 1].conthistory,
+                self.board.get_piece_at_square(m.get_from()),
+                m.get_to(),
+                bonus,
+            );
+
+            self.conthistory.update(
+                self.ply_table[ply - 2].conthistory,
+                self.board.get_piece_at_square(m.get_from()),
+                m.get_to(),
+                bonus,
+            );
+        }
+    }
+
+    pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
+        unsafe {
+            self.conthistory.get(
+                self.ply_table[ply - index].conthistory,
+                self.board.get_piece_at_square(m.get_from()),
+                m.get_to(),
+            )
+        }
+    } 
+
     //Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {
         let from = m.get_from();
