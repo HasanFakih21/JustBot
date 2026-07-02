@@ -189,7 +189,7 @@ pub fn go(
     match command.trim() {
         "depth" => {
             let (depth, args) = args.split_once(" ").unwrap_or((args, ""));
-            time.settings.depth = depth.trim().parse().unwrap_or(MAX_PLY - 1);
+            time.settings.depth = depth.trim().parse().unwrap_or(MAX_PLY as i32 - 1);
             go(args, pool, board, time, shared, mute)
         }
         "wtime" => {

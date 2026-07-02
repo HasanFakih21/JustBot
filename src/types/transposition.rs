@@ -89,8 +89,12 @@ impl Entry {
         self.score as i32
     }
 
-    pub fn get_depth(&self) -> u8 {
-        self.depth
+    pub fn get_depth(&self) -> i32 {
+        self.depth as i32
+    }
+
+    pub fn get_eval(&self) -> i32 {
+        self.eval as i32
     }
 }
 
@@ -144,7 +148,7 @@ impl TranspositionTable {
         eval: i32,
         bound: Bound,
         hash: u64,
-        depth: u8,
+        depth: i32,
         ply: isize,
         pv: bool,
     ) {
@@ -179,7 +183,7 @@ impl TranspositionTable {
 
         //Don't replace entry if this is true
         if key == entry.get_key()
-            && depth + 4 + 2 * pv as u8 <= entry.get_depth()
+            && depth + 4 + 2 * pv as i32 <= entry.get_depth()
             && entry.flags.age() == tt_age
         {
             return;
@@ -195,7 +199,7 @@ impl TranspositionTable {
         entry.best_move = best_move;
         entry.score = score as i16;
         entry.eval = eval as i16;
-        entry.depth = depth;
+        entry.depth = depth as u8;
         entry.flags = Flags::new(pv, bound, tt_age);
     }
 

@@ -70,7 +70,7 @@ pub const fn to_piece_index(piece: Option<(Side, Piece)>) -> usize {
 }
 
 /// `[Is Quiet][Depth][Move Count]`
-pub static LMR_TABLE: LazyLock<Box<[[[u8; MAX_MOVE_NUM]; MAX_PLY as usize]; 2]>> = {
+pub static LMR_TABLE: LazyLock<Box<[[[i32; MAX_MOVE_NUM]; MAX_PLY as usize]; 2]>> = {
     LazyLock::new(|| {
         let mut quiet_table = [[0; MAX_MOVE_NUM]; MAX_PLY as usize];
         let mut noisy_table = [[0; MAX_MOVE_NUM]; MAX_PLY as usize];
@@ -79,8 +79,8 @@ pub static LMR_TABLE: LazyLock<Box<[[[u8; MAX_MOVE_NUM]; MAX_PLY as usize]; 2]>>
             for move_count in 0..MAX_MOVE_NUM {
                 let reduction = 0.7844 + f32::ln(depth as f32) * f32::ln(move_count as f32);
 
-                quiet_table[depth as usize][move_count] = (reduction / 2.4696) as u8;
-                noisy_table[depth as usize][move_count] = (reduction / 3.0) as u8;
+                quiet_table[depth as usize][move_count] = ((reduction / 2.4696) * 1024.0) as i32;
+                noisy_table[depth as usize][move_count] = ((reduction / 3.0) * 1024.0) as i32;
             }
         }
 
