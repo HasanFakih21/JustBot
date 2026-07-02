@@ -12,8 +12,8 @@ pub struct TimeManager {
 //Some settings don't do anything yet
 #[derive(Debug, Clone)]
 pub struct TimeSettings {
-    pub wtime: u64,
-    pub btime: u64,
+    pub wtime: Option<u64>,
+    pub btime: Option<u64>,
     pub winc: u64,
     pub binc: u64,
     pub movestogo: usize,
@@ -26,8 +26,8 @@ pub struct TimeSettings {
 impl Default for TimeSettings {
     fn default() -> Self {
         TimeSettings {
-            wtime: 0,
-            btime: 0,
+            wtime: None,
+            btime: None,
             winc: 0,
             binc: 0,
             movestogo: 0,
@@ -41,7 +41,8 @@ impl Default for TimeSettings {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Limits {
-    time: u64,
+    soft_time: Option<Duration>,
+    hard_time: Option<Duration>,
     depth: i32,
     nodes: Option<usize>,
 }
@@ -49,7 +50,8 @@ pub struct Limits {
 impl Default for Limits {
     fn default() -> Self {
         Self {
-            time: 300000,
+            soft_time: None,
+            hard_time: None,
             depth: MAX_PLY as i32 - 1,
             nodes: None,
         }
@@ -65,15 +67,16 @@ impl TimeManager {
         }
     }
 
-    pub fn clear_settings(&mut self) {
+    pub fn clear_limits(&mut self) {
         self.settings = TimeSettings::default();
+        self.limits = Limits::default();
     }
 
     pub fn reset_clock(&mut self) {
         self.clock = Instant::now();
     }
 
-    pub fn set_time_limit(&mut self, side: Side) {
+    pub fn set_time_limits(&mut self, side: Side) {
         let remaining_time;
         let increment;
 
@@ -82,18 +85,23 @@ impl TimeManager {
                 remaining_time = self.settings.wtime;
                 increment = self.settings.winc;
             }
+
             Side::Black => {
                 remaining_time = self.settings.btime;
                 increment = self.settings.binc;
             }
         }
 
-        if remaining_time == 0 {
-            self.limits.time = 300000; //Default
+        let Some(remaining_time) = remaining_time else {
             return;
-        }
+        };
 
-        self.limits.time = (remaining_time / 20) + (increment / 2); //Simple time managment strategy: remaining time/20 + increment/2
+        self.limits.soft_time = Some(Duration::from_millis(
+            (remaining_time / 20) + (increment / 2),
+        )); //Simple time managment strategy: remaining time/20 + increment/2
+        self.limits.hard_time = Some(Duration::from_millis(
+            (remaining_time / 2) + (increment / 2),
+        ));
     }
 
     pub fn set_depth_limit(&mut self) {
@@ -112,16 +120,28 @@ impl TimeManager {
         self.limits.depth
     }
 
-    pub fn time_limit(&self) -> u64 {
-        self.limits.time
-    }
-
     pub fn elapsed(&self) -> Duration {
         self.clock.elapsed()
     }
 
-    pub fn over_limit(&self) -> bool {
-        self.elapsed().as_millis() as u64 > self.limits.time + 20 //So it uses the same time as an older version that didn't stop exactly over the limit
+    pub fn soft_limit(&self) -> bool {
+        if let Some(soft_limit) = self.limits.soft_time {
+            self.elapsed() >= soft_limit
+        } else {
+            false
+        }
+    }
+
+    pub fn hard_limit(&self, nodes: u64) -> bool {
+        if !nodes.is_multiple_of(2048) {
+            return false;
+        }
+
+        if let Some(hard_limit) = self.limits.hard_time {
+            self.elapsed() > hard_limit
+        } else {
+            false
+        }
     }
 }
 

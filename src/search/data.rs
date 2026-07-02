@@ -44,7 +44,7 @@ impl SharedData {
         self.total_nodes.load(Ordering::Acquire)
     }
 
-    pub fn add_nodes(&self, nodes: usize) {
+    pub fn increase_nodes(&self, nodes: usize) {
         self.total_nodes.fetch_add(nodes, Ordering::Relaxed);
     }
 
@@ -71,6 +71,7 @@ pub struct SearchData {
     pub time: TimeManager,
     pub report: bool,
     pub ply_table: Box<PlyTable>,
+    pub nodes: u64,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -88,6 +89,7 @@ impl SearchData {
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
             ply_table: PlyTable::new(),
+            nodes: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -97,6 +99,11 @@ impl SearchData {
             white_features: Accumulator::new(&NNUE),
             black_features: Accumulator::new(&NNUE),
         }
+    }
+
+    pub fn increment_nodes(&mut self) {
+        self.nodes += 1;
+        self.shared.increase_nodes(1);
     }
 
     pub fn mute(&mut self) {
@@ -125,7 +132,6 @@ impl SearchData {
     }
 
     pub fn start_time(&mut self) {
-        self.time.set_time_limit(self.board.state.side_to_move);
         self.time.reset_clock();
     }
 
@@ -143,16 +149,6 @@ impl SearchData {
 
     pub fn get_time_settings(&mut self) -> &mut TimeSettings {
         &mut self.time.settings
-    }
-
-    pub fn over_limit(&self) -> bool {
-        if let Some(node_limt) = self.time.node_limit()
-            && self.shared.get_total_nodes_searched() >= node_limt
-        {
-            return true;
-        }
-
-        self.time.over_limit()
     }
 
     pub fn reset_pv(&mut self) {

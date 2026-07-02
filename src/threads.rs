@@ -27,12 +27,13 @@ impl SearchThreads {
     pub fn start(
         &mut self,
         board: &Board,
-        time: TimeManager,
+        mut time: TimeManager,
         shared: &Arc<SharedData>,
         mute: bool,
     ) -> Option<Move> {
         shared.clear_node_count();
         shared.tt.increase_age();
+        time.set_time_limits(board.state.side_to_move);
 
         std::thread::scope(|scope| {
             let mut handles = Vec::new();
@@ -80,7 +81,7 @@ mod tests {
 
         let shared = Arc::new(SharedData::default());
         let mut time = TimeManager::new();
-        time.settings.wtime = 8080;
+        time.settings.wtime = Some(8080);
         time.settings.winc = 80;
 
         let board = Board::from_fen(STARTING_FEN).unwrap();
