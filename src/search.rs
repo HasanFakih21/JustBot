@@ -383,6 +383,8 @@ pub fn search<Node: NodeType>(
             if is_quiet {
                 //Add quiet bonus to history
                 data.quiet_history.update(threats, stm, m, quiet_bonus);
+                //Conthistory Bonus
+                data.update_conthistories(m, ply, cont_bonus);
                 //Add malus to quiet moves
                 for e in quiets_searched.iter() {
                     let quiet_move = e;
@@ -390,15 +392,7 @@ pub fn search<Node: NodeType>(
                         .update(threats, stm, *quiet_move, -quiet_malus);
 
                     //Conthistory malus
-                    let prev_ply = data.ply_table[ply - 1];
-                    unsafe {
-                        data.conthistory.update(
-                            prev_ply.conthistory,
-                            data.board.get_piece_at_square(quiet_move.get_from()),
-                            quiet_move.get_to(),
-                            -cont_malus,
-                        );
-                    }
+                    data.update_conthistories(*quiet_move, ply, -cont_malus);
                 }
             } else {
                 //Add noisy bonus to history
@@ -422,17 +416,6 @@ pub fn search<Node: NodeType>(
                     .map(|e| e.1);
                 data.noisy_history
                     .update(piece, to, captured, threats, -noisy_malus);
-
-                //Conthistory malus
-                let prev_ply = data.ply_table[ply - 1];
-                unsafe {
-                    data.conthistory.update(
-                        prev_ply.conthistory,
-                        data.board.get_piece_at_square(m.get_from()),
-                        m.get_to(),
-                        -cont_malus,
-                    );
-                }
             }
 
             //Add TT entry
@@ -447,17 +430,6 @@ pub fn search<Node: NodeType>(
                     depth,
                     ply,
                     Node::PV,
-                );
-            }
-
-            //Conthistory Bonus
-            let prev_ply = data.ply_table[ply - 1];
-            unsafe {
-                data.conthistory.update(
-                    prev_ply.conthistory,
-                    data.board.get_piece_at_square(m.get_from()),
-                    m.get_to(),
-                    cont_bonus,
                 );
             }
 
