@@ -383,6 +383,8 @@ pub fn search<Node: NodeType>(
             if is_quiet {
                 //Add quiet bonus to history
                 data.quiet_history.update(threats, stm, m, quiet_bonus);
+                //Conthistory Bonus
+                data.update_conthistories(m, ply, cont_bonus);
                 //Add malus to quiet moves
                 for e in quiets_searched.iter() {
                     let quiet_move = e;
@@ -414,9 +416,6 @@ pub fn search<Node: NodeType>(
                     .map(|e| e.1);
                 data.noisy_history
                     .update(piece, to, captured, threats, -noisy_malus);
-
-                //Conthistory malus
-                data.update_conthistories(*m, ply, -cont_malus);
             }
 
             //Add TT entry
@@ -434,8 +433,6 @@ pub fn search<Node: NodeType>(
                 );
             }
 
-            //Conthistory Bonus
-            data.update_conthistories(m, ply, cont_bonus);
             return best_score;
         }
 
