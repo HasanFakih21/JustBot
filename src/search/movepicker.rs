@@ -60,8 +60,7 @@ impl MovePicker {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
                 let threshold = -best_entry.score / 45 + 120;
-                if (self.tt_move.is_some_and(|m| m.get_kind().is_quiet()) && self.noisy_count > 2)
-                    || !data.board.see(best_entry.mv, threshold)
+                if !data.board.see(best_entry.mv, threshold)
                 {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
@@ -107,7 +106,7 @@ impl MovePicker {
 
             //Bonus for promotions
             if mv.get_kind().is_queen_promotion() {
-                score += 2000;
+                score += 20000;
             }
 
             let piece = data.board.get_piece_at_square(mv.get_from());
@@ -117,7 +116,7 @@ impl MovePicker {
                 .get_piece_at_square(mv.get_capture_square())
                 .map(|e| e.1);
             if let Some(p) = captured {
-                score += p.value();
+                score += p.value() * 14;
             }
 
             score += data.noisy_history.get(piece, to, captured, threats);
