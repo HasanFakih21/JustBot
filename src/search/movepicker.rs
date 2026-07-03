@@ -60,7 +60,9 @@ impl MovePicker {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
                 let threshold = -best_entry.score / 45 + 120;
-                if !data.board.see(best_entry.mv, threshold) {
+                if (self.tt_move.is_some_and(|m| m.get_kind().is_quiet()) && self.noisy_count > 2)
+                    || !data.board.see(best_entry.mv, threshold)
+                {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
                 }
@@ -129,7 +131,7 @@ impl MovePicker {
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
-            let conthistory_score = 1600 * data.get_conthistory(mv, ply, 1) / 1024 
+            let conthistory_score = 1600 * data.get_conthistory(mv, ply, 1) / 1024
                 + 1000 * data.get_conthistory(mv, ply, 2) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv) + conthistory_score;
@@ -168,21 +170,6 @@ pub mod tests {
 
     #[test]
     fn test_move_picker() {
-        // let data = SearchData {
-        //     board: Board::from_fen(
-        //         "rnbqkb1r/pp3p2/4pnpp/1p1p2N1/1Q1P4/BP2P3/P1PN1PPP/R3K2R b KQkq - 0 1",
-        //     )
-        //     .unwrap(),
-        //     ..Default::default()
-        // };
-
-        // let mut move_picker = MovePicker::new(None);
-        // println!("{}", move_picker.moves);
-        //println!("{:?}", move_picker);
-        // while let Some(m) = move_picker.next(&data, true) {
-        //     println!("{m}");
-        // }
-
         let data = SearchData {
             board: Board::from_fen(
                 "r1bqk2r/ppp1p1pp/3p2n1/3P4/4PN2/5b2/PPPP2Pp/RNBQK1R1 b Qkq - 0 1",
@@ -193,7 +180,6 @@ pub mod tests {
 
         let mut move_picker = MovePicker::new(None);
         println!("{}", move_picker.moves);
-        //println!("{:?}", move_picker);
         while let Some(m) = move_picker.next(&data, true, 0) {
             print!("{m}: ");
             print!(

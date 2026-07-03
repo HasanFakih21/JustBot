@@ -181,7 +181,7 @@ impl SearchData {
                 m.get_to(),
             )
         }
-    } 
+    }
 
     //Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {
