@@ -59,7 +59,8 @@ impl MovePicker {
         if self.status == Status::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
-                if !data.board.see(best_entry.mv, -150) {
+                let threshold = -best_entry.score / 45 + 120;
+                if !data.board.see(best_entry.mv, threshold) {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
                 }
