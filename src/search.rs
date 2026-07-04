@@ -299,6 +299,20 @@ pub fn search<Node: NodeType>(
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
         move_count += 1;
         let is_quiet = m.get_kind().is_quiet();
+        let threats = data.board.state.threats;
+        let piece = data.board.get_piece_at_square(m.get_from());
+        let captured = data
+            .board
+            .get_piece_at_square(m.get_capture_square())
+            .map(|e| e.1);
+
+        let history = if is_quiet {
+            data.quiet_history.get(threats, stm, m)
+                + data.get_conthistory(m, ply, 1)
+                + data.get_conthistory(m, ply, 2)
+        } else {
+            data.noisy_history.get(piece, m.get_to(), captured, threats)
+        };
 
         if !Node::ROOT && !mated(best_score) {
             //Late Move Pruning (LMP)
@@ -314,6 +328,17 @@ pub fn search<Node: NodeType>(
             //Futility Pruning (FP)
             if !in_check && is_quiet && depth < 6 && static_eval + 100 * depth + 150 <= alpha {
                 skip_quiets = true;
+                continue;
+            }
+
+            let threshold = if is_quiet {
+                (-10 * depth * depth + 50 * depth - 25 * history / 1024 + 25).min(0)
+            } else {
+                (-5 * depth * depth - 35 * depth - 40 * history / 1024 + 15).min(0)
+            };
+
+            //Static Exchange Evaluation Pruning (SEE Pruning)
+            if !data.board.see(m, threshold) {
                 continue;
             }
         }
@@ -378,16 +403,13 @@ pub fn search<Node: NodeType>(
             let cont_bonus = (350 * depth).min(1000) - 250;
             let cont_malus = (250 * depth).min(1000) - 250;
 
-            let threats = data.board.state.threats;
-
             if is_quiet {
                 //Add quiet bonus to history
                 data.quiet_history.update(threats, stm, m, quiet_bonus);
                 //Conthistory Bonus
                 data.update_conthistories(m, ply, cont_bonus);
                 //Add malus to quiet moves
-                for e in quiets_searched.iter() {
-                    let quiet_move = e;
+                for quiet_move in quiets_searched.iter() {
                     data.quiet_history
                         .update(threats, stm, *quiet_move, -quiet_malus);
 
@@ -396,12 +418,7 @@ pub fn search<Node: NodeType>(
                 }
             } else {
                 //Add noisy bonus to history
-                let piece = data.board.get_piece_at_square(m.get_from());
                 let to = m.get_to();
-                let captured = data
-                    .board
-                    .get_piece_at_square(m.get_capture_square())
-                    .map(|e| e.1);
                 data.noisy_history
                     .update(piece, to, captured, threats, noisy_bonus);
             }
