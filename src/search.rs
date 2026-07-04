@@ -356,91 +356,33 @@ pub fn search<Node: NodeType>(
             return TIMEOUT_SCORE;
         }
 
-        if score > alpha {
-            bound = Bound::Exact;
-            data.add_pv_move(m, ply);
-            alpha = score;
-        }
-
         if score > best_score {
             best_score = score;
-            best_move = Some(m);
-        }
 
-        //Cutoff
-        if score >= beta {
-            let quiet_bonus = 300 * depth - 250;
-            let quiet_malus = 300 * depth - 250;
+            if score > alpha {
+                best_move = Some(m);
+                bound = Bound::Exact;
+                data.add_pv_move(m, ply);
 
-            let noisy_bonus = (250 * depth).min(1000) - 250;
-            let noisy_malus = (300 * depth).min(1000) - 250;
-
-            let cont_bonus = (350 * depth).min(1000) - 250;
-            let cont_malus = (250 * depth).min(1000) - 250;
-
-            let threats = data.board.state.threats;
-
-            if is_quiet {
-                //Add quiet bonus to history
-                data.quiet_history.update(threats, stm, m, quiet_bonus);
-                //Conthistory Bonus
-                data.update_conthistories(m, ply, cont_bonus);
-                //Add malus to quiet moves
-                for e in quiets_searched.iter() {
-                    let quiet_move = e;
-                    data.quiet_history
-                        .update(threats, stm, *quiet_move, -quiet_malus);
-
-                    //Conthistory malus
-                    data.update_conthistories(*quiet_move, ply, -cont_malus);
+                //Cutoff
+                if score >= beta {
+                    bound = Bound::Lower;
+                    break;
                 }
-            } else {
-                //Add noisy bonus to history
-                let piece = data.board.get_piece_at_square(m.get_from());
-                let to = m.get_to();
-                let captured = data
-                    .board
-                    .get_piece_at_square(m.get_capture_square())
-                    .map(|e| e.1);
-                data.noisy_history
-                    .update(piece, to, captured, threats, noisy_bonus);
-            }
 
-            //Add malus to noisy moves
-            for m in noisies_searched.iter() {
-                let piece = data.board.get_piece_at_square(m.get_from());
-                let to = m.get_to();
-                let captured = data
-                    .board
-                    .get_piece_at_square(m.get_capture_square())
-                    .map(|e| e.1);
-                data.noisy_history
-                    .update(piece, to, captured, threats, -noisy_malus);
+                alpha = score;
             }
-
-            //Add TT entry
-            if let Some(m) = best_move {
-                let tt_score = best_score;
-                data.shared.tt.add_entry(
-                    m,
-                    tt_score,
-                    static_eval,
-                    Bound::Lower,
-                    data.board.state.hash,
-                    depth,
-                    ply,
-                    Node::PV,
-                );
-            }
-
-            return best_score;
         }
 
-        //Add searched quiet moves to list
-        if is_quiet {
-            quiets_searched.push(m);
-        } else {
-            noisies_searched.push(m);
+        //Add searched quiet/noisy moves to list
+        if let Some(bm) = best_move
+            && m != bm
+        {
+            if is_quiet {
+                quiets_searched.push(m);
+            } else {
+                noisies_searched.push(m);
+            }
         }
     }
 
@@ -453,6 +395,57 @@ pub fn search<Node: NodeType>(
     }
 
     if let Some(m) = best_move {
+        let is_quiet = m.get_kind().is_quiet();
+
+        let quiet_bonus = 300 * depth - 250;
+        let quiet_malus = 300 * depth - 250;
+
+        let noisy_bonus = (250 * depth).min(1000) - 250;
+        let noisy_malus = (300 * depth).min(1000) - 250;
+
+        let cont_bonus = (350 * depth).min(1000) - 250;
+        let cont_malus = (250 * depth).min(1000) - 250;
+
+        let threats = data.board.state.threats;
+
+        if is_quiet {
+            //Add quiet bonus to history
+            data.quiet_history.update(threats, stm, m, quiet_bonus);
+            //Conthistory Bonus
+            data.update_conthistories(m, ply, cont_bonus);
+            //Add malus to quiet moves
+            for e in quiets_searched.iter() {
+                let quiet_move = e;
+                data.quiet_history
+                    .update(threats, stm, *quiet_move, -quiet_malus);
+
+                //Conthistory malus
+                data.update_conthistories(*quiet_move, ply, -cont_malus);
+            }
+        } else {
+            //Add noisy bonus to history
+            let piece = data.board.get_piece_at_square(m.get_from());
+            let to = m.get_to();
+            let captured = data
+                .board
+                .get_piece_at_square(m.get_capture_square())
+                .map(|e| e.1);
+            data.noisy_history
+                .update(piece, to, captured, threats, noisy_bonus);
+        }
+
+        //Add malus to noisy moves
+        for m in noisies_searched.iter() {
+            let piece = data.board.get_piece_at_square(m.get_from());
+            let to = m.get_to();
+            let captured = data
+                .board
+                .get_piece_at_square(m.get_capture_square())
+                .map(|e| e.1);
+            data.noisy_history
+                .update(piece, to, captured, threats, -noisy_malus);
+        }
+
         let tt_score = best_score;
         data.shared.tt.add_entry(
             m,

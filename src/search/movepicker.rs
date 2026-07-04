@@ -1,5 +1,7 @@
 use crate::{
-    board::{movegen::MoveGenKind, see}, search::data::SearchData, types::{Move, MoveEntry, MoveList, stackvec::StackVec},
+    board::{movegen::MoveGenKind, see},
+    search::data::SearchData,
+    types::{Move, MoveEntry, MoveList, stackvec::StackVec},
 };
 
 #[derive(Debug, PartialEq)]
@@ -58,8 +60,7 @@ impl MovePicker {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
                 let threshold = -best_entry.score / 4 + 75;
-                if !data.board.see(best_entry.mv, threshold)
-                {
+                if !data.board.see(best_entry.mv, threshold) {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
                 }
