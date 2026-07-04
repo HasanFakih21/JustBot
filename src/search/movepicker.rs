@@ -1,7 +1,5 @@
 use crate::{
-    board::movegen::MoveGenKind,
-    search::data::SearchData,
-    types::{Move, MoveEntry, MoveList, stackvec::StackVec},
+    board::{movegen::MoveGenKind, see}, search::data::SearchData, types::{Move, MoveEntry, MoveList, stackvec::StackVec},
 };
 
 #[derive(Debug, PartialEq)]
@@ -59,7 +57,9 @@ impl MovePicker {
         if self.status == Status::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
-                if !data.board.see(best_entry.mv, -150) {
+                let threshold = -best_entry.score / 4 + 75;
+                if !data.board.see(best_entry.mv, threshold)
+                {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
                 }
@@ -104,7 +104,7 @@ impl MovePicker {
 
             //Bonus for promotions
             if mv.get_kind().is_queen_promotion() {
-                score += 2000;
+                score += 5000;
             }
 
             let piece = data.board.get_piece_at_square(mv.get_from());
@@ -114,10 +114,10 @@ impl MovePicker {
                 .get_piece_at_square(mv.get_capture_square())
                 .map(|e| e.1);
             if let Some(p) = captured {
-                score += p.value();
+                score += see::value(p)
             }
 
-            score += data.noisy_history.get(piece, to, captured, threats);
+            score += data.noisy_history.get(piece, to, captured, threats) / 8;
             entry.score = score;
         }
     }
@@ -128,7 +128,7 @@ impl MovePicker {
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
-            let conthistory_score = 1600 * data.get_conthistory(mv, ply, 1) / 1024 
+            let conthistory_score = 1600 * data.get_conthistory(mv, ply, 1) / 1024
                 + 1000 * data.get_conthistory(mv, ply, 2) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv) + conthistory_score;
@@ -167,21 +167,6 @@ pub mod tests {
 
     #[test]
     fn test_move_picker() {
-        // let data = SearchData {
-        //     board: Board::from_fen(
-        //         "rnbqkb1r/pp3p2/4pnpp/1p1p2N1/1Q1P4/BP2P3/P1PN1PPP/R3K2R b KQkq - 0 1",
-        //     )
-        //     .unwrap(),
-        //     ..Default::default()
-        // };
-
-        // let mut move_picker = MovePicker::new(None);
-        // println!("{}", move_picker.moves);
-        //println!("{:?}", move_picker);
-        // while let Some(m) = move_picker.next(&data, true) {
-        //     println!("{m}");
-        // }
-
         let data = SearchData {
             board: Board::from_fen(
                 "r1bqk2r/ppp1p1pp/3p2n1/3P4/4PN2/5b2/PPPP2Pp/RNBQK1R1 b Qkq - 0 1",
@@ -192,7 +177,6 @@ pub mod tests {
 
         let mut move_picker = MovePicker::new(None);
         println!("{}", move_picker.moves);
-        //println!("{:?}", move_picker);
         while let Some(m) = move_picker.next(&data, true, 0) {
             print!("{m}: ");
             print!(

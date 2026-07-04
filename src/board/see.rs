@@ -162,6 +162,17 @@ impl Board {
     }
 }
 
+pub fn value(piece: Piece) -> i32 {
+    match piece {
+        Piece::Pawn => 100,
+        Piece::Knight => 430,
+        Piece::Bishop => 460,
+        Piece::Rook => 650,
+        Piece::Queen => 1300,
+        Piece::King => 0,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::search::data::SearchData;
