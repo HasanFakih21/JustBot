@@ -308,8 +308,8 @@ pub fn search<Node: NodeType>(
 
         let history = if is_quiet {
             data.quiet_history.get(threats, stm, m)
-                + data.get_conthistory(m, ply, 1)
-                + data.get_conthistory(m, ply, 2)
+                + 1600 * data.get_conthistory(m, ply, 1) / 1024
+                + 1000 * data.get_conthistory(m, ply, 2) / 1024
         } else {
             data.noisy_history.get(piece, m.get_to(), captured, threats)
         };
@@ -338,7 +338,7 @@ pub fn search<Node: NodeType>(
             };
 
             //Static Exchange Evaluation Pruning (SEE Pruning)
-            if !is_quiet && !data.board.see(m, threshold) {
+            if (!in_check || !is_quiet) && !data.board.see(m, threshold) {
                 continue;
             }
         }
