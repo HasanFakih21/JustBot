@@ -332,9 +332,9 @@ pub fn search<Node: NodeType>(
             }
 
             let threshold = if is_quiet {
-                (-10 * depth * depth + 50 * depth - 25 * history / 1024 + 25).min(0)
+                (-20 * depth - history / 65).min(0)
             } else {
-                (-5 * depth * depth - 35 * depth - 40 * history / 1024 + 15).min(0)
+                (-120 * depth - history / 65).min(0)
             };
 
             //Static Exchange Evaluation Pruning (SEE Pruning)
