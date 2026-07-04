@@ -32,6 +32,10 @@ pub fn perft_divide(depth: usize, board: &mut Board) -> usize {
         return 1;
     }
 
+    if depth == 1 {
+        return board.generate_moves(MoveGenKind::All).len();
+    }
+
     let mut nodes = 0;
 
     for m in board.generate_moves(MoveGenKind::All).iter() {

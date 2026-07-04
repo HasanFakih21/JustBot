@@ -235,10 +235,10 @@ pub fn go(
 }
 
 pub fn uci() {
-    println!("id name JustBot 0.2.0");
+    println!("id name JustBot {}", env!("CARGO_PKG_VERSION"));
     println!("id author Hasan Fakih");
-    println!("option name Threads type spin default 1 min 1 max 32");
-    println!("option name Hash type spin default 16 min 1 max 512");
+    println!("option name Threads type spin default 1 min 1 max 512");
+    println!("option name Hash type spin default 16 min 1 max 1048576");
     println!("option name Clear Hash type button");
     println!("uciok");
 }
