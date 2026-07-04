@@ -375,9 +375,7 @@ pub fn search<Node: NodeType>(
         }
 
         //Add searched quiet/noisy moves to list
-        if let Some(bm) = best_move
-            && m != bm
-        {
+        if best_move != Some(m) {
             if is_quiet {
                 quiets_searched.push(m);
             } else {
