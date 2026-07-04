@@ -119,7 +119,7 @@ impl MovePicker {
                 score += p.value() * 16;
             }
 
-            score += data.noisy_history.get(piece, to, captured, threats) + (200000 - 2000 * piece.unwrap().1 as i32) * data.board.king_in_check() as i32;
+            score += data.noisy_history.get(piece, to, captured, threats) + (200000 - 20000 * piece.unwrap().1 as i32) * data.board.king_in_check() as i32;
             entry.score = score;
         }
     }
