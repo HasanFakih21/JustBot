@@ -395,8 +395,8 @@ pub fn search<Node: NodeType>(
     if let Some(m) = best_move {
         let is_quiet = m.get_kind().is_quiet();
 
-        let quiet_bonus = 300 * depth - 250;
-        let quiet_malus = 300 * depth - 250;
+        let quiet_bonus = (300 * depth).min(1000) - 250;
+        let quiet_malus = (300 * depth).min(1000) - 250;
 
         let noisy_bonus = (250 * depth).min(1000) - 250;
         let noisy_malus = (300 * depth).min(1000) - 250;
