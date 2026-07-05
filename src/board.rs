@@ -103,7 +103,8 @@ impl Board {
 
         self.state.checking_squares[Piece::Pawn as usize] =
             self.get_pawn_attacks(other_king_square, stm.other());
-        self.state.checking_squares[Piece::Knight as usize] = self.get_knight_attacks(other_king_square);
+        self.state.checking_squares[Piece::Knight as usize] =
+            self.get_knight_attacks(other_king_square);
         self.state.checking_squares[Piece::Bishop as usize] =
             self.get_bishop_attacks(other_king_square, self.get_all_occupancy());
         self.state.checking_squares[Piece::Rook as usize] =
@@ -457,7 +458,10 @@ mod tests {
     #[test]
     fn test_checking_squares() {
         let data = SearchData {
-            board: Board::from_fen("rnbqk2r/pp3p2/4pnpp/1p1p2N1/1b1P4/BP2P2P/P1PN1PP1/R3K2R b KQkq - 0 2").unwrap(),
+            board: Board::from_fen(
+                "rnbqk2r/pp3p2/4pnpp/1p1p2N1/1b1P4/BP2P2P/P1PN1PP1/R3K2R b KQkq - 0 2",
+            )
+            .unwrap(),
             ..Default::default()
         };
 
