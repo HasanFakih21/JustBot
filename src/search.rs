@@ -289,7 +289,8 @@ pub fn search<Node: NodeType>(
         .shared
         .tt
         .get_entry(data.board.state.hash)
-        .map(|e| e.get_best_move());
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
 
     let mut move_picker = MovePicker::new(tt_move);
     let mut quiets_searched = StackVec::<Move, 256>::new();
@@ -443,19 +444,18 @@ pub fn search<Node: NodeType>(
             data.noisy_history
                 .update(piece, to, captured, threats, -noisy_malus);
         }
-
-        let tt_score = best_score;
-        data.shared.tt.add_entry(
-            m,
-            tt_score,
-            static_eval,
-            bound,
-            data.board.state.hash,
-            depth,
-            ply,
-            Node::PV,
-        );
     }
+
+    data.shared.tt.add_entry(
+        best_move.unwrap_or_default(),
+        best_score,
+        static_eval,
+        bound,
+        data.board.state.hash,
+        depth,
+        ply,
+        Node::PV,
+    );
 
     best_score
 }
