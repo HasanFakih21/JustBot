@@ -180,11 +180,15 @@ impl TranspositionTable {
         };
 
         let entry = &mut cluster.entries[replacement_index];
+        let same_key = key == entry.get_key();
+
+        //Keep the stored move if the new move is null for the same position
+        if !(same_key && best_move.is_null()) {
+            entry.best_move = best_move;
+        }
 
         //Don't replace entry if this is true
-        if key == entry.get_key()
-            && depth + 4 + 2 * pv as i32 <= entry.get_depth()
-            && entry.flags.age() == tt_age
+        if same_key && depth + 4 + 2 * pv as i32 <= entry.get_depth() && entry.flags.age() == tt_age
         {
             return;
         }
@@ -196,7 +200,6 @@ impl TranspositionTable {
 
         //Replace entry
         entry.key = key;
-        entry.best_move = best_move;
         entry.score = score as i16;
         entry.eval = eval as i16;
         entry.depth = depth as u8;
