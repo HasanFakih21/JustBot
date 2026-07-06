@@ -276,6 +276,8 @@ pub fn search<Node: NodeType>(
 
         //Make Move
         data.make_move(m, ply);
+
+        let new_depth = (depth - 1) + (in_check as i32);
         let mut score = -INFINITY;
 
         //Late Move Reductions (LMR)
@@ -284,19 +286,19 @@ pub fn search<Node: NodeType>(
             r += 200 * !improving as i32;
 
             let reduction = r / 1024;
-            let reduced_depth = (depth - 1) - reduction;
+            let reduced_depth = new_depth - reduction;
 
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1);
-            if score > alpha && reduced_depth < depth - 1 {
-                score = -search::<NonPV>(data, depth - 1, -alpha - 1, -alpha, ply + 1);
+            if score > alpha && reduced_depth < new_depth {
+                score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1);
             }
         } else if !Node::PV || move_count > 1 {
-            score = -search::<NonPV>(data, depth - 1, -alpha - 1, -alpha, ply + 1);
+            score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1);
         }
 
         //Principal Variation Search (PVS)
         if Node::PV && (move_count == 1 || score > alpha) {
-            score = -search::<PV>(data, depth - 1, -beta, -alpha, ply + 1);
+            score = -search::<PV>(data, new_depth, -beta, -alpha, ply + 1);
         }
 
         //Unmake Move
