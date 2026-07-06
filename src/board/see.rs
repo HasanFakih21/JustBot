@@ -60,9 +60,11 @@ impl Board {
             }
 
             occupancies.clear_bit(
-                (self.state.pieces[attacker as usize] & our_attackers)
-                    .least_sig_bit()
-                    .unwrap(),
+                unsafe {
+                    (self.state.pieces[attacker as usize] & our_attackers)
+                        .least_sig_bit()
+                        .unwrap_unchecked()
+                }
             );
             stm = stm.other();
 
@@ -113,8 +115,10 @@ impl Board {
     }
 
     pub const fn capture_move_value(&self, mv: Move) -> i32 {
-        let attacker = self.get_piece_at_square(mv.get_from()).unwrap().1;
-        let victim = self.get_piece_at_square(mv.get_capture_square()).unwrap().1;
+        let attacker = unsafe { self.get_piece_at_square(mv.get_from()).unwrap_unchecked().1 };
+
+        debug_assert!(self.state.mailbox[mv.get_capture_square() as usize].is_some());
+        let victim = unsafe { self.get_piece_at_square(mv.get_capture_square()).unwrap_unchecked().1 };
 
         victim.value() - attacker.value()
     }

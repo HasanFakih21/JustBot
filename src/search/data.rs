@@ -193,7 +193,8 @@ impl SearchData {
         //Need to toggle off extra captured piece in case of capture
         if kind.is_capture() {
             let capture_square = m.get_capture_square();
-            let (_, captured_piece) = self.board.get_piece_at_square(capture_square).unwrap();
+            debug_assert!(self.board.state.mailbox[capture_square as usize].is_some());
+            let (_, captured_piece) = unsafe { self.board.get_piece_at_square(capture_square).unwrap_unchecked() };
 
             self.toggle_accumulators_off(stm.other(), captured_piece, capture_square);
         }
@@ -207,7 +208,7 @@ impl SearchData {
             };
 
             self.toggle_accumulators_off(stm, Piece::Rook, king_rook_square);
-            self.toggle_accumulators_on(stm, Piece::Rook, from.shift(1).unwrap());
+            self.toggle_accumulators_on(stm, Piece::Rook, from.shift(1));
         }
 
         //Need to toggle rook in case of castling
@@ -219,13 +220,13 @@ impl SearchData {
             };
 
             self.toggle_accumulators_off(stm, Piece::Rook, queen_rook_square);
-            self.toggle_accumulators_on(stm, Piece::Rook, from.shift(-1).unwrap());
+            self.toggle_accumulators_on(stm, Piece::Rook, from.shift(-1));
         }
 
-        let moving_piece = self.board.get_piece_at_square(from).unwrap().1;
+        let moving_piece = unsafe { self.board.get_piece_at_square(from).unwrap_unchecked().1 };
         //Need to handle promotions
         if kind.is_promotion() {
-            let promotion_piece = m.get_promoted_piece().unwrap();
+            let promotion_piece = unsafe { m.get_promoted_piece().unwrap_unchecked() };
             self.toggle_accumulators_off(stm, moving_piece, from);
             self.toggle_accumulators_on(stm, promotion_piece, to);
         } else {
@@ -254,7 +255,8 @@ impl SearchData {
         //Need to toggle off extra captured piece in case of capture
         if kind.is_capture() {
             let capture_square = m.get_capture_square();
-            let (_, captured_piece) = self.board.get_piece_at_square(capture_square).unwrap();
+            debug_assert!(self.board.state.mailbox[capture_square as usize].is_some());
+            let (_, captured_piece) = unsafe { self.board.get_piece_at_square(capture_square).unwrap_unchecked() };
 
             self.toggle_accumulators_on(stm.other(), captured_piece, capture_square);
         }
@@ -268,7 +270,7 @@ impl SearchData {
             };
 
             self.toggle_accumulators_on(stm, Piece::Rook, king_rook_square);
-            self.toggle_accumulators_off(stm, Piece::Rook, from.shift(1).unwrap());
+            self.toggle_accumulators_off(stm, Piece::Rook, from.shift(1));
         }
 
         //Need to toggle rook in case of castling
@@ -280,13 +282,13 @@ impl SearchData {
             };
 
             self.toggle_accumulators_on(stm, Piece::Rook, queen_rook_square);
-            self.toggle_accumulators_off(stm, Piece::Rook, from.shift(-1).unwrap());
+            self.toggle_accumulators_off(stm, Piece::Rook, from.shift(-1));
         }
 
-        let moving_piece = self.board.get_piece_at_square(from).unwrap().1;
+        let moving_piece = unsafe { self.board.get_piece_at_square(from).unwrap_unchecked().1 };
         //Need to handle promotions
         if kind.is_promotion() {
-            let promotion_piece = m.get_promoted_piece().unwrap();
+            let promotion_piece = unsafe { m.get_promoted_piece().unwrap_unchecked() };
             self.toggle_accumulators_on(stm, moving_piece, from);
             self.toggle_accumulators_off(stm, promotion_piece, to);
         } else {

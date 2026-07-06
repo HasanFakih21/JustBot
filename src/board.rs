@@ -82,9 +82,11 @@ impl Board {
 
     pub fn get_king_square(&self, side: Side) -> Square {
         debug_assert!(self.get_piece_bb(side, Piece::King).0 != 0, "{}", self);
-        self.get_piece_bb(side, Piece::King)
-            .least_sig_bit()
-            .unwrap()
+        unsafe {
+            self.get_piece_bb(side, Piece::King)
+                .least_sig_bit()
+                .unwrap_unchecked()
+        }
     }
 
     pub fn update_all_threats(&mut self) {

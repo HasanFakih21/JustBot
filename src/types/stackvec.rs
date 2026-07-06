@@ -35,7 +35,8 @@ impl<T: Copy, const SIZE: usize> StackVec<T, SIZE> {
             return self.pop();
         }
 
-        let last = self.pop().unwrap();
+        debug_assert!(!self.is_empty());
+        let last = unsafe { self.pop().unwrap_unchecked() };
         Some(self.replace(last, index))
     }
 

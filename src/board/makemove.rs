@@ -9,7 +9,9 @@ impl Board {
         let from = m.get_from();
         let to = m.get_to();
         let kind = m.get_kind();
-        let (side, piece) = self.get_piece_at_square(from).unwrap();
+
+        debug_assert!(self.state.mailbox[from as usize].is_some());
+        let (side, piece) = unsafe { self.get_piece_at_square(from).unwrap_unchecked() };
 
         let king_rook_square = CASTLING_ROOK_SQAURES[side][Castling::KING_SIDE];
         let queen_rook_square = CASTLING_ROOK_SQAURES[side][Castling::QUEEN_SIDE];
@@ -47,7 +49,7 @@ impl Board {
             self.remove_piece(side, Piece::Rook, CASTLING_ROOK_SQAURES[side][castle_kind]);
             self.state.castling_rights.clear_king_side(side);
             self.state.castling_rights.clear_queen_side(side);
-            self.place_piece(side, Piece::Rook, from.shift(offset[castle_kind]).unwrap());
+            self.place_piece(side, Piece::Rook, from.shift(offset[castle_kind]));
         }
 
         if kind == MoveKind::DoublePawn {

@@ -50,7 +50,7 @@ impl Board {
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             //Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
+            let checking_piece_square = unsafe { self.state.checkers.least_sig_bit().unwrap_unchecked() };
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
             !BitBoard(0)
@@ -66,7 +66,7 @@ impl Board {
             //Single Push
             for to in (single_pushes & target).iter() {
                 move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
+                    to.shift(-offset),
                     to,
                     MoveKind::QuietMove,
                 ));
@@ -75,7 +75,7 @@ impl Board {
             //Double Push
             for to in (double_pushes & target).iter() {
                 move_list.push(Move::new(
-                    to.shift(-offset * 2).unwrap(),
+                    to.shift(-offset * 2),
                     to,
                     MoveKind::DoublePawn,
                 ));
@@ -86,22 +86,22 @@ impl Board {
             //Normal Promotions
             for to in promotions.iter() {
                 move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
+                    to.shift(-offset),
                     to,
                     MoveKind::QPromotion,
                 ));
                 move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
+                    to.shift(-offset),
                     to,
                     MoveKind::RPromotion,
                 ));
                 move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
+                    to.shift(-offset),
                     to,
                     MoveKind::BPromotion,
                 ));
                 move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
+                    to.shift(-offset),
                     to,
                     MoveKind::NPromotion,
                 ));
@@ -135,13 +135,13 @@ impl Board {
                 MoveKind::Capture,
             );
             if let Some(en_passant) = self.state.enpassant {
-                if left_pawns.contains(en_passant.shift(-left).unwrap()) {
-                    let from = en_passant.shift(-left).unwrap();
+                if left_pawns.contains(en_passant.shift(-left)) {
+                    let from = en_passant.shift(-left);
                     move_list.push(Move::new(from, en_passant, MoveKind::EnPassant));
                 }
 
-                if right_pawns.contains(en_passant.shift(-right).unwrap()) {
-                    let from = en_passant.shift(-right).unwrap();
+                if right_pawns.contains(en_passant.shift(-right)) {
+                    let from = en_passant.shift(-right);
                     move_list.push(Move::new(from, en_passant, MoveKind::EnPassant));
                 }
             }
@@ -168,8 +168,10 @@ impl Board {
                 Side::White => Castling::WhiteKing.king_landing_square(),
                 Side::Black => Castling::BlackKing.king_landing_square(),
             };
+
+            debug_assert!(king.count_bits() > 0);
             move_list.push(Move::new(
-                king.least_sig_bit().unwrap(),
+                unsafe { king.least_sig_bit().unwrap_unchecked() },
                 target,
                 MoveKind::KingCastle,
             ));
@@ -183,8 +185,10 @@ impl Board {
                 Side::White => Castling::WhiteQueen.king_landing_square(),
                 Side::Black => Castling::BlackQueen.king_landing_square(),
             };
+
+            debug_assert!(king.count_bits() > 0);
             move_list.push(Move::new(
-                king.least_sig_bit().unwrap(),
+                unsafe { king.least_sig_bit().unwrap_unchecked() },
                 target,
                 MoveKind::QueenCastle,
             ));
@@ -200,7 +204,7 @@ impl Board {
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             //Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
+            let checking_piece_square = unsafe { self.state.checkers.least_sig_bit().unwrap_unchecked() };
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
             !BitBoard(0)
@@ -262,7 +266,7 @@ impl Board {
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             //Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
+            let checking_piece_square = unsafe { self.state.checkers.least_sig_bit().unwrap_unchecked() };
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
             !BitBoard(0)
@@ -305,7 +309,7 @@ impl Board {
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             //Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
+            let checking_piece_square = unsafe { self.state.checkers.least_sig_bit().unwrap_unchecked() };
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
             !BitBoard(0)
@@ -341,7 +345,7 @@ impl Board {
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             //Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
+            let checking_piece_square = unsafe { self.state.checkers.least_sig_bit().unwrap_unchecked() };
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
             !BitBoard(0)

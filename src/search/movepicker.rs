@@ -43,7 +43,8 @@ impl MovePicker {
         let board = &data.board;
         if self.status == Status::HashMove {
             self.status = Status::FirstNoisy;
-            let tt_move = self.tt_move.unwrap();
+            debug_assert!(self.tt_move.is_some());
+            let tt_move = unsafe { self.tt_move.unwrap_unchecked() };
             if (!skip_quiets || !tt_move.get_kind().is_quiet()) && data.board.is_legal(tt_move) {
                 return Some(tt_move);
             }
@@ -147,7 +148,7 @@ impl MovePicker {
             }
         }
 
-        self.moves.remove(best_index).unwrap()
+        unsafe { self.moves.remove(best_index).unwrap_unchecked() } 
     }
 
     fn remove_tt_move(&mut self) {

@@ -90,8 +90,9 @@ impl Square {
         Square::from((rank * 8) + file)
     }
 
-    pub fn shift(&self, offset: i8) -> Option<Square> {
-        Square::try_from((*self as i8) + offset).ok()
+    pub fn shift(&self, offset: i8) -> Square {
+        debug_assert!((*self as i8) + offset >= 0 && (*self as i8) + offset < 64);
+        Square::from(((*self as i8) + offset) as usize)
     }
 
     pub fn to_bb(&self) -> BitBoard {

@@ -61,7 +61,7 @@ impl Board {
             || self.state.pinned[stm as usize].contains(from) && !RAYS[from as usize][king_square as usize].contains(to) //If piece is pinned and the to square isn't on the same ray as the king
             || self.king_in_check()
                 && (self.state.checkers.count_bits() > 1 //If there's multiple checkers then the king has to move 
-                || ((m.get_kind() != MoveKind::EnPassant) && !(self.state.checkers | BETWEEN[king_square as usize][self.state.checkers.least_sig_bit().unwrap() as usize]).contains(to)))
+                || ((m.get_kind() != MoveKind::EnPassant) && !(self.state.checkers | BETWEEN[king_square as usize][unsafe { self.state.checkers.least_sig_bit().unwrap_unchecked() as usize }]).contains(to)))
         //If it's a check and it also doesn't contain a move that's between the king and checking piece or a capture of the checking piece
         {
             return false;
@@ -108,20 +108,18 @@ impl Board {
                 Side::Black => SOUTH,
             };
 
-            let Some(next_square) = from.shift(offset) else {
-                return false;
-            };
+            let next_square = from.shift(offset);
 
             if m.get_kind() == MoveKind::DoublePawn {
+                let next_two_square = from.shift(2 * offset); 
                 let home_rank = match stm {
                     Side::White => 1,
                     Side::Black => 6,
                 };
 
                 return from.to_rank() == home_rank
-                    && from.shift(2 * offset) == Some(to)
                     && !self.get_all_occupancy().contains(next_square)
-                    && !self.get_all_occupancy().contains(to);
+                    && !self.get_all_occupancy().contains(next_two_square);
             }
 
             return !m.is_castling() && next_square == to && !self.get_all_occupancy().contains(to);
