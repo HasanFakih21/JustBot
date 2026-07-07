@@ -6,9 +6,7 @@ use crate::nnue::{Accumulator, NNUE};
 use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::{
-    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, MoveList,
-    NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Side, Square,
-    to_file_bb,
+    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, MATE_CUTOFF, MATE_SCORE, Move, MoveKind, MoveList, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Side, Square, to_file_bb,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -182,6 +180,31 @@ impl SearchData {
             )
         }
     }
+
+    pub fn print_uci_info(&self, score: i32, depth: i32) {
+        //All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
+        if self.report {
+            //Report mate score
+            let score_print = if score.abs() > MATE_CUTOFF {
+                let num_plies = MATE_SCORE - score.abs();
+                let mate_in = score.signum() * ((num_plies + 1) / 2);
+                format!("mate {}", mate_in)
+            } else {
+                format!("cp {}", score)
+            };
+
+            println!(
+                "info depth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
+                depth - 1,
+                self.time.elapsed().as_millis(),
+                score_print,
+                self.shared.get_total_nodes_searched(),
+                self.nodes_per_second(),
+                self.get_pv(),
+                self.shared.tt.hashfull(),
+            );
+        }
+    } 
 
     //Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {

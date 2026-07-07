@@ -79,28 +79,7 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
     let mut alpha = score - alpha_window;
     let mut beta = score + beta_window;
 
-    //All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
-    if data.report {
-        //Report mate score
-        let score_print = if score.abs() > MATE_CUTOFF {
-            let num_plies = MATE_SCORE - score.abs();
-            let mate_in = score.signum() * ((num_plies + 1) / 2);
-            format!("mate {}", mate_in)
-        } else {
-            format!("cp {}", score)
-        };
-
-        println!(
-            "info depth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
-            depth - 1,
-            data.time.elapsed().as_millis(),
-            score_print,
-            data.shared.get_total_nodes_searched(),
-            data.nodes_per_second(),
-            data.get_pv(),
-            data.shared.tt.hashfull(),
-        );
-    }
+    data.print_uci_info(score, depth);
 
     //Iterative Deepening
     loop {
@@ -141,27 +120,7 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
         beta_window = 25;
         alpha = score - alpha_window;
         beta = score + beta_window;
-        if data.report {
-            //Report mate score
-            let score_print = if score.abs() > MATE_CUTOFF {
-                let num_plies = MATE_SCORE - score.abs();
-                let mate_in = score.signum() * ((num_plies + 1) / 2);
-                format!("mate {}", mate_in)
-            } else {
-                format!("cp {}", score)
-            };
-
-            println!(
-                "info depth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
-                depth - 1,
-                data.time.elapsed().as_millis(),
-                score_print,
-                data.shared.get_total_nodes_searched(),
-                data.nodes_per_second(),
-                data.get_pv(),
-                data.shared.tt.hashfull()
-            );
-        }
+        data.print_uci_info(score, depth);
 
         if data.time.soft_limit() {
             break;
@@ -181,11 +140,7 @@ pub fn search<Node: NodeType>(
     let stm = data.board.state.side_to_move;
 
     if depth <= 0 {
-        if data.board.king_in_check() {
-            return search_checks(data, alpha, beta, ply);
-        } else {
-            return quiesce(data, alpha, beta, ply); //Horizon Node
-        }
+        return quiesce(data, alpha, beta, ply); //Horizon Node
     }
 
     data.increment_nodes();
@@ -321,6 +276,8 @@ pub fn search<Node: NodeType>(
 
         //Make Move
         data.make_move(m, ply);
+
+        let new_depth = (depth - 1) + (in_check as i32);
         let mut score = -INFINITY;
 
         //Late Move Reductions (LMR)
@@ -329,19 +286,19 @@ pub fn search<Node: NodeType>(
             r += 200 * !improving as i32;
 
             let reduction = r / 1024;
-            let reduced_depth = (depth - 1) - reduction;
+            let reduced_depth = new_depth - reduction;
 
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1);
-            if score > alpha && reduced_depth < depth - 1 {
-                score = -search::<NonPV>(data, depth - 1, -alpha - 1, -alpha, ply + 1);
+            if score > alpha && reduced_depth < new_depth {
+                score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1);
             }
         } else if !Node::PV || move_count > 1 {
-            score = -search::<NonPV>(data, depth - 1, -alpha - 1, -alpha, ply + 1);
+            score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1);
         }
 
         //Principal Variation Search (PVS)
         if Node::PV && (move_count == 1 || score > alpha) {
-            score = -search::<PV>(data, depth - 1, -beta, -alpha, ply + 1);
+            score = -search::<PV>(data, new_depth, -beta, -alpha, ply + 1);
         }
 
         //Unmake Move
@@ -523,93 +480,6 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
 
         if score > alpha {
             alpha = score;
-        }
-    }
-
-    best_score
-}
-
-pub fn search_checks(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> i32 {
-    let mut best_score = -INFINITY;
-    let mut move_count = 0;
-
-    data.increment_nodes();
-
-    if data.board.state.half_move_clock > 4 {
-        //50 move rule
-        if data.board.state.half_move_clock >= 100 {
-            return 0;
-        }
-        //We need to check history if positions were repeated only for the side to move.
-        let count = data.board.detect_repetitions();
-        if count >= 2 {
-            return 0;
-        }
-    }
-
-    let in_check = data.board.king_in_check();
-
-    if ply >= MAX_PLY as isize - 1 {
-        return if in_check { 0 } else { data.nnue_evaluate() };
-    }
-
-    if !in_check {
-        return quiesce(data, alpha, beta, ply);
-    }
-
-    let tt_move = data
-        .shared
-        .tt
-        .get_entry(data.board.state.hash)
-        .map(|e| e.get_best_move());
-    let mut move_picker = MovePicker::new(tt_move);
-
-    while let Some(m) = move_picker.next(data, false, ply) {
-        move_count += 1;
-
-        data.make_move(m, ply);
-        let score = -search_checks(data, -beta, -alpha, ply + 1);
-
-        data.unmake_move(m);
-
-        if data.time.hard_limit(data.nodes)
-            || data.shared.status.get() == Status::STOPPED
-            || data
-                .time
-                .node_limit()
-                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
-        {
-            return TIMEOUT_SCORE;
-        }
-
-        if score >= beta {
-            //Add noisy bonus to history
-            let piece = data.board.get_piece_at_square(m.get_from());
-            let to = m.get_to();
-            let captured = data
-                .board
-                .get_piece_at_square(m.get_capture_square())
-                .map(|e| e.1);
-            data.noisy_history
-                .update(piece, to, captured, data.board.state.threats, 100);
-
-            return score;
-        }
-
-        if score > best_score {
-            best_score = score;
-        }
-
-        if score > alpha {
-            alpha = score;
-        }
-    }
-
-    if move_count == 0 {
-        if data.board.king_in_check() {
-            return -MATE_SCORE + ply as i32;
-        } else {
-            return 0;
         }
     }
 
