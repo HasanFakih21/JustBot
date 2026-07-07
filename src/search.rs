@@ -498,10 +498,18 @@ pub fn quiesce<Node: NodeType>(
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
         move_count += 1;
 
-        //Static Exchange Evaluation Pruning (SEE Pruning)
-        if !mated(best_score) && !data.board.see(m, -150) {
-            continue;
+        if !mated(best_score) {
+            //Late Move Pruning (LMP)
+            if move_count >= 4 {
+                break;
+            }
+
+            //Static Exchange Evaluation Pruning (SEE Pruning)
+            if !data.board.see(m, -150) {
+                continue;
+            }
         }
+
 
         data.make_move(m, ply);
         let score = -quiesce::<Node>(data, -beta, -alpha, ply + 1);
