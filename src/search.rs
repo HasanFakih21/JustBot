@@ -138,6 +138,11 @@ pub fn search<Node: NodeType>(
     ply: isize,
 ) -> i32 {
     let stm = data.board.state.side_to_move;
+    let in_check = data.board.king_in_check();
+
+    if Node::PV && !Node::ROOT {
+        data.clear_pv(ply);
+    }
 
     if depth <= 0 {
         return quiesce(data, alpha, beta, ply); //Horizon Node
@@ -145,19 +150,26 @@ pub fn search<Node: NodeType>(
 
     data.increment_nodes();
 
-    if Node::PV && !Node::ROOT {
-        data.clear_pv(ply);
-    }
-
-    if data.board.state.half_move_clock > 4 && !Node::ROOT {
-        //50 move rule
-        if data.board.state.half_move_clock >= 100 {
-            return 0;
+    if !Node::ROOT {
+        //Check for draws
+        if data.board.state.half_move_clock > 4 {
+            //50 move rule
+            if data.board.state.half_move_clock >= 100 {
+                return 0;
+            }
+            //We need to check history if positions were repeated only for the side to move.
+            let count = data.board.detect_repetitions();
+            if count >= 2 {
+                return 0;
+            }
         }
-        //We need to check history if positions were repeated only for the side to move.
-        let count = data.board.detect_repetitions();
-        if count >= 2 {
-            return 0;
+
+        if ply >= MAX_PLY as isize - 1 {
+            if in_check {
+                return 0
+            } else {
+                return data.nnue_evaluate()
+            }
         }
     }
 
@@ -187,7 +199,6 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    let in_check = data.board.king_in_check();
     let static_eval = if in_check {
         -INFINITY
     } else if let Some(e) = tt_entry {
