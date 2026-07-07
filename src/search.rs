@@ -119,7 +119,7 @@ pub fn search<Node: NodeType>(
     }
 
     if depth <= 0 {
-        return quiesce(data, alpha, beta, ply); //Horizon Node
+        return quiesce::<Node>(data, alpha, beta, ply); //Horizon Node
     }
 
     data.increment_nodes();
@@ -397,10 +397,39 @@ pub fn search<Node: NodeType>(
     best_score
 }
 
-pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> i32 {
+pub fn quiesce<Node: NodeType>(
+    data: &mut SearchData,
+    mut alpha: i32,
+    beta: i32,
+    ply: isize,
+) -> i32 {
     data.increment_nodes();
     if is_draw(data) {
         return 0;
+    }
+
+    let tt_entry = data.shared.tt.get_entry(data.board.state.hash);
+
+    //TT Cutoffs
+    if let Some(e) = tt_entry
+        && !Node::PV
+        && e.get_score().abs() < Score::MATE_CUTOFF
+    {
+        let tt_score = e.get_score();
+        match e.get_bound() {
+            Bound::Exact => return tt_score,
+            Bound::Lower => {
+                if tt_score >= beta {
+                    return tt_score;
+                }
+            }
+            Bound::Upper => {
+                if tt_score < alpha {
+                    return tt_score;
+                }
+            }
+            _ => unreachable!(),
+        }
     }
 
     let in_check = data.board.king_in_check();
@@ -415,9 +444,13 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
 
     let mut best_score = if in_check {
         -Score::INFINITY
+    } else if let Some(e) = tt_entry {
+        e.get_eval()
     } else {
         data.nnue_evaluate()
     };
+
+    let static_eval = best_score;
 
     //Stand Pat
     if best_score >= beta {
@@ -432,9 +465,13 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
         .shared
         .tt
         .get_entry(data.board.state.hash)
-        .map(|e| e.get_best_move());
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
+
     let mut move_picker = MovePicker::new(tt_move);
     let mut move_count = 0;
+    let mut bound = Bound::Upper;
+    let mut best_move: Option<Move> = None;
     let skip_quiets = !in_check;
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
@@ -446,7 +483,7 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
         }
 
         data.make_move(m, ply);
-        let score = -quiesce(data, -beta, -alpha, ply + 1);
+        let score = -quiesce::<Node>(data, -beta, -alpha, ply + 1);
         data.unmake_move(m);
 
         if data.time.hard_limit(data.nodes)
@@ -459,34 +496,52 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
             return Score::TIMEOUT;
         }
 
-        if score >= beta {
-            if !m.get_kind().is_quiet() {
-                //Add noisy bonus to history
-                let piece = data.board.get_piece_at_square(m.get_from());
-                let to = m.get_to();
-                let captured = data
-                    .board
-                    .get_piece_at_square(m.get_capture_square())
-                    .map(|e| e.1);
-                data.noisy_history
-                    .update(piece, to, captured, data.board.state.threats, 100);
-            }
-
-            return score;
-        }
-
         if score > best_score {
             best_score = score;
-        }
 
-        if score > alpha {
-            alpha = score;
+            if score > alpha {
+                best_move = Some(m);
+
+                //Cutoff
+                if score >= beta {
+                    bound = Bound::Lower;
+                    break;
+                }
+
+                alpha = score;
+            }
         }
     }
 
     if in_check && move_count == 0 {
         return -Score::MATE + ply as i32;
     }
+
+    if best_score >= beta
+        && let Some(m) = best_move
+        && m.get_kind().is_quiet()
+    {
+        //Add noisy bonus to history
+        let piece = data.board.get_piece_at_square(m.get_from());
+        let to = m.get_to();
+        let captured = data
+            .board
+            .get_piece_at_square(m.get_capture_square())
+            .map(|e| e.1);
+        data.noisy_history
+            .update(piece, to, captured, data.board.state.threats, 100);
+    }
+
+    data.shared.tt.add_entry(
+        best_move.unwrap_or_default(),
+        best_score,
+        static_eval,
+        bound,
+        data.board.state.hash,
+        0,
+        ply,
+        Node::PV,
+    );
 
     best_score
 }
