@@ -132,7 +132,9 @@ impl MovePicker {
             let conthistory_score = 1600 * data.get_conthistory(mv, ply, 1) / 1024
                 + 1000 * data.get_conthistory(mv, ply, 2) / 1024;
 
-            entry.score = data.quiet_history.get(threats, side, mv) + conthistory_score;
+            entry.score = data.quiet_history.get(threats, side, mv)
+                + conthistory_score
+                + (10000 * data.board.is_direct_check(mv) as i32);
         }
     }
 

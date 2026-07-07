@@ -20,6 +20,7 @@ pub struct BoardState {
     pub threats: BitBoard,
     pub pinned: [BitBoard; 2],
     pub checkers: BitBoard,
+    pub checking_squares: [BitBoard; 6],
 
     pub half_move_clock: u8,
     pub full_move: usize,
@@ -38,6 +39,7 @@ impl BoardState {
             threats: BitBoard(0),
             pinned: [BitBoard(0); 2],
             checkers: BitBoard(0),
+            checking_squares: [BitBoard(0); 6],
 
             half_move_clock: 0,
             full_move: 0,
@@ -87,11 +89,29 @@ impl Board {
             .unwrap()
     }
 
+    pub fn is_direct_check(&self, m: Move) -> bool {
+        let (_, piece) = self.get_piece_at_square(m.get_from()).unwrap();
+        self.state.checking_squares[piece as usize].contains(m.get_to())
+    }
+
     pub fn update_all_threats(&mut self) {
         let side = self.state.side_to_move.other();
         let stm = self.state.side_to_move;
         let occ_bb = self.get_all_occupancy() ^ self.get_piece_bb(stm, Piece::King);
         let king_square = self.get_king_square(stm);
+        let other_king_square = self.get_king_square(stm.other());
+
+        self.state.checking_squares[Piece::Pawn as usize] =
+            self.get_pawn_attacks(other_king_square, stm.other());
+        self.state.checking_squares[Piece::Knight as usize] =
+            self.get_knight_attacks(other_king_square);
+        self.state.checking_squares[Piece::Bishop as usize] =
+            self.get_bishop_attacks(other_king_square, self.get_all_occupancy());
+        self.state.checking_squares[Piece::Rook as usize] =
+            self.get_rook_attacks(other_king_square, self.get_all_occupancy());
+        self.state.checking_squares[Piece::Queen as usize] = self.state.checking_squares
+            [Piece::Rook as usize]
+            | self.state.checking_squares[Piece::Bishop as usize];
 
         self.state.threats = self.pawn_attacks_setwise(side)
             | self.knight_attacks_setwise(side)
@@ -433,5 +453,22 @@ mod tests {
         data.board.update_all_threats();
         let stm = data.board.state.side_to_move;
         data.board.state.pinned[stm as usize].print_board();
+    }
+
+    #[test]
+    fn test_checking_squares() {
+        let data = SearchData {
+            board: Board::from_fen(
+                "rnbqk2r/pp3p2/4pnpp/1p1p2N1/1b1P4/BP2P2P/P1PN1PP1/R3K2R b KQkq - 0 2",
+            )
+            .unwrap(),
+            ..Default::default()
+        };
+
+        let m = data.board.parse_move("b4d2").unwrap();
+        assert!(data.board.is_direct_check(m));
+
+        let m = data.board.parse_move("b4a3").unwrap();
+        assert!(!data.board.is_direct_check(m));
     }
 }
