@@ -118,6 +118,10 @@ pub fn search<Node: NodeType>(
         data.clear_pv(ply);
     }
 
+    if data.shared.status.get() == Status::STOPPED {
+        return Score::TIMEOUT
+    }
+
     if depth <= 0 {
         return quiesce::<Node>(data, alpha, beta, ply); //Horizon Node
     }
@@ -140,6 +144,18 @@ pub fn search<Node: NodeType>(
                 return data.nnue_evaluate();
             }
         }
+    }
+
+    //Check for Time Outs
+    if data.time.hard_limit(data.nodes)
+        || data.shared.status.get() == Status::STOPPED
+        || data
+            .time
+            .node_limit()
+            .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+    {
+        data.shared.status.stop();
+        return Score::TIMEOUT;
     }
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.hash);
@@ -256,7 +272,6 @@ pub fn search<Node: NodeType>(
 
         //Make Move
         data.make_move(m, ply);
-
         let new_depth = (depth - 1) + (in_check as i32);
         let mut score = -Score::INFINITY;
 
@@ -284,14 +299,8 @@ pub fn search<Node: NodeType>(
         //Unmake Move
         data.unmake_move(m);
 
-        if data.time.hard_limit(data.nodes)
-            || data.shared.status.get() == Status::STOPPED
-            || data
-                .time
-                .node_limit()
-                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
-        {
-            return Score::TIMEOUT;
+        if data.shared.status.get() == Status::STOPPED {
+            return Score::TIMEOUT
         }
 
         if score > best_score {
@@ -408,6 +417,17 @@ pub fn quiesce<Node: NodeType>(
         return 0;
     }
 
+    if data.time.hard_limit(data.nodes)
+        || data.shared.status.get() == Status::STOPPED
+        || data
+            .time
+            .node_limit()
+            .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+    {
+        data.shared.status.stop();
+        return Score::TIMEOUT;
+    }
+
     let tt_entry = data.shared.tt.get_entry(data.board.state.hash);
 
     //TT Cutoffs
@@ -486,14 +506,8 @@ pub fn quiesce<Node: NodeType>(
         let score = -quiesce::<Node>(data, -beta, -alpha, ply + 1);
         data.unmake_move(m);
 
-        if data.time.hard_limit(data.nodes)
-            || data.shared.status.get() == Status::STOPPED
-            || data
-                .time
-                .node_limit()
-                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
-        {
-            return Score::TIMEOUT;
+        if data.shared.status.get() == Status::STOPPED {
+            return Score::TIMEOUT
         }
 
         if score > best_score {
