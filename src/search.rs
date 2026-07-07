@@ -129,23 +129,15 @@ pub fn search<Node: NodeType>(
 
     if !Node::ROOT {
         //Check for draws
-        if data.board.state.half_move_clock > 4 {
-            //50 move rule
-            if data.board.state.half_move_clock >= 100 {
-                return 0;
-            }
-            //We need to check history if positions were repeated only for the side to move.
-            let count = data.board.detect_repetitions();
-            if count >= 2 {
-                return 0;
-            }
+        if is_draw(data) {
+            return 0;
         }
 
         if ply >= MAX_PLY as isize - 1 {
             if in_check {
-                return 0
+                return 0;
             } else {
-                return data.nnue_evaluate()
+                return data.nnue_evaluate();
             }
         }
     }
@@ -407,12 +399,27 @@ pub fn search<Node: NodeType>(
 
 pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> i32 {
     data.increment_nodes();
-    let mut best_score = data.nnue_evaluate();
-
-    if ply >= MAX_PLY as isize - 1 {
-        return best_score;
+    if is_draw(data) {
+        return 0;
     }
 
+    let in_check = data.board.king_in_check();
+
+    if ply >= MAX_PLY as isize - 1 {
+        if in_check {
+            return 0;
+        } else {
+            return data.nnue_evaluate();
+        }
+    }
+
+    let mut best_score = if in_check {
+        -Score::INFINITY
+    } else {
+        data.nnue_evaluate()
+    };
+
+    //Stand Pat
     if best_score >= beta {
         return best_score;
     }
@@ -427,8 +434,12 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
         .get_entry(data.board.state.hash)
         .map(|e| e.get_best_move());
     let mut move_picker = MovePicker::new(tt_move);
+    let mut move_count = 0;
+    let skip_quiets = !in_check;
 
-    while let Some(m) = move_picker.next(data, true, ply) {
+    while let Some(m) = move_picker.next(data, skip_quiets, ply) {
+        move_count += 1;
+
         //Static Exchange Evaluation Pruning (SEE Pruning)
         if !mated(best_score) && !data.board.see(m, -150) {
             continue;
@@ -449,15 +460,17 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
         }
 
         if score >= beta {
-            //Add noisy bonus to history
-            let piece = data.board.get_piece_at_square(m.get_from());
-            let to = m.get_to();
-            let captured = data
-                .board
-                .get_piece_at_square(m.get_capture_square())
-                .map(|e| e.1);
-            data.noisy_history
-                .update(piece, to, captured, data.board.state.threats, 100);
+            if !m.get_kind().is_quiet() {
+                //Add noisy bonus to history
+                let piece = data.board.get_piece_at_square(m.get_from());
+                let to = m.get_to();
+                let captured = data
+                    .board
+                    .get_piece_at_square(m.get_capture_square())
+                    .map(|e| e.1);
+                data.noisy_history
+                    .update(piece, to, captured, data.board.state.threats, 100);
+            }
 
             return score;
         }
@@ -469,6 +482,10 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
         if score > alpha {
             alpha = score;
         }
+    }
+
+    if in_check && move_count == 0 {
+        return -Score::MATE + ply as i32;
     }
 
     best_score

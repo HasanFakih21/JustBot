@@ -6,7 +6,9 @@ use crate::nnue::{Accumulator, NNUE};
 use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::{
-    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Score, Move, MoveKind, MoveList, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Side, Square, to_file_bb,
+    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, MoveList,
+    NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side,
+    Square, to_file_bb,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -204,7 +206,7 @@ impl SearchData {
                 self.shared.tt.hashfull(),
             );
         }
-    } 
+    }
 
     //Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {
