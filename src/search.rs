@@ -119,7 +119,7 @@ pub fn search<Node: NodeType>(
     }
 
     if data.shared.status.get() == Status::STOPPED {
-        return Score::TIMEOUT
+        return Score::TIMEOUT;
     }
 
     if depth <= 0 {
@@ -277,7 +277,8 @@ pub fn search<Node: NodeType>(
 
         //Late Move Reductions (LMR)
         if depth > 3 && move_count > 1 && !Node::PV {
-            let mut r = LMR_TABLE[is_quiet as usize][depth as usize][move_count];
+            let mut r =
+                LMR_TABLE[is_quiet as usize][depth.clamp(0, 127) as usize][move_count.clamp(1, 63)];
             r += 200 * !improving as i32;
 
             let reduction = r / 1024;
@@ -300,7 +301,7 @@ pub fn search<Node: NodeType>(
         data.unmake_move(m);
 
         if data.shared.status.get() == Status::STOPPED {
-            return Score::TIMEOUT
+            return Score::TIMEOUT;
         }
 
         if score > best_score {
@@ -507,7 +508,7 @@ pub fn quiesce<Node: NodeType>(
         data.unmake_move(m);
 
         if data.shared.status.get() == Status::STOPPED {
-            return Score::TIMEOUT
+            return Score::TIMEOUT;
         }
 
         if score > best_score {
