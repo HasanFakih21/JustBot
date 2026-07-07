@@ -4,7 +4,7 @@ use crate::board::Board;
 #[test]
 fn test_search() {
     let mut data = SearchData::default();
-    search::<Root>(&mut data, 5, -INFINITY, INFINITY, 0);
+    search::<Root>(&mut data, 5, -Score::INFINITY, Score::INFINITY, 0);
     let best_move = data.get_pv().get(0).mv;
     println!("Best move: {}", best_move);
 }
@@ -65,7 +65,7 @@ fn test_repetion_detection() {
     data.clear_features();
     data.initialize_nnue();
 
-    let score = search::<Root>(&mut data, 3, -INFINITY, INFINITY, 0);
+    let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0);
     println!("{score}");
     let m = data.get_best_move();
 
@@ -85,7 +85,7 @@ fn test_mate_in_one() {
         Board::from_fen("r1b4r/p1p1q3/1bppk3/4pp2/3PP1Q1/2P1R3/PP3PPP/RN4K1 w - - 0 18").unwrap();
     data.board = board;
 
-    search::<Root>(&mut data, 1, -INFINITY, INFINITY, 0);
+    search::<Root>(&mut data, 1, -Score::INFINITY, Score::INFINITY, 0);
     let best_move = data.get_pv().get(0).mv;
     println!("Best Move: {}", best_move);
     assert_eq!(

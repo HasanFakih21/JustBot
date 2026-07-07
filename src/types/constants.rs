@@ -48,12 +48,7 @@ pub const CASTLING_ROOK_SQAURES: [[Square; 2]; 2] = [
     [KING_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_BLACK],
 ];
 
-pub const INFINITY: i32 = 100000;
-pub const MATE_SCORE: i32 = 9000;
-pub const MATE_CUTOFF: i32 = 8900;
-pub const TIMEOUT_SCORE: i32 = 111111;
-
-pub const MAX_PLY: u8 = 248;
+pub const MAX_PLY: usize = 248;
 pub const MAX_HISTORY: i32 = 8000;
 pub const MAX_MOVE_NUM: usize = 256;
 
@@ -70,17 +65,17 @@ pub const fn to_piece_index(piece: Option<(Side, Piece)>) -> usize {
 }
 
 /// `[Is Quiet][Depth][Move Count]`
-pub static LMR_TABLE: LazyLock<Box<[[[i32; MAX_MOVE_NUM]; MAX_PLY as usize]; 2]>> = {
+pub static LMR_TABLE: LazyLock<Box<[[[i32; MAX_MOVE_NUM]; MAX_PLY]; 2]>> = {
     LazyLock::new(|| {
-        let mut quiet_table = [[0; MAX_MOVE_NUM]; MAX_PLY as usize];
-        let mut noisy_table = [[0; MAX_MOVE_NUM]; MAX_PLY as usize];
+        let mut quiet_table = [[0; MAX_MOVE_NUM]; MAX_PLY];
+        let mut noisy_table = [[0; MAX_MOVE_NUM]; MAX_PLY];
 
         for depth in 0..MAX_PLY {
             for move_count in 0..MAX_MOVE_NUM {
                 let reduction = 0.7844 + f32::ln(depth as f32) * f32::ln(move_count as f32);
 
-                quiet_table[depth as usize][move_count] = ((reduction / 2.4696) * 1024.0) as i32;
-                noisy_table[depth as usize][move_count] = ((reduction / 3.0) * 1024.0) as i32;
+                quiet_table[depth][move_count] = ((reduction / 2.4696) * 1024.0) as i32;
+                noisy_table[depth][move_count] = ((reduction / 3.0) * 1024.0) as i32;
             }
         }
 

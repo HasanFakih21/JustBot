@@ -6,7 +6,9 @@ use crate::nnue::{Accumulator, NNUE};
 use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::{
-    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, MATE_CUTOFF, MATE_SCORE, MAX_PLY, Move, MoveKind, MoveList, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Side, Square, to_file_bb,
+    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, MoveList,
+    NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side,
+    Square, to_file_bb,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -83,7 +85,7 @@ impl SearchData {
     pub fn new(shared: Arc<SharedData>) -> Self {
         SearchData {
             shared,
-            pv: vec![MoveList::new(); MAX_PLY as usize],
+            pv: vec![MoveList::new(); 128],
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
             ply_table: PlyTable::new(),
@@ -150,7 +152,7 @@ impl SearchData {
     }
 
     pub fn reset_pv(&mut self) {
-        self.pv = vec![MoveList::new(); MAX_PLY as usize];
+        self.pv = vec![MoveList::new(); 128];
     }
 
     pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
@@ -185,8 +187,8 @@ impl SearchData {
         //All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
         if self.report {
             //Report mate score
-            let score_print = if score.abs() > MATE_CUTOFF {
-                let num_plies = MATE_SCORE - score.abs();
+            let score_print = if score.abs() > Score::MATE_CUTOFF {
+                let num_plies = Score::MATE - score.abs();
                 let mate_in = score.signum() * ((num_plies + 1) / 2);
                 format!("mate {}", mate_in)
             } else {
@@ -204,7 +206,7 @@ impl SearchData {
                 self.shared.tt.hashfull(),
             );
         }
-    } 
+    }
 
     //Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {

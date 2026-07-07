@@ -1,7 +1,7 @@
 use std::cmp::max;
 
 use crate::board::Board;
-use crate::types::{BitBoard, MATE_CUTOFF, Piece, Square};
+use crate::types::{BitBoard, Piece, Square};
 
 impl Board {
     //Only checks for the current side to move
@@ -13,14 +13,6 @@ impl Board {
             | self.get_piece_bb(side, Piece::Rook)
             == BitBoard(0)
     }
-}
-
-pub const fn mated(score: i32) -> bool {
-    score <= -MATE_CUTOFF
-}
-
-pub const fn mating(score: i32) -> bool {
-    score >= MATE_CUTOFF
 }
 
 //https://www.chessprogramming.org/Center_Manhattan-Distance
@@ -90,12 +82,5 @@ mod tests {
 
         assert_eq!(7, distance(square_1, square_2));
         assert_eq!(14, manhattan_distance(square_1, square_2));
-    }
-
-    #[test]
-    fn test_mated_score() {
-        assert!(mated(-8993));
-        assert!(!mated(-34));
-        assert!(!mated(300));
     }
 }
