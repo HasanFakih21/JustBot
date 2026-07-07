@@ -256,6 +256,7 @@ pub fn search<Node: NodeType>(
         if !Node::ROOT && !mated(best_score) {
             //Late Move Pruning (LMP)
             if !in_check
+                && !is_direct_check
                 && !mating(beta)
                 && is_quiet
                 && move_count > (3 + depth as usize * depth as usize) / (2 - (improving as usize))
@@ -265,12 +266,7 @@ pub fn search<Node: NodeType>(
             }
 
             //Futility Pruning (FP)
-            if !in_check
-                && !is_direct_check
-                && is_quiet
-                && depth < 6
-                && static_eval + 100 * depth + 150 <= alpha
-            {
+            if !in_check && is_quiet && depth < 6 && static_eval + 100 * depth + 150 <= alpha {
                 skip_quiets = true;
                 continue;
             }
@@ -283,8 +279,7 @@ pub fn search<Node: NodeType>(
 
         //Late Move Reductions (LMR)
         if depth > 3 && move_count > 1 && !Node::PV {
-            let mut r =
-                LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r += 200 * !improving as i32;
 
             let reduction = r / 1024;
@@ -515,7 +510,6 @@ pub fn quiesce<Node: NodeType>(
                 continue;
             }
         }
-
 
         data.make_move(m, ply);
         let score = -quiesce::<Node>(data, -beta, -alpha, ply + 1);
