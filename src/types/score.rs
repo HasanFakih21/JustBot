@@ -4,8 +4,8 @@ pub struct Score;
 
 impl Score {
     pub const INFINITY: i32 = 100000;
-    pub const MATE: i32 = 9000;
-    pub const MATE_CUTOFF: i32 = 8900;
+    pub const MATE: i32 = 90000;
+    pub const MATE_CUTOFF: i32 = 89000;
     pub const TIMEOUT: i32 = 111111;
 }
 
