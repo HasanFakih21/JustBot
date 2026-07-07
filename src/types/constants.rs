@@ -53,7 +53,7 @@ pub const MATE_SCORE: i32 = 9000;
 pub const MATE_CUTOFF: i32 = 8900;
 pub const TIMEOUT_SCORE: i32 = 111111;
 
-pub const MAX_PLY: u8 = 128;
+pub const MAX_PLY: u8 = 248;
 pub const MAX_HISTORY: i32 = 8000;
 pub const MAX_MOVE_NUM: usize = 256;
 

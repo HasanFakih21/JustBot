@@ -137,9 +137,6 @@ pub fn search<Node: NodeType>(
     beta: i32,
     ply: isize,
 ) -> i32 {
-    let stm = data.board.state.side_to_move;
-    let in_check = data.board.king_in_check();
-
     if Node::PV && !Node::ROOT {
         data.clear_pv(ply);
     }
@@ -149,6 +146,9 @@ pub fn search<Node: NodeType>(
     }
 
     data.increment_nodes();
+
+    let stm = data.board.state.side_to_move;
+    let in_check = data.board.king_in_check();
 
     if !Node::ROOT {
         //Check for draws
