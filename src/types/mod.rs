@@ -9,6 +9,7 @@ pub mod squares;
 pub mod stackvec;
 pub mod transposition;
 pub mod zobrist;
+pub mod score;
 
 pub use bitboard::*;
 pub use constants::*;
@@ -19,3 +20,4 @@ pub use sides::*;
 pub use squares::*;
 pub use transposition::*;
 pub use zobrist::*;
+pub use score::*;

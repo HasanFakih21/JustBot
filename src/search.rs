@@ -1,5 +1,3 @@
-use crate::board::Board;
-use crate::evaluation::{mated, mating};
 use crate::search::data::{SearchData, Status};
 use crate::search::movepicker::MovePicker;
 use crate::types::plytable::PlyTable;
@@ -12,27 +10,6 @@ pub mod time;
 
 #[cfg(test)]
 mod tests;
-
-impl Board {
-    //Needs fixing
-    pub fn detect_repetitions(&self) -> usize {
-        let half_moves = self.state.half_move_clock as usize;
-        let mut count = 0;
-
-        if self.game_history.len() < half_moves {
-            return 0;
-        }
-
-        let last_halfmove_ply = self.game_history.len() - half_moves;
-        for position in self.game_history[last_halfmove_ply..].iter() {
-            if self.state.hash == *position {
-                count += 1
-            }
-        }
-
-        count
-    }
-}
 
 pub trait NodeType {
     const PV: bool;
@@ -68,7 +45,7 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
     let mut depth = 1;
 
     //Initialize with move from first depth
-    let best_score = search::<Root>(data, depth, -INFINITY, INFINITY, 0);
+    let best_score = search::<Root>(data, depth, -Score::INFINITY, Score::INFINITY, 0);
     let mut best_move = data.get_pv().get(0);
     depth += 1;
 
@@ -179,7 +156,7 @@ pub fn search<Node: NodeType>(
     if let Some(e) = tt_entry
         && !Node::PV
         && e.get_depth() >= depth
-        && e.get_score().abs() < MATE_CUTOFF
+        && e.get_score().abs() < Score::MATE_CUTOFF
     //Mate scores need to be properly adjusted for cutoffs
     {
         let tt_score = e.get_score();
@@ -200,7 +177,7 @@ pub fn search<Node: NodeType>(
     }
 
     let static_eval = if in_check {
-        -INFINITY
+        -Score::INFINITY
     } else if let Some(e) = tt_entry {
         e.get_eval()
     } else {
@@ -210,9 +187,9 @@ pub fn search<Node: NodeType>(
     data.ply_table[ply].eval = static_eval;
     let improving = if in_check {
         false
-    } else if data.ply_table[ply - 2].eval != -INFINITY {
+    } else if data.ply_table[ply - 2].eval != -Score::INFINITY {
         (static_eval - data.ply_table[ply - 2].eval) > 0
-    } else if data.ply_table[ply - 4].eval != -INFINITY {
+    } else if data.ply_table[ply - 4].eval != -Score::INFINITY {
         (static_eval - data.ply_table[ply - 4].eval) > 0
     } else {
         false
@@ -248,7 +225,7 @@ pub fn search<Node: NodeType>(
     }
 
     let mut move_count = 0;
-    let mut best_score = -INFINITY;
+    let mut best_score = -Score::INFINITY;
     let mut best_move: Option<Move> = None;
     let mut bound = Bound::Upper; //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
     let tt_move = data
@@ -289,7 +266,7 @@ pub fn search<Node: NodeType>(
         data.make_move(m, ply);
 
         let new_depth = (depth - 1) + (in_check as i32);
-        let mut score = -INFINITY;
+        let mut score = -Score::INFINITY;
 
         //Late Move Reductions (LMR)
         if depth > 3 && move_count > 1 && !Node::PV {
@@ -322,7 +299,7 @@ pub fn search<Node: NodeType>(
                 .node_limit()
                 .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
         {
-            return TIMEOUT_SCORE;
+            return Score::TIMEOUT;
         }
 
         if score > best_score {
@@ -355,7 +332,7 @@ pub fn search<Node: NodeType>(
 
     if move_count == 0 {
         if in_check {
-            return -MATE_SCORE + ply as i32;
+            return -Score::MATE + ply as i32;
         } else {
             return 0;
         }
@@ -468,7 +445,7 @@ pub fn quiesce(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> 
                 .node_limit()
                 .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
         {
-            return TIMEOUT_SCORE;
+            return Score::TIMEOUT;
         }
 
         if score >= beta {

@@ -4,7 +4,7 @@ use crate::types::{MAX_PLY, Move, Piece, PieceToHistory, Side};
 
 #[derive(Debug)]
 pub struct PlyTable {
-    data: [PlyData; MAX_PLY as usize + 16], //Add some padding so we can start the first ply further down the array so when we do ply - index, we don't have to have any if statements,
+    data: [PlyData; MAX_PLY + 16], //Add some padding so we can start the first ply further down the array so when we do ply - index, we don't have to have any if statements,
     sentinel: PieceToHistory<i16>,
 }
 
@@ -27,7 +27,7 @@ impl PlyTable {
 impl Default for PlyTable {
     fn default() -> Self {
         PlyTable {
-            data: [PlyData::default(); MAX_PLY as usize + 16],
+            data: [PlyData::default(); MAX_PLY + 16],
             sentinel: [[0; 64]; 13],
         }
     }

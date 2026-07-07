@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicPtr, AtomicU8, AtomicUsize, Ordering};
 
-use crate::types::{MATE_CUTOFF, moves::Move};
+use crate::types::{Score, moves::Move};
 
 const TT_DEFAULT_SIZE: usize = 16;
 const MEGABYTE: usize = 1024 * 1024;
@@ -194,7 +194,7 @@ impl TranspositionTable {
         }
 
         //Adjust mate scores
-        if score.abs() >= MATE_CUTOFF {
+        if score.abs() >= Score::MATE_CUTOFF {
             score += score.signum() * ply as i32;
         }
 
@@ -289,7 +289,7 @@ mod tests {
     use crate::{
         board::Board,
         search::{Root, data::SearchData, search},
-        types::{Bound, Flags, INFINITY},
+        types::{Bound, Flags, Score},
     };
 
     #[test]
@@ -302,7 +302,7 @@ mod tests {
             ..Default::default()
         };
 
-        let score = search::<Root>(&mut data, 3, -INFINITY, INFINITY, 0);
+        let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0);
 
         let hash = data.board.state.hash;
         let entry = data.shared.tt.get_entry(hash).unwrap();
@@ -316,7 +316,7 @@ mod tests {
         assert_eq!(score, s);
 
         data.board.make_move(best_move);
-        search::<Root>(&mut data, 2, -INFINITY, INFINITY, 0);
+        search::<Root>(&mut data, 2, -Score::INFINITY, Score::INFINITY, 0);
 
         let entry = data.shared.tt.get_entry(hash).unwrap();
 
