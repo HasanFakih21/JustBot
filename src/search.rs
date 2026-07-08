@@ -256,6 +256,7 @@ pub fn search<Node: NodeType>(
         if !Node::ROOT && !mated(best_score) {
             //Late Move Pruning (LMP)
             if !in_check
+                && !is_direct_check
                 && !mating(beta)
                 && is_quiet
                 && move_count > (3 + depth as usize * depth as usize) / (2 - (improving as usize))
