@@ -1,4 +1,8 @@
-use crate::{board::Board, search::data::SearchData, types::{Piece, Side, Square}};
+use crate::{
+    board::Board,
+    search::data::SearchData,
+    types::{Piece, Side, Square},
+};
 
 const HIDDEN_SIZE: usize = 512;
 const SCALE: i32 = 400;
@@ -132,50 +136,20 @@ impl Accumulator {
 mod tests {
 
     use crate::{
-        board::{Board, movegen::MoveGenKind},
-        search::data::SearchData,
+        board::{Board, movegen::MoveGenKind}, nnue::output_bucket, search::data::SearchData, types::STARTING_FEN,
     };
 
-    
+    #[test]
+    fn test_output_bucket() {
+        let data = SearchData {
+            board: Board::from_fen(STARTING_FEN)
+                .unwrap(),
+            ..Default::default()
+        };
 
-    // #[test]
-    // fn test_nnue() {
-    //     let shared = Arc::new(crate::search::data::SharedData::default());
-    //     let mut pool = SearchThreads::new(shared.clone(), 1);
-    //     let mut board =
-    //         Board::from_fen("rn1qkbnr/ppp1p1p1/3p1P1p/8/6b1/8/PPPP1PPP/RNB1KBNR w KQkq - 0 5")
-    //             .unwrap();
-    //     let mut time = TimeManager::new();
-
-    //     let mut us = Accumulator::new(&NNUE);
-    //     let mut them = Accumulator::new(&NNUE);
-
-    //     for rank in 0..8 {
-    //         for file in 0..8 {
-    //             let square = Square::from_rank_and_file(rank, file);
-    //             let side_piece = board.get_piece_at_square(square);
-    //             let stm = board.state.side_to_move;
-    //             if let Some((side, piece)) = side_piece {
-    //                 us.toggle_on(side == stm, piece, square);
-    //                 them.toggle_on(side != stm, piece, square);
-    //             }
-    //         }
-    //     }
-
-    //     let bucket = output_bucket(&board);
-    //     let eval = NNUE.evaluate(&us, &them, bucket);
-    //     go(
-    //         "nodes 40000",
-    //         &mut pool,
-    //         &mut board,
-    //         &mut time,
-    //         &shared,
-    //         false,
-    //     );
-
-    //     println!("NNUE: {}", eval);
-    //     println!("TEST: {}", pool.threads[0].nnue_evaluate())
-    // }
+        let bucket = output_bucket(&data.board);
+        assert_eq!(bucket, 7);
+    }
 
     #[test]
     fn test_nnue_make_unmake() {

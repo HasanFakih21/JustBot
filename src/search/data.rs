@@ -320,7 +320,7 @@ impl SearchData {
         }
     }
 
-    pub fn nnue_evaluate(&self) -> i32 { 
+    pub fn nnue_evaluate(&self) -> i32 {
         NNUE.evaluate(self)
     }
 
