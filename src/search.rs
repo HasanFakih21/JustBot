@@ -286,6 +286,8 @@ pub fn search<Node: NodeType>(
         if depth > 3 && move_count > 1 && !Node::PV {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r += 200 * !improving as i32;
+            r -= 600 * (move_picker.status() == movepicker::Status::GoodNoisy) as i32; 
+            r += 600 * (move_picker.status() == movepicker::Status::BadNoisy) as i32; 
 
             let reduction = r / 1024;
             let reduced_depth = new_depth - reduction;
