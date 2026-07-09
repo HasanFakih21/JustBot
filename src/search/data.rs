@@ -321,14 +321,7 @@ impl SearchData {
     }
 
     pub fn nnue_evaluate(&self) -> i32 {
-        let stm = self.board.state.side_to_move;
-
-        let (us, them) = match stm {
-            Side::White => (&self.white_features, &self.black_features),
-            Side::Black => (&self.black_features, &self.white_features),
-        };
-
-        NNUE.evaluate(us, them)
+        NNUE.evaluate(self)
     }
 
     pub fn toggle_accumulators_off(&mut self, piece_side: Side, piece: Piece, square: Square) {

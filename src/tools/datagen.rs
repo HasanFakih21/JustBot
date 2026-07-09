@@ -66,7 +66,7 @@ pub mod tests {
 
     #[test]
     fn test_fengen() {
-        let book = generate_random_openings(1, 8, 0);
+        let book = generate_random_openings(1, 8, 3493);
         for opening in book {
             println!("{opening}");
         }
