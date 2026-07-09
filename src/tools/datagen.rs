@@ -1,9 +1,10 @@
 use std::sync::Mutex;
 
+use rand::random;
+
 use crate::{
     board::{Board, movegen::MoveGenKind},
     search::data::SearchData,
-    tools::bench::bench,
     types::pseudo_rand,
 };
 
@@ -12,14 +13,13 @@ pub struct BadRandomBoard;
 
 static SEED: Mutex<u64> = Mutex::new(0);
 
-pub fn generate_random_openings(amount: usize, plies: isize, seed: u64) -> Vec<String> {
+pub fn generate_random_openings(amount: usize, plies: isize, seed: u64) {
     if seed != 0 {
         *SEED.lock().unwrap() = seed;
     } else {
-        *SEED.lock().unwrap() = bench().1;
+        *SEED.lock().unwrap() = random();
     }
 
-    let mut openings = Vec::new();
     for _ in 0..amount {
         let mut random_number = pseudo_rand(&mut SEED.lock().unwrap());
         let mut random_board = randomize_from_startpos(plies, random_number);
@@ -30,15 +30,19 @@ pub fn generate_random_openings(amount: usize, plies: isize, seed: u64) -> Vec<S
             random_board = randomize_from_startpos(plies, random_number);
         }
 
-        openings.push(random_board.unwrap().to_fen());
+        println!("info string genfens {}", random_board.unwrap().to_fen());
     }
-
-    openings
 }
 
 pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board, BadRandomBoard> {
     let mut data = SearchData::default();
     let mut state = random_number;
+
+    let plies = if rand::random_bool(0.5) {
+        plies
+    } else {
+        plies + 1
+    };
 
     for ply in 0..plies {
         let move_list = data.board.generate_moves(MoveGenKind::All);
@@ -58,17 +62,4 @@ pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board
     }
 
     Ok(data.board)
-}
-
-#[cfg(test)]
-pub mod tests {
-    use crate::tools::datagen::generate_random_openings;
-
-    #[test]
-    fn test_fengen() {
-        let book = generate_random_openings(1, 8, 3493);
-        for opening in book {
-            println!("{opening}");
-        }
-    }
 }

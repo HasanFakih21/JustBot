@@ -260,10 +260,7 @@ pub fn genfens(args: &str) {
         _ => (),
     }
 
-    let book = generate_random_openings(amount, 8, seed);
-    for opening in book {
-        println!("info string genfens {}", opening);
-    }
+    generate_random_openings(amount, 8, seed);
 }
 
 #[cfg(test)]

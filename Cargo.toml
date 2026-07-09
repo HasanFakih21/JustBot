@@ -9,3 +9,4 @@ panic = "abort"
 codegen-units = 1
 
 [dependencies]
+rand = "0.10.2"
