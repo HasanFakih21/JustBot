@@ -70,6 +70,7 @@ pub fn search_runner(data: &mut SearchData) {
             || depth > data.time.depth_limit()
             || data.shared.status.get() == Status::STOPPED
         {
+            data.shared.status.stop();
             break;
         }
 
@@ -100,6 +101,10 @@ pub fn search_runner(data: &mut SearchData) {
         data.print_uci_info(score, depth);
 
         if data.time.soft_limit() {
+            if data.id == 0 {
+                data.shared.status.stop();
+            }
+
             break;
         }
     }
