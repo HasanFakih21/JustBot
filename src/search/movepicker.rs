@@ -4,7 +4,7 @@ use crate::{
     types::{Move, MoveEntry, MoveList, stackvec::StackVec},
 };
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq)]
 pub enum Status {
     HashMove,
     FirstNoisy,
@@ -37,10 +37,6 @@ impl MovePicker {
             bad_index: 0,
             noisy_count: 0,
         }
-    }
-
-    pub fn status(&self) -> Status {
-        self.status
     }
 
     pub fn next(&mut self, data: &SearchData, skip_quiets: bool, ply: isize) -> Option<Move> {
