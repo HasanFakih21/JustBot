@@ -253,14 +253,17 @@ pub fn search<Node: NodeType>(
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.get_kind().is_quiet();
         let history = if is_quiet {
-            data.quiet_history.get(data.board.state.threats, stm, m) + data.get_conthistory(m, ply, 1) + data.get_conthistory(m, ply, 2)
+            data.quiet_history.get(data.board.state.threats, stm, m)
+                + data.get_conthistory(m, ply, 1)
+                + data.get_conthistory(m, ply, 2)
         } else {
             let piece = data.board.get_piece_at_square(m.get_from());
             let captured = data
                 .board
                 .get_piece_at_square(m.get_capture_square())
                 .map(|e| e.1);
-            data.noisy_history.get(piece, m.get_to(), captured, data.board.state.threats)
+            data.noisy_history
+                .get(piece, m.get_to(), captured, data.board.state.threats)
         };
 
         if !Node::ROOT && !mated(best_score) {
@@ -287,7 +290,7 @@ pub fn search<Node: NodeType>(
             }
 
             //History Pruning (HP)
-            if !in_check && is_quiet && depth < 5 && history < -1000 * depth {
+            if !in_check && is_quiet && depth < 5 && history < -950 * depth {
                 continue;
             }
         }
