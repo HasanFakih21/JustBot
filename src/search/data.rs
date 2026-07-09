@@ -65,6 +65,9 @@ impl Default for SharedData {
 
 #[derive(Debug)]
 pub struct SearchData {
+    pub id: usize,
+    pub best_move: Option<Move>,
+
     pub shared: Arc<SharedData>,
     pub pv: Vec<MoveList>,
     pub board: Board,
@@ -82,8 +85,10 @@ pub struct SearchData {
 }
 
 impl SearchData {
-    pub fn new(shared: Arc<SharedData>) -> Self {
+    pub fn new(shared: Arc<SharedData>, id: usize) -> Self {
         SearchData {
+            id,
+            best_move: None,
             shared,
             pv: vec![MoveList::new(); 128],
             board: Board::from_fen(STARTING_FEN).unwrap(),
@@ -123,8 +128,8 @@ impl SearchData {
         &self.pv[0]
     }
 
-    pub fn get_best_move(&self) -> Move {
-        self.get_pv().get(0).mv
+    pub fn get_best_move(&self) -> Option<Move> {
+        self.best_move
     }
 
     pub fn nodes_per_second(&self) -> usize {
@@ -353,6 +358,6 @@ impl SearchData {
 
 impl Default for SearchData {
     fn default() -> Self {
-        Self::new(Arc::new(SharedData::default()))
+        Self::new(Arc::new(SharedData::default()), 0)
     }
 }

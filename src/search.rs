@@ -35,7 +35,7 @@ impl NodeType for Root {
     const ROOT: bool = true;
 }
 
-pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
+pub fn search_runner(data: &mut SearchData) {
     data.reset_pv();
     data.start_time();
     data.clear_features();
@@ -62,7 +62,7 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
     loop {
         data.ply_table = PlyTable::new();
 
-        if data.time.hard_limit(data.nodes)
+        if data.time.hard_limit(data.nodes, data.id)
             || data
                 .time
                 .node_limit()
@@ -104,7 +104,7 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
         }
     }
 
-    Some(best_move)
+    data.best_move = Some(best_move.mv);
 }
 
 pub fn search<Node: NodeType>(
@@ -147,7 +147,7 @@ pub fn search<Node: NodeType>(
     }
 
     //Check for Time Outs
-    if data.time.hard_limit(data.nodes)
+    if data.time.hard_limit(data.nodes, data.id)
         || data.shared.status.get() == Status::STOPPED
         || data
             .time
@@ -424,7 +424,7 @@ pub fn quiesce<Node: NodeType>(
         return 0;
     }
 
-    if data.time.hard_limit(data.nodes)
+    if data.time.hard_limit(data.nodes, data.id)
         || data.shared.status.get() == Status::STOPPED
         || data
             .time

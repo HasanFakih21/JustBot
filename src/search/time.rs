@@ -132,8 +132,8 @@ impl TimeManager {
         }
     }
 
-    pub fn hard_limit(&self, nodes: u64) -> bool {
-        if !nodes.is_multiple_of(2048) {
+    pub fn hard_limit(&self, nodes: u64, id: usize) -> bool {
+        if !nodes.is_multiple_of(2048) || id != 0 {
             return false;
         }
 
