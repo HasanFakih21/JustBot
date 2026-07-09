@@ -275,6 +275,11 @@ pub fn search<Node: NodeType>(
                 skip_quiets = true;
                 continue;
             }
+
+            //Static Exchange Evaluation Pruning (SEE Pruning)
+            if !is_quiet && !data.board.see(m, 0) {
+                continue;
+            }
         }
 
         //Make Move
