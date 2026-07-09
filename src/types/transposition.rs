@@ -18,7 +18,7 @@ pub enum Bound {
     Lower,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Flags(u8);
 
 impl Flags {
@@ -211,12 +211,21 @@ impl TranspositionTable {
         unsafe { self.ptr().write_bytes(0, self.len()) }
     }
 
-    pub fn get_entry(&self, hash: u64) -> Option<&Entry> {
+    pub fn get_entry(&self, hash: u64) -> Option<Entry> {
         let index = index(hash, self.len());
         debug_assert!(index < self.len());
 
         let cluster = unsafe { &*self.ptr().add(index) };
-        cluster.lookup_key(hash as u16)
+        cluster.lookup_key(hash as u16).map(|entry| {
+            Entry::new(
+                entry.key,
+                entry.best_move,
+                entry.score,
+                entry.eval,
+                entry.depth,
+                entry.flags,
+            )
+        })
     }
 
     pub fn hashfull(&self) -> usize {

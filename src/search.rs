@@ -161,7 +161,7 @@ pub fn search<Node: NodeType>(
     let tt_entry = data.shared.tt.get_entry(data.board.state.hash);
 
     //TT Cutoffs only if depth of entry is greater or equal to the depth of the current node
-    if let Some(e) = tt_entry
+    if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_depth() >= depth
         && e.get_score().abs() < Score::MATE_CUTOFF
@@ -186,7 +186,7 @@ pub fn search<Node: NodeType>(
 
     let static_eval = if in_check {
         -Score::INFINITY
-    } else if let Some(e) = tt_entry {
+    } else if let Some(e) = &tt_entry {
         e.get_eval()
     } else {
         data.nnue_evaluate()
@@ -438,7 +438,7 @@ pub fn quiesce<Node: NodeType>(
     let tt_entry = data.shared.tt.get_entry(data.board.state.hash);
 
     //TT Cutoffs
-    if let Some(e) = tt_entry
+    if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_score().abs() < Score::MATE_CUTOFF
     {
@@ -471,7 +471,7 @@ pub fn quiesce<Node: NodeType>(
 
     let mut best_score = if in_check {
         -Score::INFINITY
-    } else if let Some(e) = tt_entry {
+    } else if let Some(e) = &tt_entry {
         e.get_eval()
     } else {
         data.nnue_evaluate()
