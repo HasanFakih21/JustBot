@@ -276,7 +276,7 @@ pub fn search<Node: NodeType>(
                 continue;
             }
 
-            let threshold = -5 * depth;
+            let threshold = -150 * depth;
             //Static Exchange Evaluation Pruning (SEE Pruning)
             if !is_quiet && !data.board.see(m, threshold) {
                 continue;
