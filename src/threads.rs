@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use crate::{
     board::Board,
@@ -17,8 +17,8 @@ pub struct SearchThreads {
 impl SearchThreads {
     pub fn new(shared: std::sync::Arc<SharedData>, count: usize) -> Self {
         let mut threads = Vec::new();
-        for _ in 0..count {
-            threads.push(SearchData::new(shared.clone()));
+        for id in 0..count {
+            threads.push(SearchData::new(shared.clone(), id));
         }
 
         SearchThreads { threads }
@@ -31,14 +31,14 @@ impl SearchThreads {
         shared: &Arc<SharedData>,
         mute: bool,
     ) -> Option<Move> {
-        shared.clear_node_count();
         shared.tt.increase_age();
         time.set_time_limits(board.state.side_to_move);
+        shared.reset_all_nodes();
 
         std::thread::scope(|scope| {
             let mut handles = Vec::new();
-            for (i, t) in self.threads.iter_mut().enumerate() {
-                if i != 0 || mute {
+            for t in self.threads.iter_mut() {
+                if t.id != 0 || mute {
                     t.mute();
                 }
 
@@ -48,18 +48,12 @@ impl SearchThreads {
                 handles.push(scope.spawn(|| search_runner(t)));
             }
 
-            let mut best_moves = HashMap::new();
             for handle in handles {
-                if let Ok(Some(m)) = handle.join() {
-                    best_moves.insert(m.mv, best_moves.get(&m.mv).unwrap_or(&0) + 1);
-                }
+                let _ = handle.join();
             }
+        });
 
-            best_moves
-                .into_iter()
-                .max_by_key(|(_, count)| *count)
-                .map(|(m, _)| m)
-        })
+        self.threads.first().map(|t| t.best_move)?
     }
 }
 

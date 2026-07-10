@@ -35,12 +35,11 @@ impl NodeType for Root {
     const ROOT: bool = true;
 }
 
-pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
+pub fn search_runner(data: &mut SearchData) {
     data.reset_pv();
     data.start_time();
     data.clear_features();
     data.initialize_nnue();
-    data.nodes = 0;
 
     let mut depth = 1;
 
@@ -62,14 +61,18 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
     loop {
         data.ply_table = PlyTable::new();
 
-        if data.time.hard_limit(data.nodes)
+        if data.time.hard_limit(data.nodes(), data.id)
             || data
                 .time
                 .node_limit()
-                .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+                .is_some_and(|node_limit| data.nodes() >= node_limit)
             || depth > data.time.depth_limit()
             || data.shared.status.get() == Status::STOPPED
         {
+            if data.id == 0 {
+                data.shared.status.stop();
+            }
+
             break;
         }
 
@@ -100,11 +103,15 @@ pub fn search_runner(data: &mut SearchData) -> Option<MoveEntry> {
         data.print_uci_info(score, depth);
 
         if data.time.soft_limit() {
+            if data.id == 0 {
+                data.shared.status.stop();
+            }
+
             break;
         }
     }
 
-    Some(best_move)
+    data.best_move = Some(best_move.mv);
 }
 
 pub fn search<Node: NodeType>(
@@ -126,7 +133,7 @@ pub fn search<Node: NodeType>(
         return quiesce::<Node>(data, alpha, beta, ply); //Horizon Node
     }
 
-    data.increment_nodes();
+    data.shared.increment_nodes(data.id);
 
     let stm = data.board.state.side_to_move;
     let in_check = data.board.king_in_check();
@@ -147,12 +154,12 @@ pub fn search<Node: NodeType>(
     }
 
     //Check for Time Outs
-    if data.time.hard_limit(data.nodes)
+    if data.time.hard_limit(data.nodes(), data.id)
         || data.shared.status.get() == Status::STOPPED
         || data
             .time
             .node_limit()
-            .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+            .is_some_and(|node_limit| data.nodes() >= node_limit)
     {
         data.shared.status.stop();
         return Score::TIMEOUT;
@@ -419,17 +426,17 @@ pub fn quiesce<Node: NodeType>(
     beta: i32,
     ply: isize,
 ) -> i32 {
-    data.increment_nodes();
+    data.shared.increment_nodes(data.id);
     if is_draw(data) {
         return 0;
     }
 
-    if data.time.hard_limit(data.nodes)
+    if data.time.hard_limit(data.nodes(), data.id)
         || data.shared.status.get() == Status::STOPPED
         || data
             .time
             .node_limit()
-            .is_some_and(|node_limit| data.shared.get_total_nodes_searched() >= node_limit)
+            .is_some_and(|node_limit| data.nodes() >= node_limit)
     {
         data.shared.status.stop();
         return Score::TIMEOUT;

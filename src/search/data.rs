@@ -1,5 +1,6 @@
+use std::array;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use crate::board::Board;
 use crate::nnue::{Accumulator, NNUE};
@@ -35,21 +36,30 @@ impl Status {
 #[derive(Debug)]
 pub struct SharedData {
     pub tt: TranspositionTable,
-    pub total_nodes: AtomicUsize,
     pub status: Status,
+    pub nodes: Box<[AtomicU64; 512]>,
 }
 
 impl SharedData {
-    pub fn get_total_nodes_searched(&self) -> usize {
-        self.total_nodes.load(Ordering::Acquire)
+    pub fn increment_nodes(&self, id: usize) {
+        self.nodes[id].store(
+            self.nodes[id].load(Ordering::Relaxed) + 1,
+            Ordering::Relaxed,
+        );
     }
 
-    pub fn increase_nodes(&self, nodes: usize) {
-        self.total_nodes.fetch_add(nodes, Ordering::Relaxed);
+    pub fn get_node_count(&self, id: usize) -> u64 {
+        self.nodes[id].load(Ordering::Relaxed)
     }
 
-    pub fn clear_node_count(&self) {
-        self.total_nodes.store(0, Ordering::Release);
+    pub fn get_total_nodes_searched(&self) -> u64 {
+        self.nodes.iter().map(|n| n.load(Ordering::Relaxed)).sum()
+    }
+
+    pub fn reset_all_nodes(&self) {
+        for t in self.nodes.iter() {
+            t.store(0, Ordering::Relaxed);
+        }
     }
 }
 
@@ -57,21 +67,22 @@ impl Default for SharedData {
     fn default() -> Self {
         Self {
             tt: TranspositionTable::default(),
-            total_nodes: AtomicUsize::new(0),
             status: Status(AtomicBool::new(Status::RUNNING)),
+            nodes: Box::new(array::from_fn(|_| AtomicU64::new(0))),
         }
     }
 }
 
 #[derive(Debug)]
 pub struct SearchData {
+    pub id: usize,
+    pub best_move: Option<Move>,
     pub shared: Arc<SharedData>,
     pub pv: Vec<MoveList>,
     pub board: Board,
     pub time: TimeManager,
     pub report: bool,
     pub ply_table: Box<PlyTable>,
-    pub nodes: u64,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -82,14 +93,15 @@ pub struct SearchData {
 }
 
 impl SearchData {
-    pub fn new(shared: Arc<SharedData>) -> Self {
+    pub fn new(shared: Arc<SharedData>, id: usize) -> Self {
         SearchData {
+            id,
+            best_move: None,
             shared,
             pv: vec![MoveList::new(); 128],
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
             ply_table: PlyTable::new(),
-            nodes: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -99,11 +111,6 @@ impl SearchData {
             white_features: Accumulator::new(&NNUE),
             black_features: Accumulator::new(&NNUE),
         }
-    }
-
-    pub fn increment_nodes(&mut self) {
-        self.nodes += 1;
-        self.shared.increase_nodes(1);
     }
 
     pub fn mute(&mut self) {
@@ -127,12 +134,20 @@ impl SearchData {
         self.get_pv().get(0).mv
     }
 
-    pub fn nodes_per_second(&self) -> usize {
-        (self.shared.get_total_nodes_searched() as f32 / self.time.elapsed().as_secs_f32()) as usize
-    }
-
     pub fn start_time(&mut self) {
         self.time.reset_clock();
+    }
+
+    pub fn nodes(&self) -> u64 {
+        self.shared.get_node_count(self.id)
+    }
+
+    pub fn reset_nodes(&self) {
+        self.shared.nodes[self.id].store(0, Ordering::Relaxed);
+    }
+
+    pub fn nodes_per_second(&self) -> usize {
+        (self.shared.get_total_nodes_searched() as f32 / self.time.elapsed().as_secs_f32()) as usize
     }
 
     pub fn add_pv_move(&mut self, m: Move, ply: isize) {
@@ -353,6 +368,6 @@ impl SearchData {
 
 impl Default for SearchData {
     fn default() -> Self {
-        Self::new(Arc::new(SharedData::default()))
+        Self::new(Arc::new(SharedData::default()), 0)
     }
 }

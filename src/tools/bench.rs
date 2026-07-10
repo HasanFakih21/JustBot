@@ -34,6 +34,6 @@ pub fn bench() -> (u64, u64) {
         total_node_count += shared.get_total_nodes_searched();
     }
 
-    let nps = (total_node_count as f32 / time.elapsed().as_secs_f32()) as usize;
-    (total_node_count as u64, nps as u64)
+    let nps = (total_node_count as f32 / time.elapsed().as_secs_f32()) as u64;
+    (total_node_count, nps)
 }

@@ -103,7 +103,8 @@ fn test_mate_in_four() {
     data.get_time_settings().nodes = 8000;
     data.time.set_nodes_limit();
 
-    let best_move = search_runner(&mut data).unwrap().mv;
+    search_runner(&mut data);
+    let best_move = data.best_move.unwrap();
 
     println!("Best Move: {}", best_move);
     assert_eq!(
@@ -124,11 +125,10 @@ fn test_pv_line() {
     data.get_time_settings().nodes = 20000;
     data.time.set_nodes_limit();
 
-    let score = search_runner(&mut data).unwrap().score;
+    search_runner(&mut data);
 
     let best_move = data.get_best_move();
     println!("PV: {}", data.get_pv());
-    println!("Eval: {}", score);
     let mut pv_line = MoveList::new();
     pv_line.push(Move::new(F6, G4, QuietMove));
     pv_line.push(Move::new(H2, G1, QuietMove));
@@ -170,14 +170,19 @@ fn test_transposition_timeout() {
     data.time.set_time_limits(board.state.side_to_move);
     data.board = board;
 
-    let _ = search_runner(&mut data);
+    search_runner(&mut data);
+    data.shared.status.run();
     println!();
-    let _ = search_runner(&mut data);
+    data.shared.status.run();
+    search_runner(&mut data);
     println!();
-    let _ = search_runner(&mut data);
+    data.shared.status.run();
+    search_runner(&mut data);
     println!();
-    let _ = search_runner(&mut data);
+    data.shared.status.run();
+    search_runner(&mut data);
     println!();
-    let _ = search_runner(&mut data);
+    data.shared.status.run();
+    search_runner(&mut data);
     println!();
 }
