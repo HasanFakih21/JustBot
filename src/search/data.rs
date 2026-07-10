@@ -172,19 +172,23 @@ impl SearchData {
 
     pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
         unsafe {
-            self.conthistory.update(
-                self.ply_table[ply - 1].conthistory,
-                self.board.get_piece_at_square(m.get_from()),
-                m.get_to(),
-                bonus,
-            );
+            if !self.ply_table[ply - 1].m.is_null() {
+                self.conthistory.update(
+                    self.ply_table[ply - 1].conthistory,
+                    self.board.get_piece_at_square(m.get_from()),
+                    m.get_to(),
+                    bonus,
+                );
+            }
 
-            self.conthistory.update(
-                self.ply_table[ply - 2].conthistory,
-                self.board.get_piece_at_square(m.get_from()),
-                m.get_to(),
-                bonus,
-            );
+            if !self.ply_table[ply - 2].m.is_null() {
+                self.conthistory.update(
+                    self.ply_table[ply - 2].conthistory,
+                    self.board.get_piece_at_square(m.get_from()),
+                    m.get_to(),
+                    bonus,
+                );
+            }
         }
     }
 

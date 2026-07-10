@@ -263,5 +263,13 @@ mod tests {
 
         let m = data.board.parse_move("c1c3").unwrap();
         assert!(!data.board.see(m, -150));
+
+        let data = SearchData {
+            board: Board::from_fen("7k/8/8/8/r7/r1p5/N7/K3B3 w - - 0 1").unwrap(),
+            ..Default::default()
+        };
+
+        let m = data.board.parse_move("e1c3").unwrap();
+        assert!(!data.board.see(m, -150));
     }
 }
