@@ -4,7 +4,7 @@ use crate::{
     types::{Move, MoveEntry, MoveList, stackvec::StackVec},
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Stage {
     HashMove,
     FirstNoisy,
@@ -17,7 +17,7 @@ pub enum Stage {
 pub struct MovePicker {
     moves: MoveList,
     tt_move: Option<Move>,
-    status: Stage,
+    stage: Stage,
     bad_noisy: StackVec<Move, 256>,
     bad_index: usize,
     noisy_count: usize,
@@ -28,7 +28,7 @@ impl MovePicker {
         Self {
             moves: MoveList::new(),
             tt_move,
-            status: if tt_move.is_some() {
+            stage: if tt_move.is_some() {
                 Stage::HashMove
             } else {
                 Stage::FirstNoisy
@@ -39,24 +39,28 @@ impl MovePicker {
         }
     }
 
+    pub fn stage(&self) -> Stage {
+        self.stage
+    }
+
     pub fn next(&mut self, data: &SearchData, skip_quiets: bool, ply: isize) -> Option<Move> {
         let board = &data.board;
-        if self.status == Stage::HashMove {
-            self.status = Stage::FirstNoisy;
+        if self.stage == Stage::HashMove {
+            self.stage = Stage::FirstNoisy;
             let tt_move = self.tt_move.unwrap();
             if (!skip_quiets || !tt_move.get_kind().is_quiet()) && data.board.is_legal(tt_move) {
                 return Some(tt_move);
             }
         }
 
-        if self.status == Stage::FirstNoisy {
+        if self.stage == Stage::FirstNoisy {
             board.append_moves(MoveGenKind::Noisy, &mut self.moves);
             self.remove_tt_move();
             self.score_noisy_moves(data);
-            self.status = Stage::GoodNoisy;
+            self.stage = Stage::GoodNoisy;
         }
 
-        if self.status == Stage::GoodNoisy {
+        if self.stage == Stage::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
                 let threshold = -best_entry.score / 4 + 75;
@@ -70,21 +74,21 @@ impl MovePicker {
             }
 
             if !skip_quiets {
-                self.status = Stage::Quiet;
+                self.stage = Stage::Quiet;
                 board.append_moves(MoveGenKind::Quiet, &mut self.moves);
                 self.remove_tt_move();
                 self.score_quiet_moves(data, ply);
             } else {
-                self.status = Stage::BadNoisy;
+                self.stage = Stage::BadNoisy;
             }
         }
 
-        if self.status == Stage::Quiet && !skip_quiets {
+        if self.stage == Stage::Quiet && !skip_quiets {
             if !self.moves.is_empty() {
                 return Some(self.best_entry().mv);
             }
 
-            self.status = Stage::BadNoisy;
+            self.stage = Stage::BadNoisy;
         }
 
         //Bad Noisy
