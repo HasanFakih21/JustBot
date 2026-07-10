@@ -123,7 +123,9 @@ impl Board {
                     self.get_bishop_attacks(king_square, self.get_all_occupancy());
                 self.state.checking_squares[Piece::Rook as usize] =
                     self.get_rook_attacks(king_square, self.get_all_occupancy());
-                self.state.checking_squares[Piece::Queen as usize] = self.state.checking_squares[Piece::Rook as usize] | self.state.checking_squares[Piece::Bishop as usize];
+                self.state.checking_squares[Piece::Queen as usize] = self.state.checking_squares
+                    [Piece::Rook as usize]
+                    | self.state.checking_squares[Piece::Bishop as usize];
             }
 
             let bishop_queens = self.get_piece_bb(side.other(), Piece::Bishop)
@@ -134,7 +136,8 @@ impl Board {
             let opp_occ = self.state.occupancies[side.other() as usize];
             let diag_attackers =
                 bishop_queens & self.get_bishop_attacks(king_square, opp_occ) & opp_occ;
-            let straight_attackers = rook_queens & self.get_rook_attacks(king_square, opp_occ) & occ_bb;
+            let straight_attackers =
+                rook_queens & self.get_rook_attacks(king_square, opp_occ) & occ_bb;
 
             for square in (diag_attackers | straight_attackers).iter() {
                 let blockers = BETWEEN[square as usize][king_square as usize]
@@ -142,7 +145,7 @@ impl Board {
                 let pieces_betweeen = blockers.count_bits();
                 if pieces_betweeen == 1 {
                     self.state.pinned[side as usize] |= blockers;
-                } else if pieces_betweeen == 0 {
+                } else if pieces_betweeen == 0 && stm == side {
                     self.state.checkers.set_bit(square);
                 }
             }

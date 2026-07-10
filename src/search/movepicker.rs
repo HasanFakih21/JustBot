@@ -79,15 +79,12 @@ impl MovePicker {
             }
         }
 
-        if self.status == Stage::Quiet && !skip_quiets {
-            if !self.moves.is_empty() {
-                return Some(self.best_entry().mv);
-            }
-
-            self.status = Stage::BadNoisy;
+        if self.status == Stage::Quiet && !skip_quiets && !self.moves.is_empty() {
+            return Some(self.best_entry().mv);
         }
 
         //Bad Noisy
+        self.status = Stage::BadNoisy;
         if self.bad_index < self.bad_noisy.len() {
             let m = self.bad_noisy.get(self.bad_index);
             self.bad_index += 1;

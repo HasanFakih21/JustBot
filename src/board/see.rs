@@ -25,12 +25,11 @@ impl Board {
         let mut occupancies = self.get_all_occupancy();
         occupancies.clear_bit(m.get_from());
 
-        if m.is_en_passant() {
-            occupancies.clear_bit(m.get_to() ^ 8);
-        }
+        let to = m.get_to();
 
-        let mut attackers = self.attackers_to(m.get_to(), occupancies) & occupancies;
-        let mut stm = self.state.side_to_move.other();
+        if m.is_en_passant() {
+            occupancies.clear_bit(to ^ 8);
+        }
 
         let diagonals =
             self.state.pieces[Piece::Bishop as usize] | self.state.pieces[Piece::Queen as usize];
@@ -38,13 +37,19 @@ impl Board {
             self.state.pieces[Piece::Rook as usize] | self.state.pieces[Piece::Queen as usize];
 
         let king_rays = [
-            RAYS[m.get_to() as usize][self.get_king_square(Side::White) as usize],
-            RAYS[m.get_to() as usize][self.get_king_square(Side::Black) as usize],
+            RAYS[to as usize][self.get_king_square(Side::White) as usize],
+            RAYS[to as usize][self.get_king_square(Side::Black) as usize],
         ];
 
+        let white_pinned = self.state.pinned[Side::White as usize];
+        let black_pinned = self.state.pinned[Side::Black as usize];
+
+        let allowed = !(white_pinned | black_pinned) | (king_rays[Side::White as usize] & white_pinned) | (king_rays[Side::Black as usize] & black_pinned);
+        let mut attackers = self.attackers_to(to, occupancies) & occupancies & allowed;
+        let mut stm = self.state.side_to_move.other();
+
         loop {
-            let mut our_attackers = attackers & self.state.occupancies[stm as usize];
-            our_attackers &= !(self.state.pinned[stm as usize] & !king_rays[stm as usize]);
+            let our_attackers = attackers & self.state.occupancies[stm as usize];
 
             if our_attackers.is_empty() {
                 break;
@@ -64,8 +69,8 @@ impl Board {
                     .least_sig_bit()
                     .unwrap(),
             );
-            stm = stm.other();
 
+            stm = stm.other();
             balance = -balance - 1 - attacker.value();
 
             if balance >= 0 {
@@ -74,11 +79,11 @@ impl Board {
 
             //Update possble revealed sliding attackers
             if matches!(attacker, Piece::Bishop | Piece::Queen | Piece::Pawn) {
-                attackers |= self.get_bishop_attacks(m.get_to(), occupancies) & diagonals;
+                attackers |= self.get_bishop_attacks(to, occupancies) & diagonals;
             }
 
             if matches!(attacker, Piece::Rook | Piece::Queen) {
-                attackers |= self.get_rook_attacks(m.get_to(), occupancies) & orthogonals;
+                attackers |= self.get_rook_attacks(to, occupancies) & orthogonals;
             }
 
             attackers &= occupancies;
@@ -244,14 +249,19 @@ mod tests {
         assert!(data.board.see(m, -150));
 
         let data = SearchData {
-            board: Board::from_fen(
-                "4k3/4n3/8/5p2/8/5Q2/8/K3R3 w - - 0 1",
-            )
-            .unwrap(),
+            board: Board::from_fen("4k3/4n3/8/5p2/8/5Q2/8/K3R3 w - - 0 1").unwrap(),
             ..Default::default()
         };
 
         let m = data.board.parse_move("f3f5").unwrap();
         assert!(data.board.see(m, -150));
+
+        let data = SearchData {
+            board: Board::from_fen("7K/8/8/8/8/2p5/8/knR5 w - - 0 1").unwrap(),
+            ..Default::default()
+        };
+
+        let m = data.board.parse_move("c1c3").unwrap();
+        assert!(!data.board.see(m, -150));
     }
 }
