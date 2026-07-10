@@ -136,14 +136,16 @@ impl Accumulator {
 mod tests {
 
     use crate::{
-        board::{Board, movegen::MoveGenKind}, nnue::output_bucket, search::data::SearchData, types::STARTING_FEN,
+        board::{Board, movegen::MoveGenKind},
+        nnue::output_bucket,
+        search::data::SearchData,
+        types::STARTING_FEN,
     };
 
     #[test]
     fn test_output_bucket() {
         let data = SearchData {
-            board: Board::from_fen(STARTING_FEN)
-                .unwrap(),
+            board: Board::from_fen(STARTING_FEN).unwrap(),
             ..Default::default()
         };
 

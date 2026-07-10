@@ -18,7 +18,7 @@ pub struct TimeSettings {
     pub binc: u64,
     pub movestogo: usize,
     pub depth: i32,
-    pub nodes: usize,
+    pub nodes: u64,
     pub mate: usize,
     pub movetime: u64,
 }
@@ -44,7 +44,7 @@ pub struct Limits {
     soft_time: Option<Duration>,
     hard_time: Option<Duration>,
     depth: i32,
-    nodes: Option<usize>,
+    nodes: Option<u64>,
 }
 
 impl Default for Limits {
@@ -112,7 +112,7 @@ impl TimeManager {
         self.limits.nodes = Some(self.settings.nodes);
     }
 
-    pub fn node_limit(&self) -> Option<usize> {
+    pub fn node_limit(&self) -> Option<u64> {
         self.limits.nodes
     }
 
@@ -132,8 +132,8 @@ impl TimeManager {
         }
     }
 
-    pub fn hard_limit(&self, nodes: u64) -> bool {
-        if !nodes.is_multiple_of(2048) {
+    pub fn hard_limit(&self, nodes: u64, id: usize) -> bool {
+        if !nodes.is_multiple_of(2048) || id != 0 {
             return false;
         }
 
