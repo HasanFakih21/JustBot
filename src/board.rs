@@ -19,6 +19,7 @@ pub struct BoardState {
     pub castling_rights: CastlingRights,
     pub threats: BitBoard,
     pub pinned: [BitBoard; 2],
+    pub pinners: [BitBoard; 2],
     pub checkers: BitBoard,
     pub checking_squares: [BitBoard; 6],
 
@@ -38,6 +39,7 @@ impl BoardState {
             castling_rights: CastlingRights::new(),
             threats: BitBoard(0),
             pinned: [BitBoard(0); 2],
+            pinners: [BitBoard(0); 2],
             checkers: BitBoard(0),
             checking_squares: [BitBoard(0); 6],
 
@@ -109,6 +111,8 @@ impl Board {
         let knight_attackers = self.get_piece_bb(stm.other(), Piece::Knight);
 
         self.state.pinned = [BitBoard(0); 2];
+        self.state.pinners = [BitBoard(0); 2];
+
         for side in [Side::White, Side::Black] {
             let king_square = self.get_king_square(side);
             if side == stm {
@@ -144,6 +148,7 @@ impl Board {
                     & self.state.occupancies[side as usize];
                 let pieces_betweeen = blockers.count_bits();
                 if pieces_betweeen == 1 {
+                    self.state.pinners[side.other() as usize].set_bit(square);
                     self.state.pinned[side as usize] |= blockers;
                 } else if pieces_betweeen == 0 && stm == side {
                     self.state.checkers.set_bit(square);

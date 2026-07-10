@@ -7,9 +7,9 @@ use crate::nnue::{Accumulator, NNUE};
 use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::{
-    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, MoveList,
-    NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side,
-    Square, to_file_bb,
+    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, MAX_PLY, Move, MoveKind,
+    MoveList, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN,
+    Score, Side, Square, to_file_bb,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -98,7 +98,7 @@ impl SearchData {
             id,
             best_move: None,
             shared,
-            pv: vec![MoveList::new(); 128],
+            pv: vec![MoveList::new(); MAX_PLY],
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
             ply_table: PlyTable::new(),

@@ -6,7 +6,7 @@ use crate::{
 
 impl Board {
     pub fn see(&self, m: Move, threshold: i32) -> bool {
-        if m.is_promotion() && !m.is_capture() {
+        if (m.is_promotion() && !m.is_capture()) || m.is_castling() {
             return true;
         }
 
@@ -41,15 +41,15 @@ impl Board {
             RAYS[to as usize][self.get_king_square(Side::Black) as usize],
         ];
 
-        let white_pinned = self.state.pinned[Side::White as usize];
-        let black_pinned = self.state.pinned[Side::Black as usize];
-
-        let allowed = !(white_pinned | black_pinned) | (king_rays[Side::White as usize] & white_pinned) | (king_rays[Side::Black as usize] & black_pinned);
-        let mut attackers = self.attackers_to(to, occupancies) & occupancies & allowed;
+        let mut attackers = self.attackers_to(to, occupancies) & occupancies;
         let mut stm = self.state.side_to_move.other();
 
         loop {
-            let our_attackers = attackers & self.state.occupancies[stm as usize];
+            let mut our_attackers = attackers & self.state.occupancies[stm as usize];
+
+            if !((self.state.pinners[stm.other() as usize] & occupancies).is_empty()) {
+                our_attackers &= !(self.state.pinned[stm as usize] & !king_rays[stm as usize]);
+            }
 
             if our_attackers.is_empty() {
                 break;
