@@ -554,7 +554,7 @@ pub fn quiesce<Node: NodeType>(
 
     if best_score >= beta
         && let Some(m) = best_move
-        && m.get_kind().is_quiet()
+        && !m.get_kind().is_quiet()
     {
         //Add noisy bonus to history
         let piece = data.board.get_piece_at_square(m.get_from());
