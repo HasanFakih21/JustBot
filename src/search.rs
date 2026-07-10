@@ -552,21 +552,6 @@ pub fn quiesce<Node: NodeType>(
         return -Score::MATE + ply as i32;
     }
 
-    if best_score >= beta
-        && let Some(m) = best_move
-        && m.get_kind().is_quiet()
-    {
-        //Add noisy bonus to history
-        let piece = data.board.get_piece_at_square(m.get_from());
-        let to = m.get_to();
-        let captured = data
-            .board
-            .get_piece_at_square(m.get_capture_square())
-            .map(|e| e.1);
-        data.noisy_history
-            .update(piece, to, captured, data.board.state.threats, 100);
-    }
-
     data.shared.tt.add_entry(
         best_move.unwrap_or_default(),
         best_score,
