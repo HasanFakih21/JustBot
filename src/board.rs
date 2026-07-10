@@ -95,55 +95,56 @@ impl Board {
     }
 
     pub fn update_all_threats(&mut self) {
-        let side = self.state.side_to_move.other();
         let stm = self.state.side_to_move;
         let occ_bb = self.get_all_occupancy() ^ self.get_piece_bb(stm, Piece::King);
-        let king_square = self.get_king_square(stm);
-        let other_king_square = self.get_king_square(stm.other());
 
-        self.state.checking_squares[Piece::Pawn as usize] =
-            self.get_pawn_attacks(other_king_square, stm.other());
-        self.state.checking_squares[Piece::Knight as usize] =
-            self.get_knight_attacks(other_king_square);
-        self.state.checking_squares[Piece::Bishop as usize] =
-            self.get_bishop_attacks(other_king_square, self.get_all_occupancy());
-        self.state.checking_squares[Piece::Rook as usize] =
-            self.get_rook_attacks(other_king_square, self.get_all_occupancy());
-        self.state.checking_squares[Piece::Queen as usize] = self.state.checking_squares
-            [Piece::Rook as usize]
-            | self.state.checking_squares[Piece::Bishop as usize];
-
-        self.state.threats = self.pawn_attacks_setwise(side)
-            | self.knight_attacks_setwise(side)
-            | self.bishop_attacks_setwise(side, occ_bb)
-            | self.rook_attacks_setwise(side, occ_bb)
-            | self.queen_attacks_setwise(side, occ_bb)
-            | self.get_king_attacks(self.get_king_square(side));
+        self.state.threats = self.pawn_attacks_setwise(stm.other())
+            | self.knight_attacks_setwise(stm.other())
+            | self.bishop_attacks_setwise(stm.other(), occ_bb)
+            | self.rook_attacks_setwise(stm.other(), occ_bb)
+            | self.queen_attacks_setwise(stm.other(), occ_bb)
+            | self.get_king_attacks(self.get_king_square(stm.other()));
 
         let pawn_attackers = self.get_piece_bb(stm.other(), Piece::Pawn);
         let knight_attackers = self.get_piece_bb(stm.other(), Piece::Knight);
-        self.state.checkers = (self.get_pawn_attacks(king_square, stm) & pawn_attackers)
-            | (self.get_knight_attacks(king_square) & knight_attackers);
-        self.state.pinned[stm as usize] = BitBoard(0);
 
-        let bishop_queens = self.get_piece_bb(stm.other(), Piece::Bishop)
-            | self.get_piece_bb(stm.other(), Piece::Queen);
-        let rook_queens = self.get_piece_bb(stm.other(), Piece::Rook)
-            | self.get_piece_bb(stm.other(), Piece::Queen);
+        self.state.pinned = [BitBoard(0); 2];
+        for side in [Side::White, Side::Black] {
+            let king_square = self.get_king_square(side);
+            if side == stm {
+                self.state.checkers = (self.get_pawn_attacks(king_square, stm) & pawn_attackers)
+                    | (self.get_knight_attacks(king_square) & knight_attackers);
+            } else {
+                self.state.checking_squares[Piece::Pawn as usize] =
+                    self.get_pawn_attacks(king_square, stm.other());
+                self.state.checking_squares[Piece::Knight as usize] =
+                    self.get_knight_attacks(king_square);
+                self.state.checking_squares[Piece::Bishop as usize] =
+                    self.get_bishop_attacks(king_square, self.get_all_occupancy());
+                self.state.checking_squares[Piece::Rook as usize] =
+                    self.get_rook_attacks(king_square, self.get_all_occupancy());
+                self.state.checking_squares[Piece::Queen as usize] = self.state.checking_squares[Piece::Rook as usize] | self.state.checking_squares[Piece::Bishop as usize];
+            }
 
-        let opp_occ = self.state.occupancies[stm.other() as usize];
-        let diag_attackers =
-            bishop_queens & self.get_bishop_attacks(king_square, opp_occ) & opp_occ;
-        let straight_attackers = rook_queens & self.get_rook_attacks(king_square, opp_occ) & occ_bb;
+            let bishop_queens = self.get_piece_bb(side.other(), Piece::Bishop)
+                | self.get_piece_bb(side.other(), Piece::Queen);
+            let rook_queens = self.get_piece_bb(side.other(), Piece::Rook)
+                | self.get_piece_bb(side.other(), Piece::Queen);
 
-        for square in (diag_attackers | straight_attackers).iter() {
-            let blockers = BETWEEN[square as usize][king_square as usize]
-                & self.state.occupancies[stm as usize];
-            let pieces_betweeen = blockers.count_bits();
-            if pieces_betweeen == 1 {
-                self.state.pinned[stm as usize] |= blockers;
-            } else if pieces_betweeen == 0 {
-                self.state.checkers.set_bit(square);
+            let opp_occ = self.state.occupancies[side.other() as usize];
+            let diag_attackers =
+                bishop_queens & self.get_bishop_attacks(king_square, opp_occ) & opp_occ;
+            let straight_attackers = rook_queens & self.get_rook_attacks(king_square, opp_occ) & occ_bb;
+
+            for square in (diag_attackers | straight_attackers).iter() {
+                let blockers = BETWEEN[square as usize][king_square as usize]
+                    & self.state.occupancies[side as usize];
+                let pieces_betweeen = blockers.count_bits();
+                if pieces_betweeen == 1 {
+                    self.state.pinned[side as usize] |= blockers;
+                } else if pieces_betweeen == 0 {
+                    self.state.checkers.set_bit(square);
+                }
             }
         }
     }
