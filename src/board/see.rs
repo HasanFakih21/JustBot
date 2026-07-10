@@ -112,13 +112,6 @@ impl Board {
         0
     }
 
-    pub const fn capture_move_value(&self, mv: Move) -> i32 {
-        let attacker = self.get_piece_at_square(mv.get_from()).unwrap().1;
-        let victim = self.get_piece_at_square(mv.get_capture_square()).unwrap().1;
-
-        victim.value() - attacker.value()
-    }
-
     pub fn least_valuable_attacker(&self, attackers: BitBoard) -> Piece {
         if !(attackers & self.state.pieces[Piece::Pawn as usize]).is_empty() {
             return Piece::Pawn;

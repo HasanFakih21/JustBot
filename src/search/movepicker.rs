@@ -164,38 +164,3 @@ impl MovePicker {
         }
     }
 }
-
-#[cfg(test)]
-pub mod tests {
-    use crate::{
-        board::Board,
-        search::{data::SearchData, movepicker::MovePicker},
-    };
-
-    #[test]
-    fn test_move_picker() {
-        let data = SearchData {
-            board: Board::from_fen(
-                "r1bqk2r/ppp1p1pp/3p2n1/3P4/4PN2/5b2/PPPP2Pp/RNBQK1R1 b Qkq - 0 1",
-            )
-            .unwrap(),
-            ..Default::default()
-        };
-
-        let mut move_picker = MovePicker::new(None);
-        println!("{}", move_picker.moves);
-        while let Some(m) = move_picker.next(&data, true, 0) {
-            print!("{m}: ");
-            print!(
-                "Value: {}, Value: {}",
-                if m.is_capture() {
-                    data.board.capture_move_value(m)
-                } else {
-                    2000
-                },
-                (data.board.move_value(m) - data.board.move_loss(m))
-            );
-            println!();
-        }
-    }
-}
