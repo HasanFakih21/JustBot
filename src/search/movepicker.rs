@@ -4,7 +4,7 @@ use crate::{
     types::{Move, MoveEntry, MoveList, stackvec::StackVec},
 };
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, PartialOrd)]
 pub enum Stage {
     HashMove,
     FirstNoisy,

@@ -1,5 +1,5 @@
 use crate::search::data::{SearchData, Status};
-use crate::search::movepicker::MovePicker;
+use crate::search::movepicker::{MovePicker, Stage};
 use crate::types::plytable::PlyTable;
 use crate::types::stackvec::StackVec;
 use crate::types::*;
@@ -284,8 +284,13 @@ pub fn search<Node: NodeType>(
             }
 
             //Static Exchange Evaluation Pruning (SEE Pruning)
-            let threshold = -150 * depth;
-            if !is_quiet && !in_check && !data.board.see(m, threshold) {
+            let threshold = -60 * depth;
+            if !is_quiet
+                && !in_check
+                && depth <= 10
+                && move_picker.stage() > Stage::GoodNoisy
+                && !data.board.see(m, threshold)
+            {
                 continue;
             }
         }
