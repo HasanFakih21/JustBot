@@ -3,10 +3,10 @@ use crate::search::data::SearchData;
 pub struct Score;
 
 impl Score {
-    pub const INFINITY: i32 = 100000;
-    pub const MATE: i32 = 90000;
-    pub const MATE_CUTOFF: i32 = 89000;
-    pub const TIMEOUT: i32 = 111111;
+    pub const INFINITY: i32 = 32_000;
+    pub const MATE: i32 = 30_000;
+    pub const MATE_CUTOFF: i32 = 29_000;
+    pub const TIMEOUT: i32 = 11_111;
 }
 
 pub const fn mated(score: i32) -> bool {
