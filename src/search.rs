@@ -45,7 +45,7 @@ pub fn search_runner(data: &mut SearchData) {
 
     //Initialize with move from first depth
     let best_score = search::<Root>(data, depth, -Score::INFINITY, Score::INFINITY, 0);
-    let mut best_move = data.get_pv().get(0);
+    let mut best_move = data.get_best_move();
     depth += 1;
 
     //Aspiration Window
@@ -94,8 +94,7 @@ pub fn search_runner(data: &mut SearchData) {
         depth += 1;
 
         score = new_score;
-        best_move = data.get_pv().get(0);
-        best_move.score = score;
+        best_move = data.get_best_move();
         alpha_window = 25;
         beta_window = 25;
         alpha = score - alpha_window;
@@ -111,7 +110,7 @@ pub fn search_runner(data: &mut SearchData) {
         }
     }
 
-    data.best_move = Some(best_move.mv);
+    data.best_move = Some(best_move);
 }
 
 pub fn search<Node: NodeType>(
@@ -122,7 +121,7 @@ pub fn search<Node: NodeType>(
     ply: isize,
 ) -> i32 {
     if Node::PV && !Node::ROOT {
-        data.clear_pv(ply);
+        data.pv.clear(ply);
     }
 
     if data.shared.status.get() == Status::STOPPED {
@@ -323,7 +322,7 @@ pub fn search<Node: NodeType>(
             if score > alpha {
                 best_move = Some(m);
                 bound = Bound::Exact;
-                data.add_pv_move(m, ply);
+                data.pv.add(m, ply);
 
                 //Cutoff
                 if score >= beta {
