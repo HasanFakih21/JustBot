@@ -6,9 +6,9 @@ use crate::board::Board;
 use crate::nnue::{Accumulator, NNUE};
 use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
+use crate::types::pv::PVTable;
 use crate::types::{
-    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, MoveList,
-    NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side,
+    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side,
     Square, to_file_bb,
 };
 use crate::types::{QuietHistory, TranspositionTable};
@@ -78,7 +78,7 @@ pub struct SearchData {
     pub id: usize,
     pub best_move: Option<Move>,
     pub shared: Arc<SharedData>,
-    pub pv: Vec<MoveList>,
+    pub pv: PVTable,
     pub board: Board,
     pub time: TimeManager,
     pub report: bool,
@@ -98,7 +98,7 @@ impl SearchData {
             id,
             best_move: None,
             shared,
-            pv: vec![MoveList::new(); 128],
+            pv: PVTable::new(),
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
             ply_table: PlyTable::new(),
@@ -126,12 +126,8 @@ impl SearchData {
         self.black_features = Accumulator::new(&NNUE);
     }
 
-    pub fn get_pv(&self) -> &MoveList {
-        &self.pv[0]
-    }
-
     pub fn get_best_move(&self) -> Move {
-        self.get_pv().get(0).mv
+        self.pv.line()[0]
     }
 
     pub fn start_time(&mut self) {
@@ -150,24 +146,12 @@ impl SearchData {
         (self.shared.get_total_nodes_searched() as f32 / self.time.elapsed().as_secs_f32()) as usize
     }
 
-    pub fn add_pv_move(&mut self, m: Move, ply: isize) {
-        self.pv[ply as usize].clear();
-        self.pv[ply as usize].push(m);
-        for child_m in self.pv[(ply + 1) as usize].clone().iter() {
-            self.pv[ply as usize].push(child_m.mv);
-        }
-    }
-
-    pub fn clear_pv(&mut self, ply: isize) {
-        self.pv[ply as usize].clear();
-    }
-
     pub fn get_time_settings(&mut self) -> &mut TimeSettings {
         &mut self.time.settings
     }
 
     pub fn reset_pv(&mut self) {
-        self.pv = vec![MoveList::new(); 128];
+        self.pv = PVTable::new();
     }
 
     pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
@@ -210,6 +194,15 @@ impl SearchData {
                 format!("cp {}", score)
             };
 
+            let pv_display = {
+                let mut output = String::new();
+                for m in self.pv.line() {
+                    output = format!("{output}{m} ");
+                }
+
+                output
+            };
+
             println!(
                 "info depth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
                 depth - 1,
@@ -217,7 +210,7 @@ impl SearchData {
                 score_print,
                 self.shared.get_total_nodes_searched(),
                 self.nodes_per_second(),
-                self.get_pv(),
+                pv_display,
                 self.shared.tt.hashfull(),
             );
         }

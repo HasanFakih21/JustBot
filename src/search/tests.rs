@@ -5,7 +5,7 @@ use crate::board::Board;
 fn test_search() {
     let mut data = SearchData::default();
     search::<Root>(&mut data, 5, -Score::INFINITY, Score::INFINITY, 0);
-    let best_move = data.get_pv().get(0).mv;
+    let best_move = data.get_best_move();
     println!("Best move: {}", best_move);
 }
 
@@ -86,7 +86,7 @@ fn test_mate_in_one() {
     data.board = board;
 
     search::<Root>(&mut data, 1, -Score::INFINITY, Score::INFINITY, 0);
-    let best_move = data.get_pv().get(0).mv;
+    let best_move = data.get_best_move();
     println!("Best Move: {}", best_move);
     assert_eq!(
         Move::new(Square::G4, Square::F5, MoveKind::Capture),
@@ -128,7 +128,7 @@ fn test_pv_line() {
     search_runner(&mut data);
 
     let best_move = data.get_best_move();
-    println!("PV: {}", data.get_pv());
+    println!("PV: {:?}", data.pv.line());
     let mut pv_line = MoveList::new();
     pv_line.push(Move::new(F6, G4, QuietMove));
     pv_line.push(Move::new(H2, G1, QuietMove));
@@ -138,7 +138,16 @@ fn test_pv_line() {
     pv_line.push(Move::new(D3, F1, QuietMove));
     pv_line.push(Move::new(E1, F1, Capture));
 
-    assert_eq!(pv_line.to_string(), data.get_pv().to_string());
+    let pv_display = {
+        let mut output = String::new();
+        for m in data.pv.line() {
+            output = format!("{output}{m} ");
+        }
+
+        output
+    };
+
+    assert_eq!(pv_line.to_string(), pv_display);
 
     println!("Best Move: {}", best_move);
     assert_eq!(
