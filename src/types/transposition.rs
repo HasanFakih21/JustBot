@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicPtr, AtomicU8, AtomicUsize, Ordering};
 
-use crate::types::{Score, moves::Move};
+use crate::types::{Score, from_tt, is_mate, moves::Move};
 
 const TT_DEFAULT_SIZE: usize = 16;
 const MEGABYTE: usize = 1024 * 1024;
@@ -18,7 +18,7 @@ pub enum Bound {
     Lower,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Flags(u8);
 
 impl Flags {
@@ -195,7 +195,7 @@ impl TranspositionTable {
         }
 
         //Adjust mate scores
-        if score.abs() >= Score::MATE_CUTOFF {
+        if is_mate(score) {
             score += score.signum() * ply as i32;
         }
 
@@ -212,12 +212,20 @@ impl TranspositionTable {
         unsafe { self.ptr().write_bytes(0, self.len()) }
     }
 
-    pub fn get_entry(&self, hash: u64) -> Option<&Entry> {
+    pub fn get_entry(&self, hash: u64, ply: isize) -> Option<Entry> {
         let index = index(hash, self.len());
         debug_assert!(index < self.len());
 
         let cluster = unsafe { &*self.ptr().add(index) };
-        cluster.lookup_key(hash as u16)
+        let entry = cluster.lookup_key(hash as u16);
+        entry.map(|e| Entry {
+            key: e.key,
+            best_move: e.best_move,
+            score: from_tt(e.score, ply),
+            eval: e.eval,
+            depth: e.depth,
+            flags: e.flags,
+        })
     }
 
     pub fn hashfull(&self) -> usize {
@@ -306,7 +314,7 @@ mod tests {
         let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0);
 
         let hash = data.board.state.hash;
-        let entry = data.shared.tt.get_entry(hash).unwrap();
+        let entry = data.shared.tt.get_entry(hash, 0).unwrap();
 
         let m = entry.get_best_move();
         let s = entry.get_score();
@@ -319,7 +327,7 @@ mod tests {
         data.board.make_move(best_move);
         search::<Root>(&mut data, 2, -Score::INFINITY, Score::INFINITY, 0);
 
-        let entry = data.shared.tt.get_entry(hash).unwrap();
+        let entry = data.shared.tt.get_entry(hash, 0).unwrap();
 
         let m = entry.get_best_move();
         let s = entry.get_score();

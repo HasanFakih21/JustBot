@@ -17,6 +17,18 @@ pub const fn mating(score: i32) -> bool {
     score >= Score::MATE_CUTOFF
 }
 
+pub const fn is_mate(score: i32) -> bool {
+    score.abs() >= Score::MATE_CUTOFF
+}
+
+pub const fn from_tt(score: i16, ply: isize) -> i16 {
+    if is_mate(score as i32) {
+        score - (score.signum() * ply as i16)
+    } else {
+        score
+    }
+}
+
 pub fn is_draw(data: &SearchData) -> bool {
     if data.board.state.half_move_clock > 4 {
         //50 move rule

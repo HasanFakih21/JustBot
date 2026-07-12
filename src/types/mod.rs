@@ -4,13 +4,13 @@ pub mod history;
 pub mod moves;
 pub mod pieces;
 pub mod plytable;
+pub mod pv;
 pub mod score;
 pub mod sides;
 pub mod squares;
 pub mod stackvec;
 pub mod transposition;
 pub mod zobrist;
-pub mod pv;
 
 pub use bitboard::*;
 pub use constants::*;
