@@ -1,11 +1,11 @@
-use crate::search::data::SearchData;
+use crate::{search::data::SearchData, types::MAX_PLY};
 
 pub struct Score;
 
 impl Score {
-    pub const INFINITY: i32 = 100000;
-    pub const MATE: i32 = 90000;
-    pub const MATE_CUTOFF: i32 = 89000;
+    pub const INFINITY: i32 = 32000;
+    pub const MATE: i32 = 30000;
+    pub const MATE_CUTOFF: i32 = Score::MATE - MAX_PLY as i32;
     pub const TIMEOUT: i32 = 111111;
 }
 

@@ -154,6 +154,7 @@ impl TranspositionTable {
     ) {
         let index = index(hash, self.len());
         debug_assert!(index < self.len());
+        debug_assert!(score != Score::TIMEOUT);
 
         let cluster = unsafe { &mut *self.ptr().add(index) };
         let key = hash as u16;
