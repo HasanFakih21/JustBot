@@ -190,7 +190,9 @@ pub fn search<Node: NodeType>(
 
     let static_eval = if in_check {
         -Score::INFINITY
-    } else if let Some(e) = &tt_entry {
+    } else if let Some(e) = &tt_entry
+        && e.get_eval() != -Score::INFINITY
+    {
         e.get_eval()
     } else {
         data.nnue_evaluate()
@@ -469,7 +471,9 @@ pub fn quiesce<Node: NodeType>(
 
     let mut best_score = if in_check {
         -Score::INFINITY
-    } else if let Some(e) = &tt_entry {
+    } else if let Some(e) = &tt_entry
+        && e.get_eval() != -Score::INFINITY
+    {
         e.get_eval()
     } else {
         data.nnue_evaluate()
