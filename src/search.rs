@@ -164,14 +164,12 @@ pub fn search<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
-    let tt_entry = data.shared.tt.get_entry(data.board.state.hash);
+    let tt_entry = data.shared.tt.get_entry(data.board.state.hash, ply);
 
     //TT Cutoffs only if depth of entry is greater or equal to the depth of the current node
-    if let Some(e) = tt_entry
+    if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_depth() >= depth
-        && e.get_score().abs() < Score::MATE_CUTOFF
-    //Mate scores need to be properly adjusted for cutoffs
     {
         let tt_score = e.get_score();
         match e.get_bound() {
@@ -192,7 +190,9 @@ pub fn search<Node: NodeType>(
 
     let static_eval = if in_check {
         -Score::INFINITY
-    } else if let Some(e) = tt_entry {
+    } else if let Some(e) = &tt_entry
+        && e.get_eval() != -Score::INFINITY
+    {
         e.get_eval()
     } else {
         data.nnue_evaluate()
@@ -242,12 +242,7 @@ pub fn search<Node: NodeType>(
     let mut best_score = -Score::INFINITY;
     let mut best_move: Option<Move> = None;
     let mut bound = Bound::Upper; //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
-    let tt_move = data
-        .shared
-        .tt
-        .get_entry(data.board.state.hash)
-        .map(|e| e.get_best_move())
-        .filter(|m| !m.is_null());
+    let tt_move = tt_entry.map(|e| e.get_best_move()).filter(|m| !m.is_null());
 
     let mut move_picker = MovePicker::new(tt_move);
     let mut quiets_searched = StackVec::<Move, 32>::new();
@@ -441,12 +436,11 @@ pub fn quiesce<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
-    let tt_entry = data.shared.tt.get_entry(data.board.state.hash);
+    let tt_entry = data.shared.tt.get_entry(data.board.state.hash, ply);
 
     //TT Cutoffs
-    if let Some(e) = tt_entry
+    if let Some(e) = &tt_entry
         && !Node::PV
-        && e.get_score().abs() < Score::MATE_CUTOFF
     {
         let tt_score = e.get_score();
         match e.get_bound() {
@@ -477,7 +471,9 @@ pub fn quiesce<Node: NodeType>(
 
     let mut best_score = if in_check {
         -Score::INFINITY
-    } else if let Some(e) = tt_entry {
+    } else if let Some(e) = &tt_entry
+        && e.get_eval() != -Score::INFINITY
+    {
         e.get_eval()
     } else {
         data.nnue_evaluate()
@@ -494,12 +490,7 @@ pub fn quiesce<Node: NodeType>(
         alpha = best_score;
     }
 
-    let tt_move = data
-        .shared
-        .tt
-        .get_entry(data.board.state.hash)
-        .map(|e| e.get_best_move())
-        .filter(|m| !m.is_null());
+    let tt_move = tt_entry.map(|e| e.get_best_move()).filter(|m| !m.is_null());
 
     let mut move_picker = MovePicker::new(tt_move);
     let mut move_count = 0;

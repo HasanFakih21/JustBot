@@ -8,8 +8,9 @@ use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
 use crate::types::{
-    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side,
-    Square, to_file_bb,
+    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, NoisyHistory,
+    Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side, Square,
+    is_mate, to_file_bb,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -186,7 +187,7 @@ impl SearchData {
         //All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
         if self.report {
             //Report mate score
-            let score_print = if score.abs() > Score::MATE_CUTOFF {
+            let score_print = if is_mate(score) {
                 let num_plies = Score::MATE - score.abs();
                 let mate_in = score.signum() * ((num_plies + 1) / 2);
                 format!("mate {}", mate_in)

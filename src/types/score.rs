@@ -1,11 +1,11 @@
-use crate::search::data::SearchData;
+use crate::{search::data::SearchData, types::MAX_PLY};
 
 pub struct Score;
 
 impl Score {
-    pub const INFINITY: i32 = 100000;
-    pub const MATE: i32 = 90000;
-    pub const MATE_CUTOFF: i32 = 89000;
+    pub const INFINITY: i32 = 32000;
+    pub const MATE: i32 = 30000;
+    pub const MATE_CUTOFF: i32 = Score::MATE - MAX_PLY as i32;
     pub const TIMEOUT: i32 = 111111;
 }
 
@@ -15,6 +15,18 @@ pub const fn mated(score: i32) -> bool {
 
 pub const fn mating(score: i32) -> bool {
     score >= Score::MATE_CUTOFF
+}
+
+pub const fn is_mate(score: i32) -> bool {
+    score.abs() >= Score::MATE_CUTOFF
+}
+
+pub const fn from_tt(score: i16, ply: isize) -> i16 {
+    if is_mate(score as i32) {
+        score - (score.signum() * ply as i16)
+    } else {
+        score
+    }
 }
 
 pub fn is_draw(data: &SearchData) -> bool {
