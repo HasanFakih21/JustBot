@@ -2,6 +2,7 @@
 name = "justbot"
 version = "0.3.0-dev"
 edition = "2024"
+build = "build.rs"
 
 [profile.release]
 lto = "fat"
