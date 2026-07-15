@@ -132,10 +132,12 @@ impl Board {
             }
 
             let opp_occ = self.state.occupancies[side.other() as usize];
-            let diagonal = 
-                (self.get_piece_bb(side.other(), Piece::Bishop) | self.get_piece_bb(side.other(), Piece::Queen)) & self.get_bishop_attacks(king_square, opp_occ);
-            let orthogonal =
-                (self.get_piece_bb(side.other(), Piece::Rook) | self.get_piece_bb(side.other(), Piece::Queen)) & self.get_rook_attacks(king_square, opp_occ);
+            let diagonal = (self.get_piece_bb(side.other(), Piece::Bishop)
+                | self.get_piece_bb(side.other(), Piece::Queen))
+                & self.get_bishop_attacks(king_square, opp_occ);
+            let orthogonal = (self.get_piece_bb(side.other(), Piece::Rook)
+                | self.get_piece_bb(side.other(), Piece::Queen))
+                & self.get_rook_attacks(king_square, opp_occ);
 
             for square in (diagonal | orthogonal).iter() {
                 let blockers = BETWEEN[square as usize][king_square as usize]

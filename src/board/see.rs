@@ -157,8 +157,10 @@ impl Board {
 
         (self.get_bishop_attacks(square, occupancies) & diagonals)
             | (self.get_rook_attacks(square, occupancies) & orthogonals)
-            | (self.get_pawn_attacks(square, Side::White) & self.state.pieces[Piece::Pawn as usize])
-            | (self.get_pawn_attacks(square, Side::Black) & self.state.pieces[Piece::Pawn as usize])
+            | (self.get_pawn_attacks(square, Side::White)
+                & self.get_piece_bb(Side::Black, Piece::Pawn))
+            | (self.get_pawn_attacks(square, Side::Black)
+                & self.get_piece_bb(Side::White, Piece::Pawn))
             | (self.get_knight_attacks(square) & self.state.pieces[Piece::Knight as usize])
             | (self.get_king_attacks(square) & self.state.pieces[Piece::King as usize])
     }
