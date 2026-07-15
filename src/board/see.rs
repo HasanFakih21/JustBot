@@ -44,7 +44,9 @@ impl Board {
 
         loop {
             let mut our_attackers = attackers & self.state.occupancies[stm as usize];
-            our_attackers &= !(self.state.pinned[stm as usize] & !king_rays[stm as usize]);
+            if !((self.state.pinners[stm.other() as usize] & occupancies).is_empty()) {
+                our_attackers &= !(self.state.pinned[stm as usize] & !king_rays[stm as usize]);
+            }
 
             if our_attackers.is_empty() {
                 break;
@@ -64,8 +66,8 @@ impl Board {
                     .least_sig_bit()
                     .unwrap(),
             );
-            stm = stm.other();
 
+            stm = stm.other();
             balance = -balance - 1 - attacker.value();
 
             if balance >= 0 {
@@ -242,5 +244,21 @@ mod tests {
 
         let m = data.board.parse_move("h2g1q").unwrap();
         assert!(data.board.see(m, -150));
+
+        let data = SearchData {
+            board: Board::from_fen("4k3/4n3/8/5p2/8/5Q2/8/K3R3 w - - 0 1").unwrap(),
+            ..Default::default()
+        };
+
+        let m = data.board.parse_move("f3f5").unwrap();
+        assert!(data.board.see(m, -150));
+
+        let data = SearchData {
+            board: Board::from_fen("7K/8/8/8/8/2p5/8/knR5 w - - 0 1").unwrap(),
+            ..Default::default()
+        };
+
+        let m = data.board.parse_move("c1c3").unwrap();
+        assert!(!data.board.see(m, -150));
     }
 }
