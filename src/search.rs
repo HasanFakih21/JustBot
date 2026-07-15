@@ -508,7 +508,7 @@ pub fn quiesce<Node: NodeType>(
             }
 
             //Static Exchange Evaluation Pruning (SEE Pruning)
-            if !data.board.see(m, -150) {
+            if !in_check && !data.board.see(m, -150) {
                 continue;
             }
         }
