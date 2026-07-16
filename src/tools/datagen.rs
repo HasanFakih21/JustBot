@@ -38,8 +38,9 @@ pub fn generate_random_openings(amount: usize, plies: isize, seed: u64) -> Vec<S
 
 pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board, BadRandomBoard> {
     let mut data = SearchData::default();
-    let mut state = random_number;
+    data.initialize_nnue();
 
+    let mut state = random_number;
     for ply in 0..plies {
         let move_list = data.board.generate_moves(MoveGenKind::All);
         //Check if there's atleast one legal move first
