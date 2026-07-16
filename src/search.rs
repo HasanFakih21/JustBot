@@ -41,7 +41,6 @@ pub fn search_runner(data: &mut SearchData) {
     data.clear_features();
     data.initialize_nnue();
 
-    //Aspiration Window
     let mut alpha_window = 25;
     let mut beta_window = 25;
     let mut alpha = -Score::INFINITY;
@@ -70,6 +69,8 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         let score = search::<Root>(data, depth, alpha, beta, 0);
+
+        //Aspiration Window
         if score <= alpha {
             //Failed Low
             alpha_window *= 2;
