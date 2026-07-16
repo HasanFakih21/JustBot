@@ -319,7 +319,7 @@ mod tests {
         let m = entry.get_best_move();
         let s = entry.get_score();
 
-        let best_move = data.get_best_move();
+        let best_move = data.pv.line()[0];
 
         assert_eq!(best_move, m);
         assert_eq!(score, s);

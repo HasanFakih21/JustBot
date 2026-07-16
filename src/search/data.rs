@@ -127,10 +127,6 @@ impl SearchData {
         self.black_features = Accumulator::new(&NNUE);
     }
 
-    pub fn get_best_move(&self) -> Move {
-        self.pv.line()[0]
-    }
-
     pub fn start_time(&mut self) {
         self.time.reset_clock();
     }

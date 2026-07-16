@@ -5,7 +5,7 @@ use crate::board::Board;
 fn test_search() {
     let mut data = SearchData::default();
     search::<Root>(&mut data, 5, -Score::INFINITY, Score::INFINITY, 0);
-    let best_move = data.get_best_move();
+    let best_move = data.pv.line()[0];
     println!("Best move: {}", best_move);
 }
 
@@ -67,7 +67,7 @@ fn test_repetion_detection() {
 
     let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0);
     println!("{score}");
-    let m = data.get_best_move();
+    let m = data.pv.line()[0];
 
     println!(
         "{:?}\nCurrent Hash: {}",
@@ -86,7 +86,7 @@ fn test_mate_in_one() {
     data.board = board;
 
     search::<Root>(&mut data, 1, -Score::INFINITY, Score::INFINITY, 0);
-    let best_move = data.get_best_move();
+    let best_move = data.pv.line()[0];
     println!("Best Move: {}", best_move);
     assert_eq!(
         Move::new(Square::G4, Square::F5, MoveKind::Capture),
@@ -127,7 +127,7 @@ fn test_pv_line() {
 
     search_runner(&mut data);
 
-    let best_move = data.get_best_move();
+    let best_move = data.pv.line()[0];
     println!("PV: {:?}", data.pv.line());
     let mut pv_line = MoveList::new();
     pv_line.push(Move::new(F6, G4, QuietMove));

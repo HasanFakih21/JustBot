@@ -45,7 +45,7 @@ pub fn search_runner(data: &mut SearchData) {
 
     //Initialize with move from first depth
     let best_score = search::<Root>(data, depth, -Score::INFINITY, Score::INFINITY, 0);
-    let mut best_move = data.get_best_move();
+    let mut best_move = data.pv.line()[0];
     depth += 1;
 
     //Aspiration Window
@@ -94,7 +94,7 @@ pub fn search_runner(data: &mut SearchData) {
         depth += 1;
 
         score = new_score;
-        best_move = data.get_best_move();
+        best_move = data.pv.line()[0];
         alpha_window = 25;
         beta_window = 25;
         alpha = score - alpha_window;
