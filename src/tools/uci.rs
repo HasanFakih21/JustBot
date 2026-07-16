@@ -52,6 +52,8 @@ pub fn input_loop(cli_args: String) {
 
                 if let Some(m) = go(args, &mut pool, &mut board, &mut time, &shared, false) {
                     println!("bestmove {}", m);
+                } else {
+                    println!("bestmove 0000");
                 }
             }
             "quit" => break,
