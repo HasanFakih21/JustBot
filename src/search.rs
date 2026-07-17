@@ -41,21 +41,13 @@ pub fn search_runner(data: &mut SearchData) {
     data.clear_features();
     data.initialize_nnue();
 
-    let mut depth = 1;
-
-    //Initialize with move from first depth
-    let best_score = search::<Root>(data, depth, -Score::INFINITY, Score::INFINITY, 0);
-    let mut best_move = data.get_best_move();
-    depth += 1;
-
-    //Aspiration Window
-    let mut score = best_score;
     let mut alpha_window = 25;
     let mut beta_window = 25;
-    let mut alpha = score - alpha_window;
-    let mut beta = score + beta_window;
+    let mut alpha = -Score::INFINITY;
+    let mut beta = Score::INFINITY;
 
-    data.print_uci_info(score, depth);
+    let mut depth = 1;
+    let mut best_move = None;
 
     //Iterative Deepening
     loop {
@@ -76,15 +68,15 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
-        let deeper_move_score = search::<Root>(data, depth, alpha, beta, 0);
+        let score = search::<Root>(data, depth, alpha, beta, 0);
 
-        let new_score = deeper_move_score;
-        if new_score <= alpha {
+        //Aspiration Window
+        if score <= alpha {
             //Failed Low
             alpha_window *= 2;
             alpha -= alpha_window;
             continue;
-        } else if new_score >= beta {
+        } else if score >= beta {
             //Failed High
             beta_window *= 2;
             beta += beta_window;
@@ -92,13 +84,7 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         depth += 1;
-
-        score = new_score;
-        best_move = data.get_best_move();
-        alpha_window = 25;
-        beta_window = 25;
-        alpha = score - alpha_window;
-        beta = score + beta_window;
+        best_move = data.pv.line().first().copied();
         data.print_uci_info(score, depth);
 
         if data.time.soft_limit() {
@@ -108,9 +94,14 @@ pub fn search_runner(data: &mut SearchData) {
 
             break;
         }
+
+        alpha_window = 25;
+        beta_window = 25;
+        alpha = score - alpha_window;
+        beta = score + beta_window;
     }
 
-    data.best_move = Some(best_move);
+    data.best_move = best_move;
 }
 
 pub fn search<Node: NodeType>(

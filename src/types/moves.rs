@@ -190,6 +190,10 @@ impl Move {
 
 impl Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.is_null() {
+            return write!(f, "0000");
+        }
+
         let mut promotion_piece = "";
         match self.get_kind() {
             MoveKind::BPromotion | MoveKind::BPromCapture => promotion_piece = "b",
@@ -202,18 +206,19 @@ impl Display for Move {
     }
 }
 
+#[rustfmt::skip]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MoveKind {
-    QuietMove = 0b0000,
-    DoublePawn = 0b0001,
-    KingCastle = 0b0010,
-    QueenCastle = 0b0011,
-    Capture = 0b0100,
-    EnPassant = 0b0101,
-    NPromotion = 0b1000,
-    BPromotion = 0b1001,
-    RPromotion = 0b1010,
-    QPromotion = 0b1011,
+    QuietMove    = 0b0000,
+    DoublePawn   = 0b0001,
+    KingCastle   = 0b0010,
+    QueenCastle  = 0b0011,
+    Capture      = 0b0100,
+    EnPassant    = 0b0101,
+    NPromotion   = 0b1000,
+    BPromotion   = 0b1001,
+    RPromotion   = 0b1010,
+    QPromotion   = 0b1011,
     NPromCapture = 0b1100,
     BPromCapture = 0b1101,
     RPromCapture = 0b1110,
