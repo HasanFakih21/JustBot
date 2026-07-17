@@ -267,6 +267,12 @@ pub fn search<Node: NodeType>(
                 skip_quiets = true;
                 continue;
             }
+
+            //Static Exchange Evaluation Pruning (SEE Pruning)
+            let threshold = (-10 * depth * depth - 30 * depth + 15).min(0);
+            if !in_check && !is_quiet && !data.board.see(m, threshold) {
+                continue;
+            }
         }
 
         //Make Move
