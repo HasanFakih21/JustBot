@@ -7,6 +7,7 @@ impl Score {
     pub const MATE: i32 = 30000;
     pub const MATE_CUTOFF: i32 = Score::MATE - MAX_PLY as i32;
     pub const TIMEOUT: i32 = 111111;
+    pub const DRAW: i32 = 0;
 }
 
 pub const fn mated(score: i32) -> bool {

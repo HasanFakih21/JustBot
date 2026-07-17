@@ -131,12 +131,12 @@ pub fn search<Node: NodeType>(
     if !Node::ROOT {
         //Check for draws
         if is_draw(data) {
-            return 0;
+            return Score::DRAW;
         }
 
         if ply >= MAX_PLY as isize - 1 {
             if in_check {
-                return 0;
+                return Score::DRAW;
             } else {
                 return data.nnue_evaluate();
             }
@@ -267,6 +267,12 @@ pub fn search<Node: NodeType>(
                 skip_quiets = true;
                 continue;
             }
+
+            //Static Exchange Evaluation Pruning (SEE Pruning)
+            let threshold = (-10 * depth * depth - 30 * depth + 15).min(0);
+            if !in_check && !is_quiet && !data.board.see(m, threshold) {
+                continue;
+            }
         }
 
         //Make Move
@@ -334,7 +340,7 @@ pub fn search<Node: NodeType>(
         if in_check {
             return -Score::MATE + ply as i32;
         } else {
-            return 0;
+            return Score::DRAW;
         }
     }
 
@@ -413,7 +419,7 @@ pub fn quiesce<Node: NodeType>(
 ) -> i32 {
     data.shared.increment_nodes(data.id);
     if is_draw(data) {
-        return 0;
+        return Score::DRAW;
     }
 
     if data.time.hard_limit(data.nodes(), data.id)
@@ -454,7 +460,7 @@ pub fn quiesce<Node: NodeType>(
 
     if ply >= MAX_PLY as isize - 1 {
         if in_check {
-            return 0;
+            return Score::DRAW;
         } else {
             return data.nnue_evaluate();
         }

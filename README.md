@@ -10,16 +10,16 @@
 <div align="center">JustBot is written without the use of any agentic or LLM assisted coding.</div>
 
 ## Releases
-|        Version             |      Elo         |
-|         :---:              |     :---:        |
-| [JustBot v0.2.0][v0.2.0]   |     ~3000        |
-| [JustBot v0.1.0][v0.1.0]   |     ~2400        |
+|        Version             |       CCRL 40/15         |        CCRL Blitz      |
+|         :---:              |         :---:            |           :---:        |
+| [JustBot v0.2.0][v0.2.0]   |          3124            |           3000*        |
+| [JustBot v0.1.0][v0.1.0]   |          2400*           |           2400*        |
 
 [v0.1.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.1.0
 [v0.2.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.2.0
 
 > [!NOTE]
-> Elo is only an estimate based on a fixed number of games against Stash
+> *Elo is only an estimate
 
 You can find precompiled binaries for Linux and Windows [here](https://github.com/HasanFakih21/JustBot/releases)
 
