@@ -119,8 +119,9 @@ pub fn search<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
+    //Horizon Node
     if depth <= 0 {
-        return quiesce::<Node>(data, alpha, beta, ply); //Horizon Node
+        return quiesce::<Node>(data, alpha, beta, ply); 
     }
 
     data.shared.increment_nodes(data.id);
@@ -201,7 +202,7 @@ pub fn search<Node: NodeType>(
     };
 
     //Reverse Futillity Pruning (RFP)
-    if !in_check && !Node::PV && depth < 7 {
+    if !in_check && !Node::PV {
         let margin = 150 * depth - (100 * improving as i32);
         if static_eval >= beta + margin {
             return static_eval;
