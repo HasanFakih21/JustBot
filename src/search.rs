@@ -121,7 +121,7 @@ pub fn search<Node: NodeType>(
 
     //Horizon Node
     if depth <= 0 {
-        return quiesce::<Node>(data, alpha, beta, ply); 
+        return quiesce::<Node>(data, alpha, beta, ply);
     }
 
     data.shared.increment_nodes(data.id);
