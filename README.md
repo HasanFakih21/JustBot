@@ -7,21 +7,26 @@
 
 </div>
 
-<div align="center">JustBot is written without the use of any agentic or LLM assisted coding.</div>
+<div align="center">JustBot is a competitive chess engine written in Rust, it's my attempt at learning the language while simultaneously working on something interesting to me; it has been a lot of fun and a huge learning experience and I hope to be able to continue working on it. This project has only been possible thanks to the wonderful open-source community. JustBot contains no LLM generated code.</div>
 
 ## Releases
 |        Version             |       CCRL 40/15         |        CCRL Blitz      |
 |         :---:              |         :---:            |           :---:        |
+| [JustBot v0.3.0][v0.3.0]   |          3400*           |           3400*        |
 | [JustBot v0.2.0][v0.2.0]   |          3124            |           3000*        |
 | [JustBot v0.1.0][v0.1.0]   |          2400*           |           2400*        |
 
 [v0.1.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.1.0
 [v0.2.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.2.0
+[v0.3.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.3.0
 
 > [!NOTE]
 > *Elo is only an estimate
 
-You can find precompiled binaries for Linux and Windows [here](https://github.com/HasanFakih21/JustBot/releases)
+You can find precompiled binaries for Linux, Windows and macOS [here](https://github.com/HasanFakih21/JustBot/releases)
+- `avx512`: The fastest build, only compatible with newer CPUs
+- `avx2`: Usable on most modern CPUs
+- `generic`: The slowest build, should run on any x86-64 CPU.
 
 ## Building the project
 To build the project, you need a working installation of Rust and Cargo, once the repository is cloned, you can run for a general build:
@@ -39,35 +44,58 @@ cargo rustc --release --bin justbot -- -C target-cpu=native
 The binary should be located within `./target/release/`
 
 ## Features
-- Alpha-Beta search
-- Basic UCI compatibility
-- Clustered Transposition Table
-- (768 -> 128)x2 -> 1 NNUE
+### Search
+- Alpha-Beta Search
 - Quiescence Search
-- Iterative Deepening
-- Time management
+    - Check Evasions
 - Principal Variation Search
+- Time management
+    - Hard/Soft Bounds
+- SEE Pruning
+- Iterative Deepening
+- Check Extensions
 - Null Move Pruning
-- MVV-LVA
-- Aspiration Windows
 - Reverse Futility Pruning
+- Aspiration Windows
 - Late Move Reductions
-- Noisy and Quiet History
 - Late Move Pruning
 - Futility Pruning
-- Check Extensions
-- SEE Pruning in Qsearch
+- Clustered Transposition Table
+- Improving Modifier
+
+### Evaluation
+- NNUE
+    - Standard 768 Inputs
+    - Dual Perspective
+    - 512 HL
+    - 8 Output Buckets
+
+### Move Ordering
+- Noisy History
+- Quiet History
+- 1 and 2 Ply Continuation Histories
 
 ### Supported UCI Options
-| Name        |    Default   |                Description                     |
-| :---:       |     :---:    |                   :---:                        |
-| Hash        |      16      | Sets the size of the transposition table in MB |
-| Clear Hash  |      ---     | Clears all entries in the transposition table  |
+| Name        |    Default   |       Max     |                Description                      |
+| :---:       |     :---:    |      :---:    |                   :---:                         |
+| Hash        |      16      |     1048576   | Sets the size of the transposition table in MB  |
+| Clear Hash  |      ---     |       ---     | Clears all entries in the transposition table   |
+| Threads     |       1      |       512     | Sets the number of threads to use during search |
 
 ## Acknowledgments
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)
 - [Maksim Korzh](https://www.youtube.com/watch?v=QUNP-UjujBM&list=PLmN0neTso3Jxh8ZIylk74JpwfiWNI76Cs) for helpful introductory videos, and where my magic numbers are from
-- [Reckless](https://github.com/codedeliveryservice/Reckless) and [Stockfish](https://github.com/official-stockfish/stockfish)
 - The very helpful members of the [Stockfish Discord Server](https://discord.com/invite/GWDRS3kU6R)
 - [OpenBench](https://github.com/andygrant/openbench) as the testing framework, and for data generation
 - [Bullet](https://github.com/jw1912/bullet) for NNUE training
+- [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio) for converting PGNs to Viriformat
+
+Additionally, the following engines have been huge sources of ideas and inspiration:
+- [Reckless](https://github.com/codedeliveryservice/Reckless)
+- [Stockfish](https://github.com/official-stockfish/stockfish)
+- [Stormphrax](https://github.com/Ciekce/Stormphrax)
+- [Viridithas](https://github.com/cosmobobak/viridithas)
+- [Hobbes](https://github.com/kelseyde/hobbes-chess-engine)
+- [Potential](https://github.com/ProgramciDusunur/Potential)
+- [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio)
+- [Icarus](https://github.com/Sp00ph/icarus)
