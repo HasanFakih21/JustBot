@@ -4,7 +4,7 @@ use crate::board::Board;
 use crate::types::{BitBoard, Piece, Square};
 
 impl Board {
-    //Only checks for the current side to move
+    // Only checks for the current side to move
     pub fn only_king_and_pawns(&self) -> bool {
         let side = self.state.side_to_move;
         self.get_piece_bb(side, Piece::Bishop)
@@ -14,7 +14,7 @@ impl Board {
             == BitBoard(0)
     }
 
-    //Needs fixing
+    // Needs fixing
     pub fn detect_repetitions(&self) -> usize {
         let half_moves = self.state.half_move_clock as usize;
         let mut count = 0;
@@ -34,7 +34,7 @@ impl Board {
     }
 }
 
-//https://www.chessprogramming.org/Center_Manhattan-Distance
+// https://www.chessprogramming.org/Center_Manhattan-Distance
 pub const fn cmd(square: Square) -> usize {
     let (mut file, mut rank) = square.to_rank_and_file();
 
@@ -54,7 +54,7 @@ pub const fn manhattan_distance(square_1: Square, square_2: Square) -> usize {
     rank_distance + file_distance
 }
 
-//Chebyshev Distance
+// Chebyshev Distance
 pub fn distance(square_1: Square, square_2: Square) -> usize {
     let (rank1, file1) = square_1.to_rank_and_file();
     let (rank2, file2) = square_2.to_rank_and_file();

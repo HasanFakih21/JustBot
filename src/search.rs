@@ -49,7 +49,7 @@ pub fn search_runner(data: &mut SearchData) {
     let mut depth = 1;
     let mut best_move = None;
 
-    //Iterative Deepening
+    // Iterative Deepening
     loop {
         data.ply_table = PlyTable::new();
 
@@ -70,14 +70,14 @@ pub fn search_runner(data: &mut SearchData) {
 
         let score = search::<Root>(data, depth, alpha, beta, 0);
 
-        //Aspiration Window
+        // Aspiration Window
         if score <= alpha {
-            //Failed Low
+            // Failed Low
             alpha_window *= 2;
             alpha -= alpha_window;
             continue;
         } else if score >= beta {
-            //Failed High
+            // Failed High
             beta_window *= 2;
             beta += beta_window;
             continue;
@@ -119,7 +119,7 @@ pub fn search<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
-    //Horizon Node
+    // Horizon Node
     if depth <= 0 {
         return quiesce::<Node>(data, alpha, beta, ply);
     }
@@ -130,7 +130,7 @@ pub fn search<Node: NodeType>(
     let in_check = data.board.king_in_check();
 
     if !Node::ROOT {
-        //Check for draws
+        // Check for draws
         if is_draw(data) {
             return Score::DRAW;
         }
@@ -144,7 +144,7 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    //Check for Time Outs
+    // Check for Time Outs
     if data.time.hard_limit(data.nodes(), data.id)
         || data.shared.status.get() == Status::STOPPED
         || data
@@ -158,7 +158,7 @@ pub fn search<Node: NodeType>(
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.hash, ply);
 
-    //TT Cutoffs only if depth of entry is greater or equal to the depth of the current node
+    // TT Cutoffs only if depth of entry is greater or equal to the depth of the current node
     if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_depth() >= depth
@@ -201,7 +201,7 @@ pub fn search<Node: NodeType>(
         false
     };
 
-    //Reverse Futillity Pruning (RFP)
+    // Reverse Futillity Pruning (RFP)
     if !in_check && !Node::PV {
         let margin = 150 * depth - (100 * improving as i32);
         if static_eval >= beta + margin {
@@ -209,7 +209,7 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    //Null Move Pruning
+    // Null Move Pruning
     if !Node::PV
         && !in_check
         && !data.board.only_king_and_pawns()
@@ -233,7 +233,8 @@ pub fn search<Node: NodeType>(
     let mut move_count = 0;
     let mut best_score = -Score::INFINITY;
     let mut best_move: Option<Move> = None;
-    let mut bound = Bound::Upper; //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
+    // Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
+    let mut bound = Bound::Upper;
     let tt_move = tt_entry.map(|e| e.get_best_move()).filter(|m| !m.is_null());
 
     let mut move_picker = MovePicker::new(tt_move);
@@ -247,7 +248,7 @@ pub fn search<Node: NodeType>(
         let is_quiet = m.get_kind().is_quiet();
 
         if !Node::ROOT && !mated(best_score) {
-            //Late Move Pruning (LMP)
+            // Late Move Pruning (LMP)
             if !in_check
                 && !is_direct_check
                 && !mating(beta)
@@ -258,7 +259,7 @@ pub fn search<Node: NodeType>(
                 continue;
             }
 
-            //Futility Pruning (FP)
+            // Futility Pruning (FP)
             if !in_check
                 && !is_direct_check
                 && is_quiet
@@ -269,19 +270,19 @@ pub fn search<Node: NodeType>(
                 continue;
             }
 
-            //Static Exchange Evaluation Pruning (SEE Pruning)
+            // Static Exchange Evaluation Pruning (SEE Pruning)
             let threshold = (-10 * depth * depth - 30 * depth + 15).min(0);
             if !in_check && !is_quiet && !data.board.see(m, threshold) {
                 continue;
             }
         }
 
-        //Make Move
+        // Make Move
         data.make_move(m, ply);
         let new_depth = (depth - 1) + (in_check as i32);
         let mut score = -Score::INFINITY;
 
-        //Late Move Reductions (LMR)
+        // Late Move Reductions (LMR)
         if depth > 3 && move_count > 1 {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r += 200 * !improving as i32;
@@ -297,12 +298,12 @@ pub fn search<Node: NodeType>(
             score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1);
         }
 
-        //Principal Variation Search (PVS)
+        // Principal Variation Search (PVS)
         if Node::PV && (move_count == 1 || score > alpha) {
             score = -search::<PV>(data, new_depth, -beta, -alpha, ply + 1);
         }
 
-        //Unmake Move
+        // Unmake Move
         data.unmake_move(m);
 
         if data.shared.status.get() == Status::STOPPED {
@@ -317,7 +318,7 @@ pub fn search<Node: NodeType>(
                 bound = Bound::Exact;
                 data.pv.add(m, ply);
 
-                //Cutoff
+                // Cutoff
                 if score >= beta {
                     bound = Bound::Lower;
                     break;
@@ -327,7 +328,7 @@ pub fn search<Node: NodeType>(
             }
         }
 
-        //Add searched quiet/noisy moves to list
+        // Add searched quiet/noisy moves to list
         if best_move != Some(m) && move_count < 32 {
             if is_quiet {
                 quiets_searched.push(m);
@@ -360,21 +361,21 @@ pub fn search<Node: NodeType>(
         let threats = data.board.state.threats;
 
         if is_quiet {
-            //Add quiet bonus to history
+            // Add quiet bonus to history
             data.quiet_history.update(threats, stm, m, quiet_bonus);
-            //Conthistory Bonus
+            // Conthistory Bonus
             data.update_conthistories(m, ply, cont_bonus);
-            //Add malus to quiet moves
+            // Add malus to quiet moves
             for e in quiets_searched.iter() {
                 let quiet_move = e;
                 data.quiet_history
                     .update(threats, stm, *quiet_move, -quiet_malus);
 
-                //Conthistory malus
+                // Conthistory malus
                 data.update_conthistories(*quiet_move, ply, -cont_malus);
             }
         } else {
-            //Add noisy bonus to history
+            // Add noisy bonus to history
             let piece = data.board.get_piece_at_square(m.get_from());
             let to = m.get_to();
             let captured = data
@@ -385,7 +386,7 @@ pub fn search<Node: NodeType>(
                 .update(piece, to, captured, threats, noisy_bonus);
         }
 
-        //Add malus to noisy moves
+        // Add malus to noisy moves
         for m in noisies_searched.iter() {
             let piece = data.board.get_piece_at_square(m.get_from());
             let to = m.get_to();
@@ -436,7 +437,7 @@ pub fn quiesce<Node: NodeType>(
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.hash, ply);
 
-    //TT Cutoffs
+    // TT Cutoffs
     if let Some(e) = &tt_entry
         && !Node::PV
     {
@@ -479,7 +480,7 @@ pub fn quiesce<Node: NodeType>(
 
     let static_eval = best_score;
 
-    //Stand Pat
+    // Stand Pat
     if best_score >= beta {
         return best_score;
     }
@@ -500,12 +501,12 @@ pub fn quiesce<Node: NodeType>(
         move_count += 1;
 
         if !mated(best_score) {
-            //Late Move Pruning (LMP)
+            // Late Move Pruning (LMP)
             if move_count >= 4 {
                 break;
             }
 
-            //Static Exchange Evaluation Pruning (SEE Pruning)
+            // Static Exchange Evaluation Pruning (SEE Pruning)
             if !data.board.see(m, -150) {
                 continue;
             }
@@ -525,7 +526,7 @@ pub fn quiesce<Node: NodeType>(
             if score > alpha {
                 best_move = Some(m);
 
-                //Cutoff
+                // Cutoff
                 if score >= beta {
                     bound = Bound::Lower;
                     break;
@@ -544,7 +545,7 @@ pub fn quiesce<Node: NodeType>(
         && let Some(m) = best_move
         && !m.get_kind().is_quiet()
     {
-        //Add noisy bonus to history
+        // Add noisy bonus to history
         let piece = data.board.get_piece_at_square(m.get_from());
         let to = m.get_to();
         let captured = data

@@ -196,7 +196,7 @@ pub fn go(
             go(args, pool, board, time, shared, mute)
         }
         "wtime" => {
-            //Example: go wtime 900000 btime 900000 winc 0 binc 0
+            // Example: go wtime 900000 btime 900000 winc 0 binc 0
             let (wtime, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.wtime = Some(wtime.trim().parse().unwrap_or(500));
             go(args, pool, board, time, shared, mute)
@@ -239,8 +239,8 @@ pub fn go(
 pub fn uci() {
     println!("id name JustBot {}", env!("CARGO_PKG_VERSION"));
     println!("id author Hasan Fakih");
-    println!("option name Threads type spin default 1 min 1 max 512");
-    println!("option name Hash type spin default 16 min 1 max 1048576");
+    println!("option name Threads type spin default 1 min 1 max {MAX_THREADS}");
+    println!("option name Hash type spin default 16 min 1 max {MAX_HASH}");
     println!("option name Clear Hash type button");
     println!("uciok");
 }

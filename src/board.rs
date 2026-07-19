@@ -69,7 +69,7 @@ impl Default for Board {
     }
 }
 
-//Little-Endian Rank-File Mapping
+// Little-Endian Rank-File Mapping
 impl Board {
     pub fn new() -> Self {
         Board {
@@ -163,22 +163,22 @@ impl Board {
     }
 
     pub fn place_piece(&mut self, side: Side, piece: Piece, square: Square) {
-        //Bitboards
+        // Bitboards
         self.state.pieces[piece as usize].set_bit(square);
         self.state.occupancies[side as usize].set_bit(square);
-        //Mailbox
+        // Mailbox
         self.state.mailbox[square as usize] = Some((side, piece));
-        //Zobrist Hash
+        // Zobrist Hash
         self.state.hash ^= ZOBRIST.get_piece_num(side, piece, square);
     }
 
     pub fn remove_piece(&mut self, side: Side, piece: Piece, square: Square) {
-        //Bitboards
+        // Bitboards
         self.state.pieces[piece as usize].clear_bit(square);
         self.state.occupancies[side as usize].clear_bit(square);
-        //Mailbox
+        // Mailbox
         self.state.mailbox[square as usize] = None;
-        //Zobrist Hash
+        // Zobrist Hash
         self.state.hash ^= ZOBRIST.get_piece_num(side, piece, square);
     }
 

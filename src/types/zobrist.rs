@@ -88,7 +88,7 @@ mod tests {
         let zobrist = ZOBRIST;
         println!("{:?}", zobrist);
 
-        //want to check if every number is unique
+        // Want to check if every number is unique
         let mut seen = HashSet::new();
         assert!(
             zobrist

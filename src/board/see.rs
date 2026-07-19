@@ -54,7 +54,7 @@ impl Board {
 
             let attacker = self.least_valuable_attacker(our_attackers);
 
-            //Makes sure the king can't capture a defended piece
+            // Makes sure the king can't capture a defended piece
             if attacker == Piece::King
                 && !(attackers & self.state.occupancies[stm.other() as usize]).is_empty()
             {
@@ -74,7 +74,7 @@ impl Board {
                 break;
             }
 
-            //Update possble revealed sliding attackers
+            // Update possble revealed sliding attackers
             if matches!(attacker, Piece::Bishop | Piece::Queen | Piece::Pawn) {
                 attackers |= self.get_bishop_attacks(m.get_to(), occupancies) & diagonals;
             }

@@ -180,9 +180,9 @@ impl SearchData {
     }
 
     pub fn print_uci_info(&self, score: i32, depth: i32) {
-        //All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
+        // All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
         if self.report {
-            //Report mate score
+            // Report mate score
             let score_print = if is_mate(score) {
                 let num_plies = Score::MATE - score.abs();
                 let mate_in = score.signum() * ((num_plies + 1) / 2);
@@ -213,14 +213,14 @@ impl SearchData {
         }
     }
 
-    //Called before move is made on the board
+    // Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {
         let from = m.get_from();
         let to = m.get_to();
         let kind = m.get_kind();
         let stm = self.board.state.side_to_move;
 
-        //Need to toggle off extra captured piece in case of capture
+        // Need to toggle off extra captured piece in case of capture
         if kind.is_capture() {
             let capture_square = m.get_capture_square();
             let (_, captured_piece) = self.board.get_piece_at_square(capture_square).unwrap();
@@ -228,7 +228,7 @@ impl SearchData {
             self.toggle_accumulators_off(stm.other(), captured_piece, capture_square);
         }
 
-        //Need to toggle rook in case of castling
+        // Need to toggle rook in case of castling
         if kind == MoveKind::KingCastle {
             debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
             let king_rook_square = match stm {
@@ -240,7 +240,7 @@ impl SearchData {
             self.toggle_accumulators_on(stm, Piece::Rook, from.shift(1).unwrap());
         }
 
-        //Need to toggle rook in case of castling
+        // Need to toggle rook in case of castling
         if kind == MoveKind::QueenCastle {
             debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
             let queen_rook_square = match stm {
@@ -253,7 +253,7 @@ impl SearchData {
         }
 
         let moving_piece = self.board.get_piece_at_square(from).unwrap().1;
-        //Need to handle promotions
+        // Need to handle promotions
         if kind.is_promotion() {
             let promotion_piece = m.get_promoted_piece().unwrap();
             self.toggle_accumulators_off(stm, moving_piece, from);
@@ -272,7 +272,7 @@ impl SearchData {
         self.board.make_move(m)
     }
 
-    //Called after move is already unmade on the board
+    // Called after move is already unmade on the board
     pub fn unmake_move(&mut self, m: Move) {
         self.board.unmake_move();
 
@@ -281,7 +281,7 @@ impl SearchData {
         let kind = m.get_kind();
         let stm = self.board.state.side_to_move;
 
-        //Need to toggle off extra captured piece in case of capture
+        // Need to toggle off extra captured piece in case of capture
         if kind.is_capture() {
             let capture_square = m.get_capture_square();
             let (_, captured_piece) = self.board.get_piece_at_square(capture_square).unwrap();
@@ -289,7 +289,7 @@ impl SearchData {
             self.toggle_accumulators_on(stm.other(), captured_piece, capture_square);
         }
 
-        //Need to toggle rook in case of castling
+        // Need to toggle rook in case of castling
         if kind == MoveKind::KingCastle {
             debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
             let king_rook_square = match stm {
@@ -301,7 +301,7 @@ impl SearchData {
             self.toggle_accumulators_off(stm, Piece::Rook, from.shift(1).unwrap());
         }
 
-        //Need to toggle rook in case of castling
+        // Need to toggle rook in case of castling
         if kind == MoveKind::QueenCastle {
             debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
             let queen_rook_square = match stm {
@@ -314,7 +314,7 @@ impl SearchData {
         }
 
         let moving_piece = self.board.get_piece_at_square(from).unwrap().1;
-        //Need to handle promotions
+        // Need to handle promotions
         if kind.is_promotion() {
             let promotion_piece = m.get_promoted_piece().unwrap();
             self.toggle_accumulators_on(stm, moving_piece, from);

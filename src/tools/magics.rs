@@ -139,7 +139,7 @@ pub static ROOK_MAGIC_NUMBERS: [u64; 64] = [
     0x1004081002402,
 ];
 
-//XOR Shift Pseudo-Random Number Generator
+// XOR Shift Pseudo-Random Number Generator
 pub fn get_random_num() -> u32 {
     let mut number = SEED.lock().unwrap();
 

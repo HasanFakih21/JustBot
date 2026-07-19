@@ -9,7 +9,7 @@ pub struct TimeManager {
     pub limits: Limits,
 }
 
-//Some settings don't do anything yet
+// Some settings don't do anything yet
 #[derive(Debug, Clone)]
 pub struct TimeSettings {
     pub wtime: Option<u64>,
@@ -96,9 +96,10 @@ impl TimeManager {
             return;
         };
 
+        // Simple time managment strategy: remaining time / 20 + increment / 2
         self.limits.soft_time = Some(Duration::from_millis(
             (remaining_time / 20) + (increment / 2),
-        )); //Simple time managment strategy: remaining time/20 + increment/2
+        ));
         self.limits.hard_time = Some(Duration::from_millis(
             (remaining_time / 2) + (increment / 2),
         ));

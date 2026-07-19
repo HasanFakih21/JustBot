@@ -22,7 +22,7 @@ impl Board {
             return false;
         }
 
-        //Verify King Moves
+        // Verify King Moves
         if moving_piece == Piece::King {
             if m.get_kind() == MoveKind::KingCastle {
                 let king_side_path = match stm {
@@ -57,17 +57,17 @@ impl Board {
                 && (self.get_king_attacks(from) & !self.state.threats).contains(to);
         }
 
-        if self.state.occupancies[stm as usize].contains(to) //If to square has piece of the same side
-            || self.state.pinned[stm as usize].contains(from) && !RAYS[from as usize][king_square as usize].contains(to) //If piece is pinned and the to square isn't on the same ray as the king
+        if self.state.occupancies[stm as usize].contains(to) // If to square has piece of the same side
+            || self.state.pinned[stm as usize].contains(from) && !RAYS[from as usize][king_square as usize].contains(to) // If piece is pinned and the to square isn't on the same ray as the king
             || self.king_in_check()
-                && (self.state.checkers.count_bits() > 1 //If there's multiple checkers then the king has to move 
+                && (self.state.checkers.count_bits() > 1 // If there's multiple checkers then the king has to move 
                 || ((m.get_kind() != MoveKind::EnPassant) && !(self.state.checkers | BETWEEN[king_square as usize][self.state.checkers.least_sig_bit().unwrap() as usize]).contains(to)))
-        //If it's a check and it also doesn't contain a move that's between the king and checking piece or a capture of the checking piece
+        // If it's a check and it also doesn't contain a move that's between the king and checking piece or a capture of the checking piece
         {
             return false;
         }
 
-        //Verify pawn moves
+        // Verify pawn moves
         if moving_piece == Piece::Pawn {
             if m.is_en_passant() {
                 let Some(ep_square) = self.state.enpassant else {
