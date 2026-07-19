@@ -303,7 +303,7 @@ pub fn search<Node: NodeType>(
         }
 
         //Unmake Move
-        data.unmake_move(m);
+        data.unmake_move();
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;
@@ -513,7 +513,7 @@ pub fn quiesce<Node: NodeType>(
 
         data.make_move(m, ply);
         let score = -quiesce::<Node>(data, -beta, -alpha, ply + 1);
-        data.unmake_move(m);
+        data.unmake_move();
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;

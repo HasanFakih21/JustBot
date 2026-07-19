@@ -175,7 +175,7 @@ mod tests {
         println!("Second Eval: {}", data.nnue_evaluate());
 
         //Unmake the move
-        data.unmake_move(m);
+        data.unmake_move();
 
         let final_eval = data.nnue_evaluate();
         println!("Final Eval: {}", final_eval);
