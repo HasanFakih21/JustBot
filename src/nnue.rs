@@ -4,7 +4,7 @@ use crate::{
     types::{Piece, Side, Square},
 };
 
-const HIDDEN_SIZE: usize = 512;
+const HIDDEN_SIZE: usize = 1024;
 const SCALE: i32 = 400;
 const NUM_OUTPUT_BUCKETS: usize = 8;
 const QA: i16 = 255;
@@ -23,22 +23,11 @@ fn screlu(x: i16) -> i32 {
     y * y
 }
 
-/// This is the quantised format that bullet outputs.
 #[repr(C)]
 pub struct Network {
-    /// Column-Major `HIDDEN_SIZE x 768` matrix.
-    /// Values have quantization of QA.
     feature_weights: [Accumulator; 768],
-    /// Vector with dimension `HIDDEN_SIZE`.
-    /// Values have quantization of QA.
     feature_bias: Accumulator,
-    /// Column-Major `1 x (2 * HIDDEN_SIZE)`
-    /// matrix, we use it like this to make the
-    /// code nicer in `Network::evaluate`.
-    /// Values have quantization of QB.
     output_weights: [[i16; 2 * HIDDEN_SIZE]; NUM_OUTPUT_BUCKETS],
-    /// Scalar output bias.
-    /// Value has quantization of QA * QB.
     output_bias: [i16; NUM_OUTPUT_BUCKETS],
 }
 
@@ -83,8 +72,6 @@ impl Network {
     }
 }
 
-/// A column of the feature-weights matrix.
-/// Note the `align(64)`.
 #[derive(Clone, Copy, Debug)]
 #[repr(C, align(64))]
 pub struct Accumulator {
@@ -92,8 +79,6 @@ pub struct Accumulator {
 }
 
 impl Accumulator {
-    /// Initialised with bias so we can just efficiently
-    /// operate on it afterwards.
     pub fn new(net: &Network) -> Self {
         net.feature_bias
     }

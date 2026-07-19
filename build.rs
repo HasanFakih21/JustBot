@@ -2,7 +2,7 @@ use std::{fs, process::Command};
 
 const BASE_URL: &str =
     "https://github.com/HasanFakih21/JustBot-Networks/releases/download/Networks";
-const NETWORK_NAME: &str = "512-HL.nnue";
+const NETWORK_NAME: &str = "1024-HL-A.nnue";
 
 fn main() {
     download_netowrk();
