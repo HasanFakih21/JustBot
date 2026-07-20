@@ -4,7 +4,7 @@ use crate::tunable_params;
 tunable_params! {
     asp_alpha_window = 25, 5..=300, true;
     asp_beta_window  = 25, 5..=300, true;
-    asp_multiplier   = 2, 1..=4,    true;
+    asp_multiplier   = 2, 1..=4,    false;
 
     rfp_base      = 150, 30..=500,   true;
     rfp_improving = 100, 20..=500,   true;
@@ -56,7 +56,7 @@ tunable_params! {
     good_noisy_see_divisor = 4, 2..=6,      true;
     good_noisy_see_offset  = 75, -40..=300, true;
 
-    queen_promotion_bonus = 5000, 500..= 10000, true;
+    queen_promotion_bonus = 5000, 500..= 10000, false;
 
     noisy_hist_score_div  = 8, 1..=12, true;
 
