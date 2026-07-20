@@ -230,11 +230,41 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    let tt_move = tt_entry.as_ref().map(|e| e.get_best_move()).filter(|m| !m.is_null());
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+
     let mut move_count = 0;
     let mut best_score = -Score::INFINITY;
     let mut best_move: Option<Move> = None;
-    let mut bound = Bound::Upper; //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
-    let tt_move = tt_entry.map(|e| e.get_best_move()).filter(|m| !m.is_null());
+    //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
+    let mut bound = Bound::Upper; 
+
+    //Singular Extensions (SE)
+    let mut extension = 0;
+    if !Node::ROOT 
+        && let Some(tt_move) = tt_move
+        && let Some(tt_bound) = tt_bound
+        && let Some(tt_score) = tt_score
+        && tt_bound != Bound::Upper
+        && depth >= 6 
+    {
+        let singular_depth = (depth - 1) / 2;
+        let singular_beta = tt_score - (depth + depth);
+
+        data.ply_table[ply].excluded = tt_move;
+        data.ply_table[ply].m = Move::default();
+        let singular_score = search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply);
+        data.ply_table[ply].excluded = Move::default();
+
+        if data.shared.status.get() == Status::STOPPED {
+            return Score::TIMEOUT;
+        }
+
+        if singular_score < singular_beta {
+            extension += 1;
+        }
+    }
 
     let mut move_picker = MovePicker::new(tt_move);
     let mut quiets_searched = StackVec::<Move, 32>::new();
@@ -242,6 +272,10 @@ pub fn search<Node: NodeType>(
     let mut skip_quiets = false;
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
+        if m == data.ply_table[ply].excluded {
+            continue;
+        }
+
         move_count += 1;
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.get_kind().is_quiet();
@@ -278,7 +312,7 @@ pub fn search<Node: NodeType>(
 
         //Make Move
         data.make_move(m, ply);
-        let new_depth = (depth - 1) + (in_check as i32);
+        let new_depth = (depth - 1) + (in_check as i32) + ((move_count == 1) as i32 * extension);
         let mut score = -Score::INFINITY;
 
         //Late Move Reductions (LMR)

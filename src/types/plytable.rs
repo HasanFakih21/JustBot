@@ -39,6 +39,7 @@ pub struct PlyData {
     pub piece: Option<(Side, Piece)>,
     pub conthistory: *mut PieceToHistory<i16>,
     pub eval: i32,
+    pub excluded: Move,
 }
 
 unsafe impl Send for PlyData {}
