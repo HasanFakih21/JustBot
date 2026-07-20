@@ -66,7 +66,7 @@ tunable_params! {
 
     see_pawn_value    = 100, 20..=300,   true;
     see_knight_value  = 430, 200..=600,  true;
-    see_bishop_value  = 460, 200..=700,  true;
-    see_rook_value    = 650, 400..=900,  true;
-    see_queen_value   = 1300, 500..=1200, true;
+    see_bishop_value  = 460, 200..=800,  true;
+    see_rook_value    = 650, 400..=1200,  true;
+    see_queen_value   = 1300, 500..=2000, true;
 }
