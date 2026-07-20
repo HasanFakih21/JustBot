@@ -128,6 +128,7 @@ pub fn search<Node: NodeType>(
 
     let stm = data.board.state.side_to_move;
     let in_check = data.board.king_in_check();
+    let excluded = !data.ply_table[ply].excluded.is_null();
 
     if !Node::ROOT {
         //Check for draws
@@ -162,7 +163,7 @@ pub fn search<Node: NodeType>(
     if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_depth() >= depth
-        && data.ply_table[ply].excluded.is_null()
+        && !excluded
     {
         let tt_score = e.get_score();
         match e.get_bound() {
@@ -203,7 +204,7 @@ pub fn search<Node: NodeType>(
     };
 
     //Reverse Futillity Pruning (RFP)
-    if !in_check && !Node::PV {
+    if !in_check && !Node::PV && !excluded {
         let margin = 150 * depth - (100 * improving as i32);
         if static_eval >= beta + margin {
             return static_eval;
@@ -212,6 +213,7 @@ pub fn search<Node: NodeType>(
 
     //Null Move Pruning
     if !Node::PV
+        && !excluded
         && !in_check
         && !data.board.only_king_and_pawns()
         && static_eval >= beta - 50 * improving as i32
@@ -224,7 +226,7 @@ pub fn search<Node: NodeType>(
 
         data.board.make_null_move();
         let null_move_score =
-            -search::<NonPV>(data, depth.saturating_sub(r), -beta, -(beta - 1), ply + 1);
+            -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1);
         data.board.unmake_move();
         if null_move_score >= beta {
             return null_move_score;
@@ -244,6 +246,7 @@ pub fn search<Node: NodeType>(
     //Singular Extensions (SE)
     let mut extension = 0;
     if !Node::ROOT 
+        && !excluded
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
@@ -374,6 +377,10 @@ pub fn search<Node: NodeType>(
     }
 
     if move_count == 0 {
+        if excluded {
+            return -Score::INFINITY + 1;
+        }
+
         if in_check {
             return -Score::MATE + ply as i32;
         } else {
@@ -434,16 +441,18 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    data.shared.tt.add_entry(
-        best_move.unwrap_or_default(),
-        best_score,
-        static_eval,
-        bound,
-        data.board.state.hash,
-        depth,
-        ply,
-        Node::PV,
-    );
+    if !excluded {
+        data.shared.tt.add_entry(
+            best_move.unwrap_or_default(),
+            best_score,
+            static_eval,
+            bound,
+            data.board.state.hash,
+            depth,
+            ply,
+            Node::PV,
+        );
+    }
 
     best_score
 }
