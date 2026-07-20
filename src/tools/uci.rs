@@ -166,6 +166,7 @@ pub fn set_option(args: &str, shared: Arc<SharedData>, pool: &mut SearchThreads)
         ["name", "threads", "value", amount] => {
             let amount = amount.parse::<usize>().unwrap_or(1);
             *pool = SearchThreads::new(shared, amount);
+            println!("info string Set Threads to {amount} mb");
         }
         ["name", "clear", "hash"] => {
             shared.tt.clear();
