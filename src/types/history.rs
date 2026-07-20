@@ -1,4 +1,4 @@
-use crate::types::{BitBoard, MAX_HISTORY, Move, Piece, Side, Square, to_piece_index};
+use crate::{search::parameters::{max_cont_history, max_noisy_history, max_quiet_history}, types::{BitBoard, Move, Piece, Side, Square, to_piece_index}};
 
 pub type FromToHistory<T> = [[T; 64]; 64];
 pub type PieceToHistory<T> = [[T; 64]; 13];
@@ -21,7 +21,7 @@ impl QuietHistory {
 
         let entry = &mut self.0[side as usize][from_threats as usize][to_threats as usize]
             [from as usize][to as usize];
-        update_entry(bonus, entry);
+        update_entry(bonus, entry, max_quiet_history());
     }
 
     pub fn get(&self, threats: BitBoard, side: Side, m: Move) -> i32 {
@@ -65,7 +65,7 @@ impl NoisyHistory {
 
         let entry =
             &mut self.0[piece_index][to as usize][captured_index][threats.contains(to) as usize];
-        update_entry(bonus, entry);
+        update_entry(bonus, entry, max_noisy_history());
     }
 
     pub fn get(
@@ -116,7 +116,7 @@ impl ContinuationHistory {
         bonus: i32,
     ) {
         let entry = &mut unsafe { &mut *subtable }[to_piece_index(piece)][to as usize];
-        update_entry(bonus, entry);
+        update_entry(bonus, entry, max_cont_history());
     }
 
     /// # Safety
@@ -139,9 +139,9 @@ fn allocate_empty_history<T>() -> Box<T> {
     }
 }
 
-fn update_entry(bonus: i32, entry: &mut i16) {
-    let clamped_bonus = bonus.clamp(-MAX_HISTORY, MAX_HISTORY);
-    *entry += (clamped_bonus - (*entry as i32) * clamped_bonus.abs() / MAX_HISTORY) as i16;
+fn update_entry(bonus: i32, entry: &mut i16, max: i32) {
+    let clamped_bonus = bonus.clamp(-max, max);
+    *entry += (clamped_bonus - (*entry as i32) * clamped_bonus.abs() / max) as i16;
 }
 
 impl Default for QuietHistory {

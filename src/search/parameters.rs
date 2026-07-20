@@ -62,11 +62,15 @@ tunable_params! {
 
     first_ply_conthistory_score_base  = 1600, 400..=4000, true;
     second_ply_conthistory_score_base = 1000, 400..=4000, true;
-    direct_check_bonus                = 10000, 0..=10000, true;
+    direct_check_bonus                = 10000, 0..=20000, true;
 
-    see_pawn_value    = 100, 20..=300,   true;
-    see_knight_value  = 430, 200..=600,  true;
-    see_bishop_value  = 460, 200..=800,  true;
+    see_pawn_value    = 100, 20..=300,    true;
+    see_knight_value  = 430, 200..=600,   true;
+    see_bishop_value  = 460, 200..=800,   true;
     see_rook_value    = 650, 400..=1200,  true;
     see_queen_value   = 1300, 500..=2000, true;
+
+    max_quiet_history = 8000, 4000..=16000, true;
+    max_noisy_history = 8000, 4000..=16000, true;
+    max_cont_history  = 8000, 4000..=16000, true;
 }
