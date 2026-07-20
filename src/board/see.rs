@@ -1,6 +1,9 @@
 use crate::{
     attacks::RAYS,
     board::Board,
+    search::parameters::{
+        see_bishop_value, see_knight_value, see_pawn_value, see_queen_value, see_rook_value,
+    },
     types::{BitBoard, Move, Piece, Side, Square},
 };
 
@@ -168,11 +171,11 @@ impl Board {
 
 pub fn value(piece: Piece) -> i32 {
     match piece {
-        Piece::Pawn => 100,
-        Piece::Knight => 430,
-        Piece::Bishop => 460,
-        Piece::Rook => 650,
-        Piece::Queen => 1300,
+        Piece::Pawn => see_pawn_value(),
+        Piece::Knight => see_knight_value(),
+        Piece::Bishop => see_bishop_value(),
+        Piece::Rook => see_rook_value(),
+        Piece::Queen => see_queen_value(),
         Piece::King => 0,
     }
 }

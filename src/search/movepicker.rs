@@ -1,6 +1,13 @@
 use crate::{
     board::{movegen::MoveGenKind, see},
-    search::data::SearchData,
+    search::{
+        data::SearchData,
+        parameters::{
+            direct_check_bonus, first_ply_conthistory_score_base, good_noisy_see_divisor,
+            good_noisy_see_offset, noisy_hist_score_div, queen_promotion_bonus,
+            second_ply_conthistory_score_base,
+        },
+    },
     types::{Move, MoveEntry, MoveList, stackvec::StackVec},
 };
 
@@ -59,7 +66,8 @@ impl MovePicker {
         if self.status == Stage::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
-                let threshold = -best_entry.score / 4 + 75;
+                let threshold =
+                    -best_entry.score / good_noisy_see_divisor() + good_noisy_see_offset();
                 if !data.board.see(best_entry.mv, threshold) {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
@@ -105,7 +113,7 @@ impl MovePicker {
 
             //Bonus for promotions
             if mv.get_kind().is_queen_promotion() {
-                score += 5000;
+                score += queen_promotion_bonus();
             }
 
             let piece = data.board.get_piece_at_square(mv.get_from());
@@ -118,7 +126,7 @@ impl MovePicker {
                 score += see::value(p)
             }
 
-            score += data.noisy_history.get(piece, to, captured, threats) / 8;
+            score += data.noisy_history.get(piece, to, captured, threats) / noisy_hist_score_div();
             entry.score = score;
         }
     }
@@ -129,12 +137,13 @@ impl MovePicker {
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
-            let conthistory_score = 1600 * data.get_conthistory(mv, ply, 1) / 1024
-                + 1000 * data.get_conthistory(mv, ply, 2) / 1024;
+            let conthistory_score =
+                first_ply_conthistory_score_base() * data.get_conthistory(mv, ply, 1) / 1024
+                    + second_ply_conthistory_score_base() * data.get_conthistory(mv, ply, 2) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score
-                + (10000 * data.board.is_direct_check(mv) as i32);
+                + (direct_check_bonus() * data.board.is_direct_check(mv) as i32);
         }
     }
 

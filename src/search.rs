@@ -1,11 +1,22 @@
 use crate::search::data::{SearchData, Status};
 use crate::search::movepicker::MovePicker;
+use crate::search::parameters::{
+    asp_alpha_window, asp_beta_window, asp_multiplier, cont_hist_bonus_base, cont_hist_bonus_min,
+    cont_hist_bonus_offset, cont_hist_malus_base, cont_hist_malus_min, cont_hist_malus_offset,
+    fp_base, fp_depth, fp_offset, lmp_base, lmp_improving, lmr_depth, lmr_improving, lmr_pv,
+    nmp_depth, nmp_improving, noisy_hist_bonus_base, noisy_hist_bonus_min, noisy_hist_bonus_offset,
+    noisy_hist_malus_base, noisy_hist_malus_min, noisy_hist_malus_offset, qsearch_lmp_move_count,
+    qsearch_noisy_hist_bonus, qsearch_see, quiet_hist_bonus_base, quiet_hist_bonus_min,
+    quiet_hist_bonus_offset, quiet_hist_malus_base, quiet_hist_malus_min, quiet_hist_malus_offset,
+    rfp_base, rfp_improving, see_base, see_min, see_offset1, see_offset2,
+};
 use crate::types::plytable::PlyTable;
 use crate::types::stackvec::StackVec;
 use crate::types::*;
 
 pub mod data;
 pub mod movepicker;
+pub mod parameters;
 pub mod time;
 
 #[cfg(test)]
@@ -41,8 +52,8 @@ pub fn search_runner(data: &mut SearchData) {
     data.clear_features();
     data.initialize_nnue();
 
-    let mut alpha_window = 25;
-    let mut beta_window = 25;
+    let mut alpha_window = asp_alpha_window();
+    let mut beta_window = asp_beta_window();
     let mut alpha = -Score::INFINITY;
     let mut beta = Score::INFINITY;
 
@@ -73,12 +84,12 @@ pub fn search_runner(data: &mut SearchData) {
         //Aspiration Window
         if score <= alpha {
             //Failed Low
-            alpha_window *= 2;
+            alpha_window *= asp_multiplier();
             alpha -= alpha_window;
             continue;
         } else if score >= beta {
             //Failed High
-            beta_window *= 2;
+            beta_window *= asp_multiplier();
             beta += beta_window;
             continue;
         }
@@ -95,8 +106,8 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
-        alpha_window = 25;
-        beta_window = 25;
+        alpha_window = asp_alpha_window();
+        beta_window = asp_beta_window();
         alpha = score - alpha_window;
         beta = score + beta_window;
     }
@@ -205,7 +216,7 @@ pub fn search<Node: NodeType>(
 
     //Reverse Futillity Pruning (RFP)
     if !in_check && !Node::PV && !excluded {
-        let margin = 150 * depth - (100 * improving as i32);
+        let margin = rfp_base() * depth - (rfp_improving() * improving as i32);
         if static_eval >= beta + margin {
             return static_eval;
         }
@@ -216,24 +227,26 @@ pub fn search<Node: NodeType>(
         && !excluded
         && !in_check
         && !data.board.only_king_and_pawns()
-        && static_eval >= beta - 50 * improving as i32
+        && static_eval >= beta - nmp_improving() * improving as i32
         && !data.ply_table[ply - 1].m.is_null()
     {
-        let r = 4;
+        let r = nmp_depth();
         data.ply_table[ply].conthistory = data.ply_table.sentinel();
         data.ply_table[ply].m = Move::default();
         data.ply_table[ply].piece = None;
 
         data.board.make_null_move();
-        let null_move_score =
-            -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1);
+        let null_move_score = -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1);
         data.board.unmake_move();
         if null_move_score >= beta {
             return null_move_score;
         }
     }
 
-    let tt_move = tt_entry.as_ref().map(|e| e.get_best_move()).filter(|m| !m.is_null());
+    let tt_move = tt_entry
+        .as_ref()
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
 
@@ -241,17 +254,17 @@ pub fn search<Node: NodeType>(
     let mut best_score = -Score::INFINITY;
     let mut best_move: Option<Move> = None;
     //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
-    let mut bound = Bound::Upper; 
+    let mut bound = Bound::Upper;
 
     //Singular Extensions (SE)
     let mut extension = 0;
-    if !Node::ROOT 
+    if !Node::ROOT
         && !excluded
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
         && tt_bound != Bound::Upper
-        && depth >= 6 
+        && depth >= 6
     {
         let singular_depth = (depth - 1) / 2;
         let singular_beta = tt_score - (depth + depth);
@@ -259,7 +272,8 @@ pub fn search<Node: NodeType>(
         data.ply_table[ply].excluded = tt_move;
         data.ply_table[ply].m = Move::default();
         //Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
-        let singular_score = search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply);
+        let singular_score =
+            search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply);
         data.ply_table[ply].excluded = Move::default();
 
         if data.shared.status.get() == Status::STOPPED {
@@ -291,7 +305,8 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && !mating(beta)
                 && is_quiet
-                && move_count > (3 + depth as usize * depth as usize) / (2 - (improving as usize))
+                && move_count
+                    > (lmp_base() + depth * depth) / (lmp_improving() - (improving as i32))
             {
                 skip_quiets = true;
                 continue;
@@ -301,15 +316,16 @@ pub fn search<Node: NodeType>(
             if !in_check
                 && !is_direct_check
                 && is_quiet
-                && depth < 6
-                && static_eval + 100 * depth + 150 <= alpha
+                && depth < fp_depth()
+                && static_eval + fp_base() * depth + fp_offset() <= alpha
             {
                 skip_quiets = true;
                 continue;
             }
 
             //Static Exchange Evaluation Pruning (SEE Pruning)
-            let threshold = (-10 * depth * depth - 30 * depth + 15).min(0);
+            let threshold =
+                (see_base() * depth * depth - see_offset1() * depth + see_offset2()).min(see_min());
             if !in_check && !is_quiet && !data.board.see(m, threshold) {
                 continue;
             }
@@ -321,12 +337,13 @@ pub fn search<Node: NodeType>(
         let mut score = -Score::INFINITY;
 
         //Late Move Reductions (LMR)
-        if depth > 3 && move_count > 1 {
-            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
-            r += 200 * !improving as i32;
+        if depth > lmr_depth() && move_count > 1 {
+            let mut r =
+                LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63) as usize];
+            r += lmr_improving() * !improving as i32;
 
             let reduction = r / 1024;
-            let reduced_depth = (new_depth - reduction).max(1) + 2 * Node::PV as i32;
+            let reduced_depth = (new_depth - reduction).max(1) + lmr_pv() * Node::PV as i32;
 
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1);
             if score > alpha && reduced_depth < new_depth {
@@ -391,14 +408,20 @@ pub fn search<Node: NodeType>(
     if let Some(m) = best_move {
         let is_quiet = m.get_kind().is_quiet();
 
-        let quiet_bonus = (300 * depth).min(1000) - 250;
-        let quiet_malus = (300 * depth).min(1000) - 250;
+        let quiet_bonus = (quiet_hist_bonus_base() * depth).min(quiet_hist_bonus_min())
+            - quiet_hist_bonus_offset();
+        let quiet_malus = (quiet_hist_malus_base() * depth).min(quiet_hist_malus_min())
+            - quiet_hist_malus_offset();
 
-        let noisy_bonus = (250 * depth).min(1000) - 250;
-        let noisy_malus = (300 * depth).min(1000) - 250;
+        let noisy_bonus = (noisy_hist_bonus_base() * depth).min(noisy_hist_bonus_min())
+            - noisy_hist_bonus_offset();
+        let noisy_malus = (noisy_hist_malus_base() * depth).min(noisy_hist_malus_min())
+            - noisy_hist_malus_offset();
 
-        let cont_bonus = (350 * depth).min(1000) - 250;
-        let cont_malus = (250 * depth).min(1000) - 250;
+        let cont_bonus =
+            (cont_hist_bonus_base() * depth).min(cont_hist_bonus_min()) - cont_hist_bonus_offset();
+        let cont_malus =
+            (cont_hist_malus_base() * depth).min(cont_hist_malus_min()) - cont_hist_malus_offset();
 
         let threats = data.board.state.threats;
 
@@ -546,12 +569,12 @@ pub fn quiesce<Node: NodeType>(
 
         if !mated(best_score) {
             //Late Move Pruning (LMP)
-            if move_count >= 4 {
+            if move_count >= qsearch_lmp_move_count() {
                 break;
             }
 
             //Static Exchange Evaluation Pruning (SEE Pruning)
-            if !data.board.see(m, -150) {
+            if !data.board.see(m, qsearch_see()) {
                 continue;
             }
         }
@@ -596,8 +619,13 @@ pub fn quiesce<Node: NodeType>(
             .board
             .get_piece_at_square(m.get_capture_square())
             .map(|e| e.1);
-        data.noisy_history
-            .update(piece, to, captured, data.board.state.threats, 100);
+        data.noisy_history.update(
+            piece,
+            to,
+            captured,
+            data.board.state.threats,
+            qsearch_noisy_hist_bonus(),
+        );
     }
 
     data.shared.tt.add_entry(

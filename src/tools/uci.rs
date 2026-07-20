@@ -9,6 +9,8 @@ use crate::threads::SearchThreads;
 use crate::tools::bench::bench;
 use crate::tools::datagen::generate_random_openings;
 use crate::types::*;
+#[cfg(feature = "tuning")]
+use crate::search::parameters::{list_params, print_params_ob, set_param};
 
 pub fn input_loop(cli_args: String) {
     let shared = Arc::new(SharedData::default());
@@ -73,6 +75,8 @@ pub fn input_loop(cli_args: String) {
             "genfens" => {
                 genfens(args);
             }
+            #[cfg(feature = "tuning")]
+            "params" => print_params_ob(),
             _ => (),
         }
 
@@ -172,6 +176,16 @@ pub fn set_option(args: &str, shared: Arc<SharedData>, pool: &mut SearchThreads)
             shared.tt.clear();
             println!("info string TT cleared");
         }
+        #[cfg(feature = "tuning")]
+        ["setoption", "name", name, "value", amount] => {
+            match amount.parse::<i32>() {
+                Ok(amount) => set_param(name, amount),
+                Err(_) => {
+                    println!("info error: invalid value '{}'", amount);
+                    return;
+                }
+            };
+        }
         _ => eprintln!("Unkown option"),
     }
 }
@@ -243,6 +257,8 @@ pub fn uci() {
     println!("option name Threads type spin default 1 min 1 max 512");
     println!("option name Hash type spin default 16 min 1 max 1048576");
     println!("option name Clear Hash type button");
+    #[cfg(feature = "tuning")]
+    list_params();
     println!("uciok");
 }
 
