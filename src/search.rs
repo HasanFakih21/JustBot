@@ -3,12 +3,13 @@ use crate::search::movepicker::MovePicker;
 use crate::search::parameters::{
     asp_alpha_window, asp_beta_window, asp_multiplier, cont_hist_bonus_base, cont_hist_bonus_min,
     cont_hist_bonus_offset, cont_hist_malus_base, cont_hist_malus_min, cont_hist_malus_offset,
-    fp_base, fp_depth, fp_offset, lmp_base, lmp_improving, lmr_depth, lmr_improving, lmr_pv,
-    nmp_depth, nmp_improving, noisy_hist_bonus_base, noisy_hist_bonus_min, noisy_hist_bonus_offset,
-    noisy_hist_malus_base, noisy_hist_malus_min, noisy_hist_malus_offset, qsearch_lmp_move_count,
-    qsearch_noisy_hist_bonus, qsearch_see, quiet_hist_bonus_base, quiet_hist_bonus_min,
-    quiet_hist_bonus_offset, quiet_hist_malus_base, quiet_hist_malus_min, quiet_hist_malus_offset,
-    rfp_base, rfp_improving, see_base, see_min, see_offset1, see_offset2,
+    fp_base, fp_depth, fp_offset, hist_prune_base, hist_prune_depth, lmp_base, lmp_improving,
+    lmr_depth, lmr_improving, lmr_pv, nmp_depth, nmp_improving, noisy_hist_bonus_base,
+    noisy_hist_bonus_min, noisy_hist_bonus_offset, noisy_hist_malus_base, noisy_hist_malus_min,
+    noisy_hist_malus_offset, qsearch_lmp_move_count, qsearch_noisy_hist_bonus, qsearch_see,
+    quiet_hist_bonus_base, quiet_hist_bonus_min, quiet_hist_bonus_offset, quiet_hist_malus_base,
+    quiet_hist_malus_min, quiet_hist_malus_offset, rfp_base, rfp_improving, see_base, see_min,
+    see_offset1, see_offset2, singular_extension_depth,
 };
 use crate::types::plytable::PlyTable;
 use crate::types::stackvec::StackVec;
@@ -258,7 +259,7 @@ pub fn search<Node: NodeType>(
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
         && tt_bound != Bound::Upper
-        && depth >= 6
+        && depth >= singular_extension_depth()
     {
         let singular_depth = (depth - 1) / 2;
         let singular_beta = tt_score - (depth + depth);
@@ -340,7 +341,11 @@ pub fn search<Node: NodeType>(
             }
 
             //History Pruning (HP)
-            if !in_check && is_quiet && depth <= 4 && history < -1500 * depth {
+            if !in_check
+                && is_quiet
+                && depth <= hist_prune_depth()
+                && history < hist_prune_base() * depth
+            {
                 continue;
             }
 

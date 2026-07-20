@@ -73,4 +73,9 @@ tunable_params! {
     max_quiet_history = 8000, 4000..=16000, true;
     max_noisy_history = 8000, 4000..=16000, true;
     max_cont_history  = 8000, 4000..=16000, true;
+
+    singular_extension_depth = 6, 2..=10, true;
+
+    hist_prune_depth = 4, 2..=10,        true;
+    hist_prune_base  = -1500, -3000..=0, true;
 }

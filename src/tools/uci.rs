@@ -4,13 +4,13 @@ use std::thread;
 
 use crate::board::Board;
 use crate::search::data::SharedData;
+#[cfg(feature = "tuning")]
+use crate::search::parameters::{list_params, print_params_ob, set_param};
 use crate::search::time::TimeManager;
 use crate::threads::SearchThreads;
 use crate::tools::bench::bench;
 use crate::tools::datagen::generate_random_openings;
 use crate::types::*;
-#[cfg(feature = "tuning")]
-use crate::search::parameters::{list_params, print_params_ob, set_param};
 
 pub fn input_loop(cli_args: String) {
     let shared = Arc::new(SharedData::default());

@@ -1,4 +1,7 @@
-use crate::{search::parameters::{max_cont_history, max_noisy_history, max_quiet_history}, types::{BitBoard, Move, Piece, Side, Square, to_piece_index}};
+use crate::{
+    search::parameters::{max_cont_history, max_noisy_history, max_quiet_history},
+    types::{BitBoard, Move, Piece, Side, Square, to_piece_index},
+};
 
 pub type FromToHistory<T> = [[T; 64]; 64];
 pub type PieceToHistory<T> = [[T; 64]; 13];
