@@ -13,7 +13,7 @@ tunable_params! {
     nmp_depth     = 4, 1..=10,       true;
 
     lmp_base      = 3, 1..=6,        true;
-    lmp_improving = 2, 1..=4,        true;
+    lmp_improving = 2, 2..=4,        true;
 
     fp_depth      = 6, 3..=9,        true;
     fp_base       = 100, -20..=400,  true;
@@ -65,8 +65,8 @@ tunable_params! {
     direct_check_bonus                = 10000, 0..=10000, true;
 
     see_pawn_value    = 100, 20..=300,   true;
-    see_knight_value  = 320, 200..=600,  true;
-    see_bishop_value  = 330, 200..=700,  true;
-    see_rook_value    = 500, 400..=900,  true;
-    see_queen_value   = 900, 500..=1200, true;
+    see_knight_value  = 430, 200..=600,  true;
+    see_bishop_value  = 460, 200..=700,  true;
+    see_rook_value    = 650, 400..=900,  true;
+    see_queen_value   = 1300, 500..=1200, true;
 }

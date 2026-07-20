@@ -34,7 +34,7 @@ macro_rules! tunable_params {
         pub fn print_params_ob() {
             $(
                 if $spsa {
-                    let step = ($max - $min) / 20;
+                    let step = (($max - $min) / 20).max(1);
                     println!(
                         "{}, int, {}.0, {}.0, {}.0, {}, 0.002",
                         stringify!($name),
