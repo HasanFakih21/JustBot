@@ -250,12 +250,6 @@ pub fn search<Node: NodeType>(
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
 
-    let mut move_count = 0;
-    let mut best_score = -Score::INFINITY;
-    let mut best_move: Option<Move> = None;
-    //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
-    let mut bound = Bound::Upper;
-
     //Singular Extensions (SE)
     let mut extension = 0;
     if !Node::ROOT
@@ -285,6 +279,12 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    let mut move_count = 0;
+    let mut best_score = -Score::INFINITY;
+    let mut best_move: Option<Move> = None;
+    //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
+    let mut bound = Bound::Upper;
+
     let mut move_picker = MovePicker::new(tt_move);
     let mut quiets_searched = StackVec::<Move, 32>::new();
     let mut noisies_searched = StackVec::<Move, 32>::new();
@@ -298,6 +298,22 @@ pub fn search<Node: NodeType>(
         move_count += 1;
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.get_kind().is_quiet();
+        let history = if is_quiet {
+            data.quiet_history.get(data.board.state.threats, stm, m)
+                + data.get_conthistory(m, ply, 1)
+                + data.get_conthistory(m, ply, 2)
+        } else {
+            let captured = data
+                .board
+                .get_piece_at_square(m.get_capture_square())
+                .map(|(_, p)| p);
+            data.noisy_history.get(
+                data.board.get_piece_at_square(m.get_from()),
+                m.get_to(),
+                captured,
+                data.board.state.threats,
+            )
+        };
 
         if !Node::ROOT && !mated(best_score) {
             //Late Move Pruning (LMP)
@@ -320,6 +336,11 @@ pub fn search<Node: NodeType>(
                 && static_eval + fp_base() * depth + fp_offset() <= alpha
             {
                 skip_quiets = true;
+                continue;
+            }
+
+            //History Pruning (HP)
+            if !in_check && is_quiet && depth <= 4 && history < -1500 * depth {
                 continue;
             }
 
