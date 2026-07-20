@@ -177,7 +177,7 @@ pub fn set_option(args: &str, shared: Arc<SharedData>, pool: &mut SearchThreads)
             println!("info string TT cleared");
         }
         #[cfg(feature = "tuning")]
-        ["setoption", "name", name, "value", amount] => {
+        ["name", name, "value", amount] => {
             match amount.parse::<i32>() {
                 Ok(amount) => set_param(name, amount),
                 Err(_) => {
