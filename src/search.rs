@@ -162,6 +162,7 @@ pub fn search<Node: NodeType>(
     if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_depth() >= depth
+        && data.ply_table[ply].excluded.is_null()
     {
         let tt_score = e.get_score();
         match e.get_bound() {
@@ -254,6 +255,7 @@ pub fn search<Node: NodeType>(
 
         data.ply_table[ply].excluded = tt_move;
         data.ply_table[ply].m = Move::default();
+        //Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
         let singular_score = search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply);
         data.ply_table[ply].excluded = Move::default();
 
