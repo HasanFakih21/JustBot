@@ -239,12 +239,6 @@ pub fn search<Node: NodeType>(
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
 
-    let mut move_count = 0;
-    let mut best_score = -Score::INFINITY;
-    let mut best_move: Option<Move> = None;
-    //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
-    let mut bound = Bound::Upper;
-
     //Singular Extensions (SE)
     let mut extension = 0;
     if !Node::ROOT
@@ -273,6 +267,12 @@ pub fn search<Node: NodeType>(
             extension += 1;
         }
     }
+
+    let mut move_count = 0;
+    let mut best_score = -Score::INFINITY;
+    let mut best_move: Option<Move> = None;
+    //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
+    let mut bound = Bound::Upper;
 
     let mut move_picker = MovePicker::new(tt_move);
     let mut quiets_searched = StackVec::<Move, 32>::new();
@@ -328,8 +328,7 @@ pub fn search<Node: NodeType>(
             }
 
             //History Pruning (HP)
-            if !in_check && is_quiet && depth <= 4 && history < -950 * depth {
-                skip_quiets = true;
+            if !in_check && is_quiet && depth <= 4 && history < -1500 * depth {
                 continue;
             }
 
