@@ -225,33 +225,29 @@ pub fn search<Node: NodeType>(
         data.ply_table[ply].piece = None;
 
         data.board.make_null_move();
-        let null_move_score =
-            -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1);
+        let null_move_score = -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1);
         data.board.unmake_move();
         if null_move_score >= beta {
             return null_move_score;
         }
     }
 
-    let tt_move = tt_entry.as_ref().map(|e| e.get_best_move()).filter(|m| !m.is_null());
+    let tt_move = tt_entry
+        .as_ref()
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
 
-    let mut move_count = 0;
-    let mut best_score = -Score::INFINITY;
-    let mut best_move: Option<Move> = None;
-    //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
-    let mut bound = Bound::Upper; 
-
     //Singular Extensions (SE)
     let mut extension = 0;
-    if !Node::ROOT 
+    if !Node::ROOT
         && !excluded
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
         && tt_bound != Bound::Upper
-        && depth >= 6 
+        && depth >= 6
     {
         let singular_depth = (depth - 1) / 2;
         let singular_beta = tt_score - (depth + depth);
@@ -259,7 +255,8 @@ pub fn search<Node: NodeType>(
         data.ply_table[ply].excluded = tt_move;
         data.ply_table[ply].m = Move::default();
         //Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
-        let singular_score = search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply);
+        let singular_score =
+            search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply);
         data.ply_table[ply].excluded = Move::default();
 
         if data.shared.status.get() == Status::STOPPED {
@@ -270,6 +267,12 @@ pub fn search<Node: NodeType>(
             extension += 1;
         }
     }
+
+    let mut move_count = 0;
+    let mut best_score = -Score::INFINITY;
+    let mut best_move: Option<Move> = None;
+    //Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
+    let mut bound = Bound::Upper;
 
     let mut move_picker = MovePicker::new(tt_move);
     let mut quiets_searched = StackVec::<Move, 32>::new();
@@ -284,6 +287,22 @@ pub fn search<Node: NodeType>(
         move_count += 1;
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.get_kind().is_quiet();
+        let history = if is_quiet {
+            data.quiet_history.get(data.board.state.threats, stm, m)
+                + data.get_conthistory(m, ply, 1)
+                + data.get_conthistory(m, ply, 2)
+        } else {
+            let captured = data
+                .board
+                .get_piece_at_square(m.get_capture_square())
+                .map(|(_, p)| p);
+            data.noisy_history.get(
+                data.board.get_piece_at_square(m.get_from()),
+                m.get_to(),
+                captured,
+                data.board.state.threats,
+            )
+        };
 
         if !Node::ROOT && !mated(best_score) {
             //Late Move Pruning (LMP)
@@ -305,6 +324,11 @@ pub fn search<Node: NodeType>(
                 && static_eval + 100 * depth + 150 <= alpha
             {
                 skip_quiets = true;
+                continue;
+            }
+
+            //History Pruning (HP)
+            if !in_check && is_quiet && depth <= 4 && history < -1500 * depth {
                 continue;
             }
 
