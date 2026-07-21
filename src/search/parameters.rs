@@ -13,7 +13,7 @@ tunable_params! {
     nmp_depth     = 4, 1..=10,       true;
 
     lmp_base      = 3, 1..=6,        true;
-    lmp_improving = 2, 2..=4,        true;
+    lmp_improving = 2, 1..=6,        true;
 
     fp_depth      = 6, 3..=9,        true;
     fp_base       = 100, -20..=400,  true;
