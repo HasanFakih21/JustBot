@@ -1,4 +1,4 @@
-use crate::types::{BitBoard, MAX_HISTORY, Move, Piece, Side, Square, to_piece_index};
+use crate::types::{BitBoard, Move, Piece, Side, Square, to_piece_index};
 
 pub type FromToHistory<T> = [[T; 64]; 64];
 pub type PieceToHistory<T> = [[T; 64]; 13];
@@ -8,6 +8,8 @@ pub type PieceToHistory<T> = [[T; 64]; 13];
 pub struct QuietHistory(pub Box<[[[FromToHistory<i16>; 2]; 2]; 2]>);
 
 impl QuietHistory {
+    const MAX_HISTORY: i32 = 8199;
+
     pub fn new() -> Self {
         Self(allocate_empty_history())
     }
@@ -21,7 +23,7 @@ impl QuietHistory {
 
         let entry = &mut self.0[side as usize][from_threats as usize][to_threats as usize]
             [from as usize][to as usize];
-        update_entry(bonus, entry);
+        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
     pub fn get(&self, threats: BitBoard, side: Side, m: Move) -> i32 {
@@ -41,6 +43,8 @@ impl QuietHistory {
 pub struct NoisyHistory(pub Box<PieceToHistory<[[i16; 2]; 7]>>);
 
 impl NoisyHistory {
+    const MAX_HISTORY: i32 = 8113;
+
     pub fn new() -> Self {
         Self(allocate_empty_history())
     }
@@ -65,7 +69,7 @@ impl NoisyHistory {
 
         let entry =
             &mut self.0[piece_index][to as usize][captured_index][threats.contains(to) as usize];
-        update_entry(bonus, entry);
+        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
     pub fn get(
@@ -94,6 +98,8 @@ impl NoisyHistory {
 pub struct ContinuationHistory(pub Box<PieceToHistory<PieceToHistory<i16>>>);
 
 impl ContinuationHistory {
+    pub const MAX_HISTORY: i32 = 7890;
+
     pub fn new() -> Self {
         Self(allocate_empty_history())
     }
@@ -116,7 +122,7 @@ impl ContinuationHistory {
         bonus: i32,
     ) {
         let entry = &mut unsafe { &mut *subtable }[to_piece_index(piece)][to as usize];
-        update_entry(bonus, entry);
+        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
     /// # Safety
@@ -139,9 +145,9 @@ fn allocate_empty_history<T>() -> Box<T> {
     }
 }
 
-fn update_entry(bonus: i32, entry: &mut i16) {
-    let clamped_bonus = bonus.clamp(-MAX_HISTORY, MAX_HISTORY);
-    *entry += (clamped_bonus - (*entry as i32) * clamped_bonus.abs() / MAX_HISTORY) as i16;
+fn update_entry<const MAX: i32>(bonus: i32, entry: &mut i16) {
+    let clamped_bonus = bonus.clamp(-MAX, MAX);
+    *entry += (clamped_bonus - (*entry as i32) * clamped_bonus.abs() / MAX) as i16;
 }
 
 impl Default for QuietHistory {
