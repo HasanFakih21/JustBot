@@ -49,7 +49,6 @@ pub const CASTLING_ROOK_SQAURES: [[Square; 2]; 2] = [
 ];
 
 pub const MAX_PLY: usize = 248;
-pub const MAX_HISTORY: i32 = 8000;
 pub const MAX_MOVE_NUM: usize = 256;
 
 pub const fn to_file_bb(square: Square) -> BitBoard {
