@@ -175,7 +175,7 @@ pub fn search<Node: NodeType>(
                 }
             }
             Bound::Upper => {
-                if tt_score < alpha {
+                if tt_score < alpha || cutnode {
                     return tt_score;
                 }
             }
