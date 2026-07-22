@@ -212,15 +212,26 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    let tt_move = tt_entry
+        .as_ref()
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
+
     //Null Move Pruning
-    if !Node::PV
+    if cutnode
+        && depth >= 3
         && !excluded
         && !in_check
         && !data.board.only_king_and_pawns()
+        && tt_bound.is_none_or(|b| b != Bound::Upper)
         && static_eval >= beta - 60 * improving as i32
         && !data.ply_table[ply - 1].m.is_null()
     {
-        let r = 6;
+        let r = 6 + depth * 128 / 640;
         data.ply_table[ply].conthistory = data.ply_table.sentinel();
         data.ply_table[ply].m = Move::default();
         data.ply_table[ply].piece = None;
@@ -232,15 +243,6 @@ pub fn search<Node: NodeType>(
             return null_move_score;
         }
     }
-
-    let tt_move = tt_entry
-        .as_ref()
-        .map(|e| e.get_best_move())
-        .filter(|m| !m.is_null());
-    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
-    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
-    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
-    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     //Singular Extensions (SE)
     let mut extension = 0;
