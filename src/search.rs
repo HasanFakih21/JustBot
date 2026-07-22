@@ -68,7 +68,7 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
-        let score = search::<Root>(data, depth, alpha, beta, 0);
+        let score = search::<Root>(data, depth, alpha, beta, 0, false);
 
         //Aspiration Window
         if score <= alpha {
@@ -110,6 +110,7 @@ pub fn search<Node: NodeType>(
     mut alpha: i32,
     beta: i32,
     ply: isize,
+    cutnode: bool,
 ) -> i32 {
     if Node::PV && !Node::ROOT {
         data.pv.clear(ply);
@@ -225,7 +226,7 @@ pub fn search<Node: NodeType>(
         data.ply_table[ply].piece = None;
 
         data.board.make_null_move();
-        let null_move_score = -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1);
+        let null_move_score = -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1, false);
         data.board.unmake_move();
         if null_move_score >= beta {
             return null_move_score;
@@ -258,7 +259,7 @@ pub fn search<Node: NodeType>(
         data.ply_table[ply].m = Move::default();
         //Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
         let singular_score =
-            search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply);
+            search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply, cutnode);
         data.ply_table[ply].excluded = Move::default();
 
         if data.shared.status.get() == Status::STOPPED {
@@ -267,6 +268,10 @@ pub fn search<Node: NodeType>(
 
         if singular_score < singular_beta {
             extension += 1;
+        } 
+        //Negative Extensions
+        else if tt_score >= beta || cutnode {
+            extension -= 2; 
         }
     }
 
@@ -357,17 +362,17 @@ pub fn search<Node: NodeType>(
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
 
-            score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1);
+            score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, true);
             if score > alpha && reduced_depth < new_depth {
-                score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1);
+                score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
             }
         } else if !Node::PV || move_count > 1 {
-            score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1);
+            score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
         }
 
         //Principal Variation Search (PVS)
         if Node::PV && (move_count == 1 || score > alpha) {
-            score = -search::<PV>(data, new_depth, -beta, -alpha, ply + 1);
+            score = -search::<PV>(data, new_depth, -beta, -alpha, ply + 1, false);
         }
 
         //Unmake Move
