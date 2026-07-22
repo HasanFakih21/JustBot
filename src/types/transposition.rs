@@ -315,7 +315,7 @@ mod tests {
             ..Default::default()
         };
 
-        let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0);
+        let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0, false);
 
         let hash = data.board.state.hash;
         let entry = data.shared.tt.get_entry(hash, 0).unwrap();
@@ -329,7 +329,7 @@ mod tests {
         assert_eq!(score, s);
 
         data.board.make_move(best_move);
-        search::<Root>(&mut data, 2, -Score::INFINITY, Score::INFINITY, 0);
+        search::<Root>(&mut data, 2, -Score::INFINITY, Score::INFINITY, 0, false);
 
         let entry = data.shared.tt.get_entry(hash, 0).unwrap();
 
