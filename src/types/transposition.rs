@@ -81,6 +81,10 @@ impl Entry {
         self.flags.bound()
     }
 
+    pub fn is_pv(&self) -> bool {
+        self.flags.pv()
+    }
+
     pub fn get_best_move(&self) -> Move {
         self.best_move
     }

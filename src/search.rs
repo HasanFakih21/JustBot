@@ -238,6 +238,8 @@ pub fn search<Node: NodeType>(
         .filter(|m| !m.is_null());
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     //Singular Extensions (SE)
     let mut extension = 0;
@@ -348,6 +350,9 @@ pub fn search<Node: NodeType>(
         if depth > 2 && move_count > 1 {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r += 217 * !improving as i32;
+            r -= 200 * tt_pv as i32;
+            r += 450 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
+            r += 300 * (tt_depth.is_some_and(|d| d < depth)) as i32;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
