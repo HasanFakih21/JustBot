@@ -260,8 +260,14 @@ pub fn search<Node: NodeType>(
         data.ply_table[ply].excluded = tt_move;
         data.ply_table[ply].m = Move::default();
         //Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
-        let singular_score =
-            search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply, cutnode);
+        let singular_score = search::<NonPV>(
+            data,
+            singular_depth,
+            singular_beta - 1,
+            singular_beta,
+            ply,
+            cutnode,
+        );
         data.ply_table[ply].excluded = Move::default();
 
         if data.shared.status.get() == Status::STOPPED {
@@ -270,10 +276,14 @@ pub fn search<Node: NodeType>(
 
         if singular_score < singular_beta {
             extension += 1;
-        } 
+        }
+        //Multi-Cut
+        else if singular_score >= beta {
+            return singular_score;
+        }
         //Negative Extensions
         else if tt_score >= beta || cutnode {
-            extension -= 2; 
+            extension -= 2;
         }
     }
 
