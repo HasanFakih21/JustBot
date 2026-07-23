@@ -87,7 +87,6 @@ impl Board {
         }
 
         self.state.hash ^= ZOBRIST.get_castling_num(self.state.castling_rights);
-        self.game_history.push(self.state.hash);
         self.update_all_threats();
         self.update_en_passant();
     }
@@ -133,8 +132,6 @@ impl Board {
         if let Some(prev_state) = self.state_stack.pop() {
             self.state = prev_state;
         }
-
-        self.game_history.pop();
     }
 
     pub fn copy_state(&mut self) {
@@ -149,14 +146,16 @@ impl Board {
         self.copy_state();
         self.state.side_to_move = self.state.side_to_move.other();
         self.state.hash ^= ZOBRIST.get_side_num();
+
         if let Some(square) = self.state.enpassant {
             self.state.hash ^= ZOBRIST.get_enpassant_num(square);
             self.state.enpassant = None;
         }
-        self.game_history.push(self.state.hash);
+
         if self.state.side_to_move == Side::White {
             self.state.full_move += 1
         }
+
         self.update_all_threats();
     }
 }

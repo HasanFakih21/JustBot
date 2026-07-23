@@ -60,7 +60,6 @@ impl Default for BoardState {
 pub struct Board {
     pub state: BoardState,
     pub state_stack: Vec<BoardState>,
-    pub game_history: Vec<u64>,
 }
 
 impl Default for Board {
@@ -75,7 +74,6 @@ impl Board {
         Board {
             state_stack: Vec::new(),
             state: BoardState::new(),
-            game_history: Vec::new(),
         }
     }
 

@@ -69,10 +69,6 @@ fn test_repetion_detection() {
     println!("{score}");
     let m = data.pv.line()[0];
 
-    println!(
-        "{:?}\nCurrent Hash: {}",
-        data.board.game_history, data.board.state.hash
-    );
     println!("Repetions counted: {}", data.board.detect_repetitions());
     assert_eq!(score, 0);
     assert_eq!(m, Move::new(C1, C2, QuietMove));
