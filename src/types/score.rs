@@ -4,6 +4,7 @@ pub struct Score;
 
 impl Score {
     pub const INFINITY: i32 = 32000;
+    pub const NONE: i32 = 32760;
     pub const MATE: i32 = 30000;
     pub const MATE_CUTOFF: i32 = Score::MATE - MAX_PLY as i32;
     pub const TIMEOUT: i32 = 111111;
@@ -20,6 +21,10 @@ pub const fn mating(score: i32) -> bool {
 
 pub const fn is_mate(score: i32) -> bool {
     score.abs() >= Score::MATE_CUTOFF
+}
+
+pub const fn is_valid(score: i32) -> bool {
+    score != Score::NONE
 }
 
 pub const fn from_tt(score: i16, ply: isize) -> i16 {

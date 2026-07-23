@@ -165,6 +165,7 @@ pub fn search<Node: NodeType>(
         && !Node::PV
         && e.get_depth() >= depth
         && !excluded
+        && is_valid(e.get_score())
     {
         let tt_score = e.get_score();
         match e.get_bound() {
@@ -184,9 +185,9 @@ pub fn search<Node: NodeType>(
     }
 
     let static_eval = if in_check {
-        -Score::INFINITY
+        Score::NONE
     } else if let Some(e) = &tt_entry
-        && e.get_eval() != -Score::INFINITY
+        && is_valid(e.get_eval())
     {
         e.get_eval()
     } else {
@@ -196,9 +197,9 @@ pub fn search<Node: NodeType>(
     data.ply_table[ply].eval = static_eval;
     let improving = if in_check {
         false
-    } else if data.ply_table[ply - 2].eval != -Score::INFINITY {
+    } else if is_valid(data.ply_table[ply - 2].eval) {
         (static_eval - data.ply_table[ply - 2].eval) > 0
-    } else if data.ply_table[ply - 4].eval != -Score::INFINITY {
+    } else if is_valid(data.ply_table[ply - 4].eval) {
         (static_eval - data.ply_table[ply - 4].eval) > 0
     } else {
         false
@@ -217,7 +218,10 @@ pub fn search<Node: NodeType>(
         .map(|e| e.get_best_move())
         .filter(|m| !m.is_null());
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
-    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+    let tt_score = tt_entry
+        .as_ref()
+        .map(|e| e.get_score())
+        .filter(|s| is_valid(*s));
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
@@ -260,8 +264,14 @@ pub fn search<Node: NodeType>(
         data.ply_table[ply].excluded = tt_move;
         data.ply_table[ply].m = Move::default();
         //Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
-        let singular_score =
-            search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply, cutnode);
+        let singular_score = search::<NonPV>(
+            data,
+            singular_depth,
+            singular_beta - 1,
+            singular_beta,
+            ply,
+            cutnode,
+        );
         data.ply_table[ply].excluded = Move::default();
 
         if data.shared.status.get() == Status::STOPPED {
@@ -270,10 +280,10 @@ pub fn search<Node: NodeType>(
 
         if singular_score < singular_beta {
             extension += 1;
-        } 
+        }
         //Negative Extensions
         else if tt_score >= beta || cutnode {
-            extension -= 2; 
+            extension -= 2;
         }
     }
 
@@ -520,6 +530,7 @@ pub fn quiesce<Node: NodeType>(
     //TT Cutoffs
     if let Some(e) = &tt_entry
         && !Node::PV
+        && is_valid(e.get_score())
     {
         let tt_score = e.get_score();
         match e.get_bound() {
