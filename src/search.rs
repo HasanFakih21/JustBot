@@ -221,17 +221,16 @@ pub fn search<Node: NodeType>(
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
-    let estimated_score = if !in_check 
-        && !excluded 
+    let estimated_score = if !in_check
+        && !excluded
         && let Some(tt_score) = tt_score
         && let Some(tt_bound) = tt_bound
         && tt_score != -Score::INFINITY
         && match tt_bound {
             Bound::Lower => tt_score > static_eval,
             Bound::Upper => tt_score < static_eval,
-            _ => true
-        }
-    {
+            _ => true,
+        } {
         tt_score
     } else {
         static_eval
@@ -264,6 +263,8 @@ pub fn search<Node: NodeType>(
         && !excluded
         && !in_check
         && !data.board.only_king_and_pawns()
+        && !mated(beta)
+        && !mating(estimated_score)
         && tt_bound.is_none_or(|b| b != Bound::Upper)
         && estimated_score >= beta - 60 * improving as i32
         && !data.ply_table[ply - 1].m.is_null()
