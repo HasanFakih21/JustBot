@@ -219,6 +219,11 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    //Razoring
+    if !Node::PV && static_eval < alpha - 300 - 250 * depth * depth {
+        return quiesce::<Node>(data, alpha, beta, ply);
+    }
+
     let tt_move = tt_entry
         .as_ref()
         .map(|e| e.get_best_move())
