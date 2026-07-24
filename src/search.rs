@@ -160,7 +160,7 @@ pub fn search<Node: NodeType>(
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
 
-    //TT Cutoffs only if depth of entry is greater or equal to the depth of the current node
+    //TT Cutoffs
     if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_depth() >= depth
@@ -201,6 +201,7 @@ pub fn search<Node: NodeType>(
     };
 
     data.ply_table[ply].eval = static_eval;
+
     let improving = if in_check {
         false
     } else if data.ply_table[ply - 2].eval != -Score::INFINITY {
@@ -211,14 +212,6 @@ pub fn search<Node: NodeType>(
         false
     };
 
-    //Reverse Futillity Pruning (RFP)
-    if !in_check && !Node::PV && !excluded {
-        let margin = 148 * depth - (92 * improving as i32);
-        if static_eval >= beta + margin {
-            return static_eval;
-        }
-    }
-
     let tt_move = tt_entry
         .as_ref()
         .map(|e| e.get_best_move())
@@ -227,6 +220,24 @@ pub fn search<Node: NodeType>(
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
+
+    //Razoring
+    if !Node::PV
+        && !in_check
+        && tt_bound.is_none_or(|b| b != Bound::Lower)
+        && static_eval < alpha - 250 - 250 * depth * depth
+        && alpha < 2000
+    {
+        return quiesce::<Node>(data, alpha, beta, ply);
+    }
+
+    //Reverse Futillity Pruning (RFP)
+    if !in_check && !Node::PV && !excluded {
+        let margin = 148 * depth - (92 * improving as i32);
+        if static_eval >= beta + margin {
+            return static_eval;
+        }
+    }
 
     //Null Move Pruning
     if cutnode
