@@ -249,6 +249,10 @@ pub fn search<Node: NodeType>(
         if null_move_score >= beta {
             return null_move_score;
         }
+
+        if data.shared.status.get() == Status::STOPPED {
+            return Score::TIMEOUT;
+        }
     }
 
     //Singular Extensions (SE)
