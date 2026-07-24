@@ -191,11 +191,11 @@ impl SearchData {
 
     pub fn correction(&self) -> i32 {
         let stm = self.board.state.side_to_move;
-        self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
+        (self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
             + self.corrhistory.non_pawn[Side::White as usize]
                 .get(stm, self.board.state.keys.non_pawn[Side::White])
             + self.corrhistory.non_pawn[Side::Black as usize]
-                .get(stm, self.board.state.keys.non_pawn[Side::Black])
+                .get(stm, self.board.state.keys.non_pawn[Side::Black]))
                 / 64
     }
 
