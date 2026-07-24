@@ -571,17 +571,26 @@ pub fn quiesce<Node: NodeType>(
         }
     }
 
-    let mut best_score = if in_check {
-        -Score::INFINITY
+    //Evaluation
+    let raw_eval;
+    let static_eval;
+    let mut best_score;
+
+    if in_check {
+        raw_eval = -Score::INFINITY;
+        static_eval = -Score::INFINITY;
+        best_score = static_eval;
     } else if let Some(e) = &tt_entry
         && e.get_eval() != -Score::INFINITY
     {
-        e.get_eval() + data.correction()
+        raw_eval = e.get_eval();
+        static_eval = raw_eval + data.correction();
+        best_score = static_eval;
     } else {
-        data.nnue_evaluate() + data.correction()
+        raw_eval = data.nnue_evaluate();
+        static_eval = raw_eval + data.correction();
+        best_score = static_eval
     };
-
-    let static_eval = best_score;
 
     //Stand Pat
     if best_score >= beta {
@@ -662,7 +671,7 @@ pub fn quiesce<Node: NodeType>(
     data.shared.tt.add_entry(
         best_move.unwrap_or_default(),
         best_score,
-        static_eval,
+        raw_eval,
         bound,
         data.board.state.keys.full,
         0,
