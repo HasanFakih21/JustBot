@@ -250,11 +250,9 @@ pub fn search<Node: NodeType>(
     if !in_check
         && !Node::PV
         && !excluded
-        && estimated_score >= beta + 148 * depth - (92 * improving as i32)
-        && !mated(beta)
-        && !mating(estimated_score)
+        && static_eval >= beta + 148 * depth - (92 * improving as i32)
     {
-        return estimated_score;
+        return static_eval;
     }
 
     //Null Move Pruning
