@@ -182,7 +182,7 @@ impl SearchData {
 
     pub fn correction(&self) -> i32 {
         let stm = self.board.state.side_to_move;
-        self.pawn_corrhistory.get(stm, self.board.state.keys.pawn)
+        self.pawn_corrhistory.get(stm, self.board.state.keys.pawn) / 64
     }
 
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
