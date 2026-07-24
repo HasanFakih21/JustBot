@@ -211,19 +211,6 @@ pub fn search<Node: NodeType>(
         false
     };
 
-    //Reverse Futillity Pruning (RFP)
-    if !in_check && !Node::PV && !excluded {
-        let margin = 148 * depth - (92 * improving as i32);
-        if static_eval >= beta + margin {
-            return static_eval;
-        }
-    }
-
-    //Razoring
-    if !Node::PV && static_eval < alpha - 300 - 250 * depth * depth {
-        return quiesce::<Node>(data, alpha, beta, ply);
-    }
-
     let tt_move = tt_entry
         .as_ref()
         .map(|e| e.get_best_move())
@@ -232,6 +219,23 @@ pub fn search<Node: NodeType>(
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
+
+    //Razoring
+    if !Node::PV
+        && !in_check
+        && tt_bound.is_none_or(|b| b != Bound::Lower)
+        && static_eval < alpha - 300 - 250 * depth * depth
+    {
+        return quiesce::<Node>(data, alpha, beta, ply);
+    }
+
+    //Reverse Futillity Pruning (RFP)
+    if !in_check && !Node::PV && !excluded {
+        let margin = 148 * depth - (92 * improving as i32);
+        if static_eval >= beta + margin {
+            return static_eval;
+        }
+    }
 
     //Null Move Pruning
     if cutnode
