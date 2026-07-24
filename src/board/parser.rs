@@ -1,6 +1,6 @@
 use crate::board::Board;
 use crate::board::movegen::MoveGenKind;
-use crate::types::{Castling, Move, Piece, Side, Square, ZOBRIST, pieces};
+use crate::types::{Castling, Move, Piece, Side, Square, pieces};
 
 #[derive(Debug)]
 pub struct FenParseError;
@@ -78,12 +78,15 @@ impl Board {
         }
 
         if board.state.side_to_move == Side::Black {
-            board.state.hash ^= ZOBRIST.get_side_num()
+            board.state.keys.toggle_side();
         }
 
-        board.state.hash ^= ZOBRIST.get_castling_num(board.state.castling_rights);
+        board
+            .state
+            .keys
+            .toggle_castling(board.state.castling_rights);
         if let Some(square) = board.state.enpassant {
-            board.state.hash ^= ZOBRIST.get_enpassant_num(square);
+            board.state.keys.toggle_en_passant(square);
         }
 
         board.update_all_threats();

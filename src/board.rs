@@ -1,5 +1,6 @@
 use crate::attacks::*;
 use crate::tools::magics::*;
+use crate::types::keys::Keys;
 use crate::types::*;
 use std::fmt::Display;
 
@@ -25,7 +26,7 @@ pub struct BoardState {
 
     pub half_move_clock: u8,
     pub full_move: usize,
-    pub hash: u64,
+    pub keys: Keys,
 }
 
 impl BoardState {
@@ -45,7 +46,7 @@ impl BoardState {
 
             half_move_clock: 0,
             full_move: 0,
-            hash: 0,
+            keys: Keys::default(),
         }
     }
 }
@@ -169,7 +170,7 @@ impl Board {
         //Mailbox
         self.state.mailbox[square as usize] = Some((side, piece));
         //Zobrist Hash
-        self.state.hash ^= ZOBRIST.get_piece_num(side, piece, square);
+        self.state.keys.toggle(side, piece, square);
     }
 
     pub fn remove_piece(&mut self, side: Side, piece: Piece, square: Square) {
@@ -179,7 +180,7 @@ impl Board {
         //Mailbox
         self.state.mailbox[square as usize] = None;
         //Zobrist Hash
-        self.state.hash ^= ZOBRIST.get_piece_num(side, piece, square);
+        self.state.keys.toggle(side, piece, square);
     }
 
     pub fn get_piece_attack(&self, side: Side, square: Square, piece: Piece) -> BitBoard {

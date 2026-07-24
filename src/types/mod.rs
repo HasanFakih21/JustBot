@@ -1,6 +1,7 @@
 pub mod bitboard;
 pub mod constants;
 pub mod history;
+pub mod keys;
 pub mod moves;
 pub mod pieces;
 pub mod plytable;

@@ -158,7 +158,7 @@ pub fn search<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
-    let tt_entry = data.shared.tt.get_entry(data.board.state.hash, ply);
+    let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
 
     //TT Cutoffs only if depth of entry is greater or equal to the depth of the current node
     if let Some(e) = &tt_entry
@@ -260,8 +260,14 @@ pub fn search<Node: NodeType>(
         data.ply_table[ply].excluded = tt_move;
         data.ply_table[ply].m = Move::default();
         //Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
-        let singular_score =
-            search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply, cutnode);
+        let singular_score = search::<NonPV>(
+            data,
+            singular_depth,
+            singular_beta - 1,
+            singular_beta,
+            ply,
+            cutnode,
+        );
         data.ply_table[ply].excluded = Move::default();
 
         if data.shared.status.get() == Status::STOPPED {
@@ -270,10 +276,10 @@ pub fn search<Node: NodeType>(
 
         if singular_score < singular_beta {
             extension += 1;
-        } 
+        }
         //Negative Extensions
         else if tt_score >= beta || cutnode {
-            extension -= 2; 
+            extension -= 2;
         }
     }
 
@@ -483,7 +489,7 @@ pub fn search<Node: NodeType>(
             best_score,
             static_eval,
             bound,
-            data.board.state.hash,
+            data.board.state.keys.full,
             depth,
             ply,
             Node::PV,
@@ -515,7 +521,7 @@ pub fn quiesce<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
-    let tt_entry = data.shared.tt.get_entry(data.board.state.hash, ply);
+    let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
 
     //TT Cutoffs
     if let Some(e) = &tt_entry
@@ -641,7 +647,7 @@ pub fn quiesce<Node: NodeType>(
         best_score,
         static_eval,
         bound,
-        data.board.state.hash,
+        data.board.state.keys.full,
         0,
         ply,
         Node::PV,

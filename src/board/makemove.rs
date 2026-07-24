@@ -1,6 +1,6 @@
 use super::Board;
 use crate::types::{
-    CASTLING_ROOK_SQAURES, Castling, Piece, Side, Square, ZOBRIST,
+    CASTLING_ROOK_SQAURES, Castling, Piece, Side, Square,
     moves::{Move, MoveKind},
 };
 
@@ -17,10 +17,10 @@ impl Board {
         let opp_queen_rook_square = CASTLING_ROOK_SQAURES[side.other()][Castling::QUEEN_SIDE];
 
         self.copy_state();
-        self.state.hash ^= ZOBRIST.get_castling_num(self.state.castling_rights);
+        self.state.keys.toggle_castling(self.state.castling_rights);
 
         if let Some(square) = self.state.enpassant {
-            self.state.hash ^= ZOBRIST.get_enpassant_num(square);
+            self.state.keys.toggle_en_passant(square);
             self.state.enpassant = None;
         }
 
@@ -30,7 +30,7 @@ impl Board {
         }
 
         self.state.side_to_move = self.state.side_to_move.other();
-        self.state.hash ^= ZOBRIST.get_side_num();
+        self.state.keys.toggle_side();
 
         if let Piece::Rook = piece {
             if from == king_rook_square && self.state.castling_rights.can_king_side(side) {
@@ -52,7 +52,9 @@ impl Board {
 
         if kind == MoveKind::DoublePawn {
             self.state.enpassant = Some(Square::from(to as usize ^ 8));
-            self.state.hash ^= ZOBRIST.get_enpassant_num(Square::from(to as usize ^ 8));
+            self.state
+                .keys
+                .toggle_en_passant(Square::from(to as usize ^ 8));
         }
 
         if let Some((other_side, captured_piece)) = self.get_piece_at_square(m.get_capture_square())
@@ -86,8 +88,8 @@ impl Board {
             self.state.full_move += 1
         }
 
-        self.state.hash ^= ZOBRIST.get_castling_num(self.state.castling_rights);
-        self.game_history.push(self.state.hash);
+        self.state.keys.toggle_castling(self.state.castling_rights);
+        self.game_history.push(self.state.keys.full);
         self.update_all_threats();
         self.update_en_passant();
     }
@@ -124,7 +126,7 @@ impl Board {
             }
 
             //Toggle en passant off
-            self.state.hash ^= ZOBRIST.get_enpassant_num(enpassant);
+            self.state.keys.toggle_en_passant(enpassant);
             self.state.enpassant = None;
         }
     }
@@ -148,12 +150,12 @@ impl Board {
     pub fn make_null_move(&mut self) {
         self.copy_state();
         self.state.side_to_move = self.state.side_to_move.other();
-        self.state.hash ^= ZOBRIST.get_side_num();
+        self.state.keys.toggle_side();
         if let Some(square) = self.state.enpassant {
-            self.state.hash ^= ZOBRIST.get_enpassant_num(square);
+            self.state.keys.toggle_en_passant(square);
             self.state.enpassant = None;
         }
-        self.game_history.push(self.state.hash);
+        self.game_history.push(self.state.keys.full);
         if self.state.side_to_move == Side::White {
             self.state.full_move += 1
         }
