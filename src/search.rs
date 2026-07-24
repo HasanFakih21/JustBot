@@ -183,14 +183,21 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    let static_eval = if in_check {
-        -Score::INFINITY
+    //Evaluation
+    let raw_eval;
+    let static_eval;
+
+    if in_check {
+        raw_eval = -Score::INFINITY;
+        static_eval = -Score::INFINITY;
     } else if let Some(e) = &tt_entry
         && e.get_eval() != -Score::INFINITY
     {
-        e.get_eval() + data.correction()
+        raw_eval = e.get_eval();
+        static_eval = raw_eval + data.correction();
     } else {
-        data.nnue_evaluate() + data.correction()
+        raw_eval = data.nnue_evaluate();
+        static_eval = raw_eval + data.correction();
     };
 
     data.ply_table[ply].eval = static_eval;
@@ -487,7 +494,7 @@ pub fn search<Node: NodeType>(
         data.shared.tt.add_entry(
             best_move.unwrap_or_default(),
             best_score,
-            static_eval,
+            raw_eval,
             bound,
             data.board.state.keys.full,
             depth,
@@ -500,7 +507,8 @@ pub fn search<Node: NodeType>(
     if !in_check
         && best_move.is_none_or(|m| m.get_kind().is_quiet())
         && ((bound == Bound::Lower && best_score >= static_eval)
-            || (bound == Bound::Upper && best_score <= static_eval))
+            || (bound == Bound::Upper && best_score <= static_eval)
+            || bound == Bound::Exact)
     {
         data.update_correction_histories(best_score - static_eval, depth);
     }

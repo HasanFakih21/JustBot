@@ -196,7 +196,7 @@ impl SearchData {
                 .get(stm, self.board.state.keys.non_pawn[Side::White])
             + self.corrhistory.non_pawn[Side::Black as usize]
                 .get(stm, self.board.state.keys.non_pawn[Side::Black]))
-                / 64
+            / 64
     }
 
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
