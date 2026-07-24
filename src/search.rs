@@ -502,7 +502,7 @@ pub fn search<Node: NodeType>(
         && ((bound == Bound::Lower && best_score >= static_eval)
             || (bound == Bound::Upper && best_score <= static_eval))
     {
-        data.update_correction_histories(best_score - static_eval);
+        data.update_correction_histories(best_score - static_eval, depth);
     }
 
     best_score

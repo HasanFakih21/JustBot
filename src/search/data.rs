@@ -88,9 +88,7 @@ pub struct SearchData {
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
     pub conthistory: ContinuationHistory,
-
-    //Correction Histories
-    pub pawn_corrhistory: CorrectionHistory,
+    pub corrhistory: CorrectionHistories,
 
     pub white_features: Accumulator,
     pub black_features: Accumulator,
@@ -111,8 +109,7 @@ impl SearchData {
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
             conthistory: ContinuationHistory::new(),
-
-            pawn_corrhistory: CorrectionHistory::new(),
+            corrhistory: CorrectionHistories::default(),
 
             white_features: Accumulator::new(&NNUE),
             black_features: Accumulator::new(&NNUE),
@@ -174,15 +171,20 @@ impl SearchData {
         }
     }
 
-    pub fn update_correction_histories(&mut self, bonus: i32) {
+    pub fn update_correction_histories(&mut self, diff: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
-        self.pawn_corrhistory
-            .update(stm, self.board.state.keys.pawn, bonus);
+        let bonus = (150 * depth  * diff / 120).clamp(-4500, 2500);
+        self.corrhistory.pawn.update(stm, self.board.state.keys.pawn, bonus);
+        self.corrhistory.non_pawn[Side::White as usize].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
+        self.corrhistory.non_pawn[Side::Black as usize].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
     }
 
     pub fn correction(&self) -> i32 {
         let stm = self.board.state.side_to_move;
-        self.pawn_corrhistory.get(stm, self.board.state.keys.pawn) / 64
+        self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
+        + self.corrhistory.non_pawn[Side::White as usize].get(stm, self.board.state.keys.non_pawn[Side::White])
+        + self.corrhistory.non_pawn[Side::Black as usize].get(stm, self.board.state.keys.non_pawn[Side::Black])
+        / 64
     }
 
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
@@ -376,4 +378,10 @@ impl Default for SearchData {
     fn default() -> Self {
         Self::new(Arc::new(SharedData::default()), 0)
     }
+}
+
+#[derive(Debug, Default)]
+pub struct CorrectionHistories {
+    pub pawn: CorrectionHistory,
+    pub non_pawn: [CorrectionHistory; 2]
 }
