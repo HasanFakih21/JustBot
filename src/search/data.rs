@@ -173,18 +173,30 @@ impl SearchData {
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
-        let bonus = (150 * depth  * diff / 120).clamp(-4500, 2500);
-        self.corrhistory.pawn.update(stm, self.board.state.keys.pawn, bonus);
-        self.corrhistory.non_pawn[Side::White as usize].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
-        self.corrhistory.non_pawn[Side::Black as usize].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
+        let bonus = (150 * depth * diff / 120).clamp(-4500, 2500);
+        self.corrhistory
+            .pawn
+            .update(stm, self.board.state.keys.pawn, bonus);
+        self.corrhistory.non_pawn[Side::White as usize].update(
+            stm,
+            self.board.state.keys.non_pawn[Side::White],
+            bonus,
+        );
+        self.corrhistory.non_pawn[Side::Black as usize].update(
+            stm,
+            self.board.state.keys.non_pawn[Side::Black],
+            bonus,
+        );
     }
 
     pub fn correction(&self) -> i32 {
         let stm = self.board.state.side_to_move;
         self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
-        + self.corrhistory.non_pawn[Side::White as usize].get(stm, self.board.state.keys.non_pawn[Side::White])
-        + self.corrhistory.non_pawn[Side::Black as usize].get(stm, self.board.state.keys.non_pawn[Side::Black])
-        / 64
+            + self.corrhistory.non_pawn[Side::White as usize]
+                .get(stm, self.board.state.keys.non_pawn[Side::White])
+            + self.corrhistory.non_pawn[Side::Black as usize]
+                .get(stm, self.board.state.keys.non_pawn[Side::Black])
+                / 64
     }
 
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
@@ -383,5 +395,5 @@ impl Default for SearchData {
 #[derive(Debug, Default)]
 pub struct CorrectionHistories {
     pub pawn: CorrectionHistory,
-    pub non_pawn: [CorrectionHistory; 2]
+    pub non_pawn: [CorrectionHistory; 2],
 }
