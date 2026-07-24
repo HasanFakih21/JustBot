@@ -8,9 +8,9 @@ use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
 use crate::types::{
-    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, NoisyHistory,
-    Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side, Square,
-    is_mate, to_file_bb,
+    ContinuationHistory, CorrectionHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move,
+    MoveKind, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN,
+    Score, Side, Square, is_mate, to_file_bb,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -89,6 +89,9 @@ pub struct SearchData {
     pub noisy_history: NoisyHistory,
     pub conthistory: ContinuationHistory,
 
+    //Correction Histories
+    pub pawn_corrhistory: CorrectionHistory,
+
     pub white_features: Accumulator,
     pub black_features: Accumulator,
 }
@@ -102,12 +105,14 @@ impl SearchData {
             pv: PVTable::new(),
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
+            report: true,
             ply_table: PlyTable::new(),
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
             conthistory: ContinuationHistory::new(),
-            report: true,
+
+            pawn_corrhistory: CorrectionHistory::new(),
 
             white_features: Accumulator::new(&NNUE),
             black_features: Accumulator::new(&NNUE),
@@ -167,6 +172,17 @@ impl SearchData {
                 bonus,
             );
         }
+    }
+
+    pub fn update_correction_histories(&mut self, bonus: i32) {
+        let stm = self.board.state.side_to_move;
+        self.pawn_corrhistory
+            .update(stm, self.board.state.keys.pawn, bonus);
+    }
+
+    pub fn correction(&self) -> i32 {
+        let stm = self.board.state.side_to_move;
+        self.pawn_corrhistory.get(stm, self.board.state.keys.pawn)
     }
 
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {

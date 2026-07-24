@@ -5,7 +5,7 @@ pub type PieceToHistory<T> = [[T; 64]; 13];
 
 #[derive(Debug, Clone)]
 //[Side to Move][From Threatened][To Threatened][From][To]
-pub struct QuietHistory(pub Box<[[[FromToHistory<i16>; 2]; 2]; 2]>);
+pub struct QuietHistory(Box<[[[FromToHistory<i16>; 2]; 2]; 2]>);
 
 impl QuietHistory {
     const MAX_HISTORY: i32 = 8199;
@@ -40,7 +40,7 @@ impl QuietHistory {
 
 #[derive(Debug, Clone)]
 //[Piece][To][Captured Piece][To Threatened]
-pub struct NoisyHistory(pub Box<PieceToHistory<[[i16; 2]; 7]>>);
+pub struct NoisyHistory(Box<PieceToHistory<[[i16; 2]; 7]>>);
 
 impl NoisyHistory {
     const MAX_HISTORY: i32 = 8113;
@@ -95,7 +95,7 @@ impl NoisyHistory {
 
 #[derive(Debug, Clone)]
 //[Piece][To][Piece][To]
-pub struct ContinuationHistory(pub Box<PieceToHistory<PieceToHistory<i16>>>);
+pub struct ContinuationHistory(Box<PieceToHistory<PieceToHistory<i16>>>);
 
 impl ContinuationHistory {
     pub const MAX_HISTORY: i32 = 7890;
@@ -137,6 +137,30 @@ impl ContinuationHistory {
     }
 }
 
+#[derive(Debug, Clone)]
+//[Side to Move][Key]
+pub struct CorrectionHistory(Box<[[i16; Self::SIZE]; 2]>);
+
+impl CorrectionHistory {
+    const MAX_HISTORY: i32 = 12000;
+
+    const SIZE: usize = 16000;
+    const MASK: usize = Self::SIZE - 1;
+
+    pub fn new() -> Self {
+        Self(allocate_empty_history())
+    }
+
+    pub fn update(&mut self, stm: Side, key: u64, bonus: i32) {
+        let entry = &mut self.0[stm as usize][key as usize & Self::MASK];
+        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
+    }
+
+    pub fn get(&self, stm: Side, key: u64) -> i32 {
+        self.0[stm as usize][key as usize & Self::MASK] as i32
+    }
+}
+
 fn allocate_empty_history<T>() -> Box<T> {
     let layout = std::alloc::Layout::new::<T>();
     unsafe {
@@ -165,6 +189,12 @@ impl Default for NoisyHistory {
 impl Default for ContinuationHistory {
     fn default() -> Self {
         ContinuationHistory::new()
+    }
+}
+
+impl Default for CorrectionHistory {
+    fn default() -> Self {
+        CorrectionHistory::new()
     }
 }
 

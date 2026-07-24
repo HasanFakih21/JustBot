@@ -188,9 +188,9 @@ pub fn search<Node: NodeType>(
     } else if let Some(e) = &tt_entry
         && e.get_eval() != -Score::INFINITY
     {
-        e.get_eval()
+        e.get_eval() + data.correction()
     } else {
-        data.nnue_evaluate()
+        data.nnue_evaluate() + data.correction()
     };
 
     data.ply_table[ply].eval = static_eval;
@@ -496,6 +496,15 @@ pub fn search<Node: NodeType>(
         );
     }
 
+    //Update Correction Histories
+    if !in_check
+        && best_move.is_none_or(|m| m.get_kind().is_quiet())
+        && ((bound == Bound::Lower && best_score >= static_eval)
+            || (bound == Bound::Upper && best_score <= static_eval))
+    {
+        data.update_correction_histories(best_score - static_eval);
+    }
+
     best_score
 }
 
@@ -559,9 +568,9 @@ pub fn quiesce<Node: NodeType>(
     } else if let Some(e) = &tt_entry
         && e.get_eval() != -Score::INFINITY
     {
-        e.get_eval()
+        e.get_eval() + data.correction()
     } else {
-        data.nnue_evaluate()
+        data.nnue_evaluate() + data.correction()
     };
 
     let static_eval = best_score;
