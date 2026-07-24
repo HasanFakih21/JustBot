@@ -160,7 +160,7 @@ pub fn search<Node: NodeType>(
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
 
-    //TT Cutoffs only if depth of entry is greater or equal to the depth of the current node
+    //TT Cutoffs
     if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_depth() >= depth
@@ -201,6 +201,7 @@ pub fn search<Node: NodeType>(
     };
 
     data.ply_table[ply].eval = static_eval;
+
     let improving = if in_check {
         false
     } else if data.ply_table[ply - 2].eval != -Score::INFINITY {
@@ -224,7 +225,8 @@ pub fn search<Node: NodeType>(
     if !Node::PV
         && !in_check
         && tt_bound.is_none_or(|b| b != Bound::Lower)
-        && static_eval < alpha - 300 - 250 * depth * depth
+        && static_eval < alpha - 250 - 250 * depth * depth
+        && alpha < 2000
     {
         return quiesce::<Node>(data, alpha, beta, ply);
     }
