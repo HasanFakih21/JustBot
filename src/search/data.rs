@@ -8,9 +8,9 @@ use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
 use crate::types::{
-    ContinuationHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move, MoveKind, NoisyHistory,
-    Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN, Score, Side, Square,
-    is_mate, to_file_bb,
+    ContinuationHistory, CorrectionHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move,
+    MoveKind, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN,
+    Score, Side, Square, is_mate, to_file_bb,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -88,6 +88,7 @@ pub struct SearchData {
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
     pub conthistory: ContinuationHistory,
+    pub corrhistory: CorrectionHistories,
 
     pub white_features: Accumulator,
     pub black_features: Accumulator,
@@ -102,12 +103,13 @@ impl SearchData {
             pv: PVTable::new(),
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
+            report: true,
             ply_table: PlyTable::new(),
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
             conthistory: ContinuationHistory::new(),
-            report: true,
+            corrhistory: CorrectionHistories::default(),
 
             white_features: Accumulator::new(&NNUE),
             black_features: Accumulator::new(&NNUE),
@@ -167,6 +169,34 @@ impl SearchData {
                 bonus,
             );
         }
+    }
+
+    pub fn update_correction_histories(&mut self, diff: i32, depth: i32) {
+        let stm = self.board.state.side_to_move;
+        let bonus = (150 * depth * diff / 120).clamp(-4500, 2500);
+        self.corrhistory
+            .pawn
+            .update(stm, self.board.state.keys.pawn, bonus);
+        self.corrhistory.non_pawn[Side::White as usize].update(
+            stm,
+            self.board.state.keys.non_pawn[Side::White],
+            bonus,
+        );
+        self.corrhistory.non_pawn[Side::Black as usize].update(
+            stm,
+            self.board.state.keys.non_pawn[Side::Black],
+            bonus,
+        );
+    }
+
+    pub fn correction(&self) -> i32 {
+        let stm = self.board.state.side_to_move;
+        (self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
+            + self.corrhistory.non_pawn[Side::White as usize]
+                .get(stm, self.board.state.keys.non_pawn[Side::White])
+            + self.corrhistory.non_pawn[Side::Black as usize]
+                .get(stm, self.board.state.keys.non_pawn[Side::Black]))
+            / 64
     }
 
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
@@ -360,4 +390,10 @@ impl Default for SearchData {
     fn default() -> Self {
         Self::new(Arc::new(SharedData::default()), 0)
     }
+}
+
+#[derive(Debug, Default)]
+pub struct CorrectionHistories {
+    pub pawn: CorrectionHistory,
+    pub non_pawn: [CorrectionHistory; 2],
 }

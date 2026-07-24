@@ -25,7 +25,7 @@ impl Board {
 
         let last_halfmove_ply = self.game_history.len() - half_moves;
         for position in self.game_history[last_halfmove_ply..].iter() {
-            if self.state.hash == *position {
+            if self.state.keys.full == *position {
                 count += 1
             }
         }

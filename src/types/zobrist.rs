@@ -112,6 +112,6 @@ mod tests {
             ^ ZOBRIST.get_piece_num(Side::Black, Piece::King, Square::B2)
             ^ ZOBRIST.get_castling_num(CastlingRights(0));
 
-        assert_eq!(board1.state.hash, ver_hash);
+        assert_eq!(board1.state.keys.full, ver_hash);
     }
 }
