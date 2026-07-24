@@ -221,22 +221,41 @@ pub fn search<Node: NodeType>(
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
+    let estimated_score = if !in_check 
+        && !excluded 
+        && let Some(tt_score) = tt_score
+        && let Some(tt_bound) = tt_bound
+        && tt_score != -Score::INFINITY
+        && match tt_bound {
+            Bound::Lower => tt_score > static_eval,
+            Bound::Upper => tt_score < static_eval,
+            _ => true
+        }
+    {
+        tt_score
+    } else {
+        static_eval
+    };
+
     //Razoring
     if !Node::PV
         && !in_check
         && tt_bound.is_none_or(|b| b != Bound::Lower)
-        && static_eval < alpha - 250 - 250 * depth * depth
+        && estimated_score < alpha - 250 - 250 * depth * depth
         && alpha < 2000
     {
         return quiesce::<Node>(data, alpha, beta, ply);
     }
 
     //Reverse Futillity Pruning (RFP)
-    if !in_check && !Node::PV && !excluded {
-        let margin = 148 * depth - (92 * improving as i32);
-        if static_eval >= beta + margin {
-            return static_eval;
-        }
+    if !in_check
+        && !Node::PV
+        && !excluded
+        && estimated_score >= beta + 148 * depth - (92 * improving as i32)
+        && !mated(beta)
+        && !mating(estimated_score)
+    {
+        return estimated_score;
     }
 
     //Null Move Pruning
@@ -246,7 +265,7 @@ pub fn search<Node: NodeType>(
         && !in_check
         && !data.board.only_king_and_pawns()
         && tt_bound.is_none_or(|b| b != Bound::Upper)
-        && static_eval >= beta - 60 * improving as i32
+        && estimated_score >= beta - 60 * improving as i32
         && !data.ply_table[ply - 1].m.is_null()
     {
         let r = 6 + depth * 128 / 640;
