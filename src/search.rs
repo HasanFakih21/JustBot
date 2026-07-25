@@ -301,7 +301,7 @@ pub fn search<Node: NodeType>(
         }
         //Multi-Cut
         else if singular_score >= beta && !is_mate(singular_score) {
-            return singular_score;
+            return singular_score.midpoint(beta);
         }
         //Negative Extensions
         else if tt_score >= beta || cutnode {
