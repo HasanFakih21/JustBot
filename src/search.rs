@@ -302,6 +302,8 @@ pub fn search<Node: NodeType>(
 
         if singular_score < singular_beta {
             extension += 1;
+        } else if singular_score >= beta {
+            return singular_score;
         }
         //Negative Extensions
         else if tt_score >= beta || cutnode {
