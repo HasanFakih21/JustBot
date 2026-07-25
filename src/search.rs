@@ -274,6 +274,8 @@ pub fn search<Node: NodeType>(
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
+        && tt_score != -Score::INFINITY
+        && !is_mate(tt_score)
         && tt_bound != Bound::Upper
         && depth >= 6
     {
