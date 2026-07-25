@@ -302,7 +302,7 @@ pub fn search<Node: NodeType>(
 
         if singular_score < singular_beta {
             extension += 1;
-        } else if singular_score >= beta && !is_mate(singular_score) {
+        } else if singular_score >= beta && !is_mate(singular_score) && !Node::PV {
             return singular_score;
         }
         //Negative Extensions
