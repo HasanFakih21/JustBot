@@ -233,11 +233,12 @@ pub fn search<Node: NodeType>(
     }
 
     //Reverse Futillity Pruning (RFP)
-    if !in_check && !Node::PV && !excluded {
-        let margin = 148 * depth - (92 * improving as i32);
-        if static_eval >= beta + margin {
-            return static_eval;
-        }
+    if !in_check
+        && !Node::PV
+        && !excluded
+        && static_eval >= beta + 148 * depth - (92 * improving as i32)
+    {
+        return static_eval;
     }
 
     //Null Move Pruning
@@ -304,7 +305,9 @@ pub fn search<Node: NodeType>(
             extension += 1;
         }
         //Negative Extensions
-        else if tt_score >= beta || cutnode {
+        else if tt_score >= beta {
+            extension -= 3;
+        } else if cutnode {
             extension -= 2;
         }
     }
