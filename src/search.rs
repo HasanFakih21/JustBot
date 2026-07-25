@@ -271,13 +271,14 @@ pub fn search<Node: NodeType>(
     let mut extension = 0;
     if !Node::ROOT
         && !excluded
+        && depth >= 6
+        && tt_depth.is_some_and(|d| d >= depth - 3)
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
         && tt_score != -Score::INFINITY
         && !is_mate(tt_score)
         && tt_bound != Bound::Upper
-        && depth >= 6
     {
         let singular_depth = (depth - 1) / 2;
         let singular_beta = tt_score - (depth + depth);
@@ -300,8 +301,7 @@ pub fn search<Node: NodeType>(
         }
 
         if singular_score < singular_beta {
-            let double_margin = 10 + 250 * Node::PV as i32;
-            extension = 1 + (singular_score < singular_beta - double_margin) as i32;
+            extension += 1;
         }
         //Negative Extensions
         else if tt_score >= beta || cutnode {
