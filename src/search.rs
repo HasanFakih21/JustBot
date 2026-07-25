@@ -277,7 +277,8 @@ pub fn search<Node: NodeType>(
         && depth >= 6
     {
         let singular_depth = (depth - 1) / 2;
-        let singular_beta = tt_score - (depth + depth);
+        let singular_margin = depth * (150 + 150 * (tt_pv && !Node::PV) as i32) / 128;
+        let singular_beta = tt_score - singular_margin;
 
         data.ply_table[ply].excluded = tt_move;
         data.ply_table[ply].m = Move::default();
