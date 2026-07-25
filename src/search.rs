@@ -186,6 +186,7 @@ pub fn search<Node: NodeType>(
     //Evaluation
     let raw_eval;
     let static_eval;
+    let correction = data.correction();
 
     if in_check {
         raw_eval = -Score::INFINITY;
@@ -194,10 +195,10 @@ pub fn search<Node: NodeType>(
         && e.get_eval() != -Score::INFINITY
     {
         raw_eval = e.get_eval();
-        static_eval = raw_eval + data.correction();
+        static_eval = raw_eval + correction;
     } else {
         raw_eval = data.nnue_evaluate();
-        static_eval = raw_eval + data.correction();
+        static_eval = raw_eval + correction;
     };
 
     data.ply_table[ply].eval = static_eval;
@@ -297,7 +298,7 @@ pub fn search<Node: NodeType>(
         }
 
         if singular_score < singular_beta {
-            let double_margin = 10 + 120 * Node::PV as i32 + 50 * (Node::PV && !tt_pv) as i32;
+            let double_margin = 10 + 250 * Node::PV as i32;
             extension = 1 + (singular_score < singular_beta - double_margin) as i32;
         }
         //Negative Extensions
