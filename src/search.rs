@@ -164,6 +164,7 @@ pub fn search<Node: NodeType>(
     if let Some(e) = &tt_entry
         && !Node::PV
         && e.get_depth() >= depth
+        && (e.get_score() <= alpha || cutnode)
         && !excluded
     {
         let tt_score = e.get_score();
