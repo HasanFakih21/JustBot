@@ -186,6 +186,7 @@ pub fn search<Node: NodeType>(
     //Evaluation
     let raw_eval;
     let static_eval;
+    let correction = data.correction();
 
     if in_check {
         raw_eval = -Score::INFINITY;
@@ -194,10 +195,10 @@ pub fn search<Node: NodeType>(
         && e.get_eval() != -Score::INFINITY
     {
         raw_eval = e.get_eval();
-        static_eval = raw_eval + data.correction();
+        static_eval = raw_eval + correction;
     } else {
         raw_eval = data.nnue_evaluate();
-        static_eval = raw_eval + data.correction();
+        static_eval = raw_eval + correction;
     };
 
     data.ply_table[ply].eval = static_eval;
@@ -270,11 +271,14 @@ pub fn search<Node: NodeType>(
     let mut extension = 0;
     if !Node::ROOT
         && !excluded
+        && depth >= 6
+        && tt_depth.is_some_and(|d| d >= depth - 3)
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
+        && tt_score != -Score::INFINITY
+        && !is_mate(tt_score)
         && tt_bound != Bound::Upper
-        && depth >= 6
     {
         let singular_depth = (depth - 1) / 2;
         let singular_beta = tt_score - (depth + depth);
