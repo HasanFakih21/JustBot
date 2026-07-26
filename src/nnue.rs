@@ -7,12 +7,8 @@ use crate::{
 const HIDDEN_SIZE: usize = 512;
 const SCALE: i32 = 400;
 const NUM_OUTPUT_BUCKETS: usize = 8;
-const NUM_INPUT_BUCKETS: usize = 10;
 const QA: i16 = 255;
 const QB: i16 = 64;
-const BUCKET_LAYOUT: [usize; 32] = [
-    0, 1, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9,
-];
 
 pub static NNUE: Network = unsafe { std::mem::transmute(*include_bytes!("../model.nnue")) };
 
@@ -30,7 +26,7 @@ fn screlu(x: i16) -> i32 {
 /// This is the quantised format that bullet outputs.
 #[repr(C)]
 pub struct Network {
-    feature_weights: [Accumulator; 768 * NUM_INPUT_BUCKETS],
+    feature_weights: [Accumulator; 768],
     feature_bias: Accumulator,
     output_weights: [[i16; 2 * HIDDEN_SIZE]; NUM_OUTPUT_BUCKETS],
     output_bias: [i16; NUM_OUTPUT_BUCKETS],
@@ -130,18 +126,14 @@ impl Accumulator {
 }
 
 pub fn feature_index(our_side: bool, piece: Piece, square: Square, king_square: Square) -> usize {
-    let (king_rank, king_file) = king_square.to_rank_and_file();
-    let bucket = BUCKET_LAYOUT[king_rank * 4 + (king_file.min(7 - king_file))];
+    let king_file = king_square.to_file();
 
-    bucket * 768
-        + (((!our_side as usize * 6) + piece as usize) * 64)
-        + (square as usize ^ ((king_file > 3) as usize * 7))
+    (((!our_side as usize * 6) + piece as usize) * 64) + (square as usize ^ ((king_file > 3) as usize * 7))
 }
 
-pub fn input_context(king_square: Square) -> (usize, bool) {
-    let (rank, file) = king_square.to_rank_and_file();
-    let bucket = BUCKET_LAYOUT[rank * 4 + (file.min(7 - file))];
-    (bucket, file > 3)
+pub fn input_context(king_square: Square) -> bool {
+    //Which Half of the board the king is on
+    king_square.to_file() > 3
 }
 
 #[cfg(test)]
