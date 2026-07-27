@@ -153,7 +153,6 @@ impl Board {
         self.state.side_to_move = self.state.side_to_move.other();
         self.state.keys.toggle_side();
         self.state.plies_from_null = 0;
-        self.state.half_move_clock += 1;
 
         if let Some(square) = self.state.enpassant {
             self.state.keys.toggle_en_passant(square);
