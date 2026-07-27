@@ -38,10 +38,7 @@ pub fn is_draw(data: &SearchData) -> bool {
         }
 
         //We need to check history if positions were repeated only for the side to move.
-        let count = data.board.detect_repetitions();
-        if count >= 2 {
-            return true;
-        }
+        return data.board.detect_repetition();
     }
 
     false

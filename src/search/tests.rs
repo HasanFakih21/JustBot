@@ -73,7 +73,7 @@ fn test_repetion_detection() {
         "{:?}\nCurrent Hash: {}",
         data.board.game_history, data.board.state.keys.full
     );
-    println!("Repetions counted: {}", data.board.detect_repetitions());
+    println!("Repetition: {}?", data.board.detect_repetition());
     assert_eq!(score, 0);
     assert_eq!(m, Move::new(C1, C2, QuietMove));
 }

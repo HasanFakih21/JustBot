@@ -14,14 +14,15 @@ impl Board {
             == BitBoard(0)
     }
 
-    pub fn detect_repetitions(&self) -> usize {
+    pub fn detect_repetition(&self) -> bool {
         let half_moves = self.state.half_move_clock as usize;
         self.game_history
             .iter()
             .rev()
-            .take(half_moves)
-            .filter(|e| **e == self.state.keys.full)
-            .count()
+            .take(half_moves + 1)
+            .skip(2)
+            .step_by(2)
+            .any(|e| *e == self.state.keys.full)
     }
 }
 
