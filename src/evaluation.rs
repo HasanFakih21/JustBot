@@ -14,23 +14,14 @@ impl Board {
             == BitBoard(0)
     }
 
-    //Needs fixing
     pub fn detect_repetitions(&self) -> usize {
         let half_moves = self.state.half_move_clock as usize;
-        let mut count = 0;
-
-        if self.game_history.len() < half_moves {
-            return 0;
-        }
-
-        let last_halfmove_ply = self.game_history.len() - half_moves;
-        for position in self.game_history[last_halfmove_ply..].iter() {
-            if self.state.keys.full == *position {
-                count += 1
-            }
-        }
-
-        count
+        self.game_history
+            .iter()
+            .rev()
+            .take(half_moves)
+            .filter(|e| **e == self.state.keys.full)
+            .count()
     }
 }
 
