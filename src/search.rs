@@ -38,8 +38,8 @@ impl NodeType for Root {
 pub fn search_runner(data: &mut SearchData) {
     data.reset_pv();
     data.start_time();
-    data.clear_features();
-    data.initialize_nnue();
+    data.network.clear_features();
+    data.network.full_refresh(&data.board);
 
     let mut alpha_window = 31;
     let mut beta_window = 20;
@@ -141,7 +141,7 @@ pub fn search<Node: NodeType>(
             if in_check {
                 return Score::DRAW;
             } else {
-                return data.nnue_evaluate();
+                return data.network.evaluate(&data.board);
             }
         }
     }
@@ -198,7 +198,7 @@ pub fn search<Node: NodeType>(
         raw_eval = e.get_eval();
         static_eval = raw_eval + correction;
     } else {
-        raw_eval = data.nnue_evaluate();
+        raw_eval = data.network.evaluate(&data.board);
         static_eval = raw_eval + correction;
     };
 
@@ -411,7 +411,7 @@ pub fn search<Node: NodeType>(
         }
 
         //Unmake Move
-        data.unmake_move(m);
+        data.unmake_move();
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;
@@ -587,7 +587,7 @@ pub fn quiesce<Node: NodeType>(
         if in_check {
             return Score::DRAW;
         } else {
-            return data.nnue_evaluate();
+            return data.network.evaluate(&data.board);
         }
     }
 
@@ -607,7 +607,7 @@ pub fn quiesce<Node: NodeType>(
         static_eval = raw_eval + data.correction();
         best_score = static_eval;
     } else {
-        raw_eval = data.nnue_evaluate();
+        raw_eval = data.network.evaluate(&data.board);
         static_eval = raw_eval + data.correction();
         best_score = static_eval
     };
@@ -646,7 +646,7 @@ pub fn quiesce<Node: NodeType>(
 
         data.make_move(m, ply);
         let score = -quiesce::<Node>(data, -beta, -alpha, ply + 1);
-        data.unmake_move(m);
+        data.unmake_move();
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;

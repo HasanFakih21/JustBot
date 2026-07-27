@@ -36,7 +36,7 @@ pub fn generate_random_openings(amount: usize, plies: isize, seed: u64) {
 pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board, BadRandomBoard> {
     let mut data = SearchData::default();
     let mut state = random_number;
-    data.initialize_nnue();
+    data.network.full_refresh(&data.board);
 
     // let plies = if rand::random_bool(0.5) {
     //     plies
@@ -57,7 +57,7 @@ pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board
     }
 
     //Check if eval is not too uneven
-    if data.nnue_evaluate().abs() > 1000 {
+    if data.network.evaluate(&data.board).abs() > 1000 {
         return Err(BadRandomBoard);
     }
 

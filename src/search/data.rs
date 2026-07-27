@@ -3,14 +3,13 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use crate::board::Board;
-use crate::nnue::{Accumulator, NNUE, input_context};
+use crate::nnue::{Network, input_context};
 use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
 use crate::types::{
-    ContinuationHistory, CorrectionHistory, KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, Move,
-    MoveKind, NoisyHistory, Piece, QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, STARTING_FEN,
-    Score, Side, Square, is_mate, to_file_bb,
+    ContinuationHistory, CorrectionHistory, Move, NoisyHistory, Piece, STARTING_FEN, Score, Side,
+    is_mate,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -74,7 +73,6 @@ impl Default for SharedData {
     }
 }
 
-#[derive(Debug)]
 pub struct SearchData {
     pub id: usize,
     pub best_move: Option<Move>,
@@ -90,8 +88,7 @@ pub struct SearchData {
     pub conthistory: ContinuationHistory,
     pub corrhistory: CorrectionHistories,
 
-    pub white_features: Accumulator,
-    pub black_features: Accumulator,
+    pub network: Network,
 }
 
 impl SearchData {
@@ -111,8 +108,7 @@ impl SearchData {
             conthistory: ContinuationHistory::new(),
             corrhistory: CorrectionHistories::default(),
 
-            white_features: Accumulator::new(&NNUE),
-            black_features: Accumulator::new(&NNUE),
+            network: Network::new(),
         }
     }
 
@@ -122,11 +118,6 @@ impl SearchData {
 
     pub fn report(&mut self) {
         self.report = true;
-    }
-
-    pub fn clear_features(&mut self) {
-        self.white_features = Accumulator::new(&NNUE);
-        self.black_features = Accumulator::new(&NNUE);
     }
 
     pub fn start_time(&mut self) {
@@ -245,9 +236,10 @@ impl SearchData {
 
     //Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {
+        self.network.push();
+
         let from = m.get_from();
         let to = m.get_to();
-        let kind = m.get_kind();
         let stm = self.board.state.side_to_move;
         let moving_piece = self.board.get_piece_at_square(from).unwrap().1;
 
@@ -256,47 +248,7 @@ impl SearchData {
                 != input_context(to ^ (56 * (stm == Side::Black) as u8));
 
         if !needs_refresh {
-            //Need to toggle off extra captured piece in case of capture
-            if kind.is_capture() {
-                let capture_square = m.get_capture_square();
-                let (_, captured_piece) = self.board.get_piece_at_square(capture_square).unwrap();
-
-                self.toggle_accumulators_off(stm.other(), captured_piece, capture_square);
-            }
-
-            //Need to toggle rook in case of castling
-            if kind == MoveKind::KingCastle {
-                debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
-                let king_rook_square = match stm {
-                    Side::White => KING_SIDE_ROOK_WHITE,
-                    Side::Black => KING_SIDE_ROOK_BLACK,
-                };
-
-                self.toggle_accumulators_off(stm, Piece::Rook, king_rook_square);
-                self.toggle_accumulators_on(stm, Piece::Rook, from.shift(1).unwrap());
-            }
-
-            //Need to toggle rook in case of castling
-            if kind == MoveKind::QueenCastle {
-                debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
-                let queen_rook_square = match stm {
-                    Side::White => QUEEN_SIDE_ROOK_WHITE,
-                    Side::Black => QUEEN_SIDE_ROOK_BLACK,
-                };
-
-                self.toggle_accumulators_off(stm, Piece::Rook, queen_rook_square);
-                self.toggle_accumulators_on(stm, Piece::Rook, from.shift(-1).unwrap());
-            }
-
-            //Need to handle promotions
-            if kind.is_promotion() {
-                let promotion_piece = m.get_promoted_piece().unwrap();
-                self.toggle_accumulators_off(stm, moving_piece, from);
-                self.toggle_accumulators_on(stm, promotion_piece, to);
-            } else {
-                self.toggle_accumulators_off(stm, moving_piece, from);
-                self.toggle_accumulators_on(stm, moving_piece, to);
-            }
+            self.network.update(&self.board, m);
         }
 
         self.ply_table[ply].m = m;
@@ -306,104 +258,17 @@ impl SearchData {
             .subtable(Some((stm, moving_piece)), m.get_to());
 
         self.board.make_move(m);
+
         if needs_refresh {
-            self.clear_features();
-            self.initialize_nnue();
+            self.network.clear_features();
+            self.network.full_refresh(&self.board);
         }
     }
 
     //Called after move is already unmade on the board
-    pub fn unmake_move(&mut self, m: Move) {
+    pub fn unmake_move(&mut self) {
         self.board.unmake_move();
-
-        let from = m.get_from();
-        let to = m.get_to();
-        let kind = m.get_kind();
-        let stm = self.board.state.side_to_move;
-        let moving_piece = self.board.get_piece_at_square(from).unwrap().1;
-
-        let needs_refresh = moving_piece == Piece::King
-            && input_context(from ^ (56 * (stm == Side::Black) as u8))
-                != input_context(to ^ (56 * (stm == Side::Black) as u8));
-
-        if !needs_refresh {
-            //Need to toggle off extra captured piece in case of capture
-            if kind.is_capture() {
-                let capture_square = m.get_capture_square();
-                let (_, captured_piece) = self.board.get_piece_at_square(capture_square).unwrap();
-
-                self.toggle_accumulators_on(stm.other(), captured_piece, capture_square);
-            }
-
-            //Need to toggle rook in case of castling
-            if kind == MoveKind::KingCastle {
-                debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
-                let king_rook_square = match stm {
-                    Side::White => KING_SIDE_ROOK_WHITE,
-                    Side::Black => KING_SIDE_ROOK_BLACK,
-                };
-
-                self.toggle_accumulators_on(stm, Piece::Rook, king_rook_square);
-                self.toggle_accumulators_off(stm, Piece::Rook, from.shift(1).unwrap());
-            }
-
-            //Need to toggle rook in case of castling
-            if kind == MoveKind::QueenCastle {
-                debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
-                let queen_rook_square = match stm {
-                    Side::White => QUEEN_SIDE_ROOK_WHITE,
-                    Side::Black => QUEEN_SIDE_ROOK_BLACK,
-                };
-
-                self.toggle_accumulators_on(stm, Piece::Rook, queen_rook_square);
-                self.toggle_accumulators_off(stm, Piece::Rook, from.shift(-1).unwrap());
-            }
-
-            //Need to handle promotions
-            if kind.is_promotion() {
-                let promotion_piece = m.get_promoted_piece().unwrap();
-                self.toggle_accumulators_on(stm, moving_piece, from);
-                self.toggle_accumulators_off(stm, promotion_piece, to);
-            } else {
-                self.toggle_accumulators_on(stm, moving_piece, from);
-                self.toggle_accumulators_off(stm, moving_piece, to);
-            }
-        } else {
-            self.clear_features();
-            self.initialize_nnue();
-        }
-    }
-
-    pub fn nnue_evaluate(&self) -> i32 {
-        NNUE.evaluate(self)
-    }
-
-    pub fn toggle_accumulators_off(&mut self, piece_side: Side, piece: Piece, square: Square) {
-        let white_king = self.board.get_king_square(Side::White);
-        let black_king = self.board.get_king_square(Side::Black) ^ 56;
-
-        self.white_features
-            .toggle_off(piece_side == Side::White, piece, square, white_king);
-        self.black_features
-            .toggle_off(piece_side == Side::Black, piece, square ^ 56, black_king);
-    }
-
-    pub fn toggle_accumulators_on(&mut self, piece_side: Side, piece: Piece, square: Square) {
-        let white_king = self.board.get_king_square(Side::White);
-        let black_king = self.board.get_king_square(Side::Black) ^ 56;
-
-        self.white_features
-            .toggle_on(piece_side == Side::White, piece, square, white_king);
-        self.black_features
-            .toggle_on(piece_side == Side::Black, piece, square ^ 56, black_king);
-    }
-
-    pub fn initialize_nnue(&mut self) {
-        for square in self.board.get_all_occupancy().iter() {
-            if let Some((side, piece)) = self.board.get_piece_at_square(square) {
-                self.toggle_accumulators_on(side, piece, square);
-            }
-        }
+        self.network.pop();
     }
 }
 
