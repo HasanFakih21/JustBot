@@ -24,6 +24,14 @@ impl Board {
             .step_by(2)
             .any(|e| *e == self.state.keys.full)
     }
+
+    pub fn draw_by_fifty_moves(&self) -> bool {
+        self.state.half_move_clock >= 100
+    }
+
+    pub fn is_draw(&self) -> bool {
+        self.draw_by_fifty_moves() || self.detect_repetition()
+    }
 }
 
 //https://www.chessprogramming.org/Center_Manhattan-Distance

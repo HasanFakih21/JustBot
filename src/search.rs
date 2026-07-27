@@ -133,7 +133,7 @@ pub fn search<Node: NodeType>(
 
     if !Node::ROOT {
         //Check for draws
-        if is_draw(data) {
+        if data.board.is_draw() {
             return Score::DRAW;
         }
 
@@ -543,7 +543,7 @@ pub fn quiesce<Node: NodeType>(
     ply: isize,
 ) -> i32 {
     data.shared.increment_nodes(data.id);
-    if is_draw(data) {
+    if data.board.is_draw() {
         return Score::DRAW;
     }
 

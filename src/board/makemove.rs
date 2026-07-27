@@ -89,9 +89,9 @@ impl Board {
         }
 
         self.state.keys.toggle_castling(self.state.castling_rights);
-        self.game_history.push(self.state.keys.full);
         self.update_all_threats();
         self.update_en_passant();
+        self.game_history.push(self.state.keys.full);
     }
 
     pub fn update_en_passant(&mut self) {
@@ -151,14 +151,17 @@ impl Board {
         self.copy_state();
         self.state.side_to_move = self.state.side_to_move.other();
         self.state.keys.toggle_side();
+
         if let Some(square) = self.state.enpassant {
             self.state.keys.toggle_en_passant(square);
             self.state.enpassant = None;
         }
-        self.game_history.push(self.state.keys.full);
+
         if self.state.side_to_move == Side::White {
             self.state.full_move += 1
         }
+
+        self.game_history.push(self.state.keys.full);
         self.update_all_threats();
     }
 }
