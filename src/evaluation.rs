@@ -37,7 +37,7 @@ impl Board {
     }
 }
 
-// https:// www.chessprogramming.org/Center_Manhattan-Distance
+// https://www.chessprogramming.org/Center_Manhattan-Distance
 pub const fn cmd(square: Square) -> usize {
     let (mut file, mut rank) = square.to_rank_and_file();
 

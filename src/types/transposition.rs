@@ -263,7 +263,7 @@ impl TranspositionTable {
     }
 }
 
-// https:// lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
+// https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
 const fn index(hash: u64, len: usize) -> usize {
     (((hash as u128) * (len as u128)) >> 64) as usize
 }
