@@ -29,7 +29,7 @@ impl<T: Copy, const SIZE: usize> StackVec<T, SIZE> {
         }
     }
 
-    //Instead of shifting entire list, pop the last element and place it at the removed spot
+    // Instead of shifting entire list, pop the last element and place it at the removed spot
     pub fn remove(&mut self, index: usize) -> Option<T> {
         if index == self.len - 1 {
             return self.pop();

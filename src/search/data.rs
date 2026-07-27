@@ -201,9 +201,9 @@ impl SearchData {
     }
 
     pub fn print_uci_info(&self, score: i32, depth: i32) {
-        //All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
+        // All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
         if self.report {
-            //Report mate score
+            // Report mate score
             let score_print = if is_mate(score) {
                 let num_plies = Score::MATE - score.abs();
                 let mate_in = score.signum() * ((num_plies + 1) / 2);
@@ -234,7 +234,7 @@ impl SearchData {
         }
     }
 
-    //Called before move is made on the board
+    // Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {
         self.network.push();
 
@@ -265,7 +265,7 @@ impl SearchData {
         }
     }
 
-    //Called after move is already unmade on the board
+    // Called after move is already unmade on the board
     pub fn unmake_move(&mut self) {
         self.board.unmake_move();
         self.network.pop();

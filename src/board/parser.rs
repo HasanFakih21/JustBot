@@ -11,10 +11,10 @@ impl From<pieces::InvalidPiece> for FenParseError {
     }
 }
 
-//Starting Position: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-//[pieces] [turn to move] [castling rights] [enpassant] [halfmove clock] [fullmove clock]
+// Starting Position: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+// [pieces] [turn to move] [castling rights] [enpassant] [halfmove clock] [fullmove clock]
 
-//FEN String Parser
+// FEN String Parser
 impl Board {
     pub fn from_fen(fen_string: &str) -> Result<Self, FenParseError> {
         let mut board = Board::new();
@@ -122,8 +122,8 @@ impl Board {
         }
     }
 
-    //Starting Position: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-    //[pieces] [turn to move] [castling rights] [enpassant] [halfmove clock] [fullmove clock]
+    // Starting Position: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    // [pieces] [turn to move] [castling rights] [enpassant] [halfmove clock] [fullmove clock]
     pub fn to_fen(&self) -> String {
         let mut fen = String::new();
         for rank in (0..8).rev() {

@@ -29,7 +29,7 @@ impl Network {
         }
     }
 
-    //Pushes the current accumulators into the stack
+    // Pushes the current accumulators into the stack
     pub fn push(&mut self) {
         self.index += 1;
         self.stack[self.index] = self.stack[self.index - 1].clone();
@@ -40,7 +40,7 @@ impl Network {
     }
 
     pub fn evaluate(&self, board: &Board) -> i32 {
-        // Initialise output.
+        //  Initialise output.
         let mut output = 0;
         let stm = board.state.side_to_move;
         let (us, them) = (
@@ -51,26 +51,26 @@ impl Network {
         let bucket = output_bucket(board);
         let weights = &self.parameters.output_weights[bucket];
 
-        // Side-To-Move Accumulator -> Output.
+        //  Side-To-Move Accumulator -> Output.
         for (&input, &weight) in us.vals.iter().zip(&weights[..HIDDEN_SIZE]) {
             output += screlu(input) * i32::from(weight);
         }
 
-        // Not-Side-To-Move Accumulator -> Output.
+        //  Not-Side-To-Move Accumulator -> Output.
         for (&input, &weight) in them.vals.iter().zip(&weights[HIDDEN_SIZE..]) {
             output += screlu(input) * i32::from(weight);
         }
 
-        // Reduce quantization from QA * QA * QB to QA * QB.
+        //  Reduce quantization from QA * QA * QB to QA * QB.
         output /= i32::from(QA);
 
-        // Add bias.
+        //  Add bias.
         output += i32::from(self.parameters.output_bias[bucket]);
 
-        // Apply eval scale.
+        //  Apply eval scale.
         output *= SCALE;
 
-        // Remove quantisation altogether
+        //  Remove quantisation altogether
         output /= i32::from(QA) * i32::from(QB);
 
         output
@@ -83,7 +83,7 @@ impl Network {
         let stm = board.state.side_to_move;
         let moving_piece = board.get_piece_at_square(from).unwrap().1;
 
-        //Need to toggle off extra captured piece in case of capture
+        // Need to toggle off extra captured piece in case of capture
         if kind.is_capture() {
             let capture_square = m.get_capture_square();
             let (_, captured_piece) = board.get_piece_at_square(capture_square).unwrap();
@@ -91,7 +91,7 @@ impl Network {
             self.toggle_accumulators_off(board, stm.other(), captured_piece, capture_square);
         }
 
-        //Need to toggle rook in case of castling
+        // Need to toggle rook in case of castling
         if kind == MoveKind::KingCastle {
             debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
             let king_rook_square = match stm {
@@ -103,7 +103,7 @@ impl Network {
             self.toggle_accumulators_on(board, stm, Piece::Rook, from.shift(1).unwrap());
         }
 
-        //Need to toggle rook in case of castling
+        // Need to toggle rook in case of castling
         if kind == MoveKind::QueenCastle {
             debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
             let queen_rook_square = match stm {
@@ -115,7 +115,7 @@ impl Network {
             self.toggle_accumulators_on(board, stm, Piece::Rook, from.shift(-1).unwrap());
         }
 
-        //Need to handle promotions
+        // Need to handle promotions
         if kind.is_promotion() {
             let promotion_piece = m.get_promoted_piece().unwrap();
             self.toggle_accumulators_off(board, stm, moving_piece, from);
@@ -212,7 +212,7 @@ impl Default for Network {
     }
 }
 
-/// This is the quantised format that bullet outputs.
+// / This is the quantised format that bullet outputs.
 #[repr(C)]
 pub struct Parameters {
     feature_weights: [Accumulator; 768],
@@ -221,8 +221,8 @@ pub struct Parameters {
     output_bias: [i16; NUM_OUTPUT_BUCKETS],
 }
 
-/// A column of the feature-weights matrix.
-/// Note the `align(64)`.
+// / A column of the feature-weights matrix.
+// / Note the `align(64)`.
 #[derive(Clone, Copy, Debug)]
 #[repr(C, align(64))]
 pub struct Accumulator {
@@ -230,13 +230,13 @@ pub struct Accumulator {
 }
 
 impl Accumulator {
-    /// Initialised with bias so we can just efficiently
-    /// operate on it afterwards.
+    // / Initialised with bias so we can just efficiently
+    // / operate on it afterwards.
     pub fn new(net: &Parameters) -> Self {
         net.feature_bias
     }
 
-    /// Add a feature to an accumulator.
+    // / Add a feature to an accumulator.
     pub fn add_feature(&mut self, feature_idx: usize, net: &Parameters) {
         for (i, d) in self
             .vals
@@ -247,7 +247,7 @@ impl Accumulator {
         }
     }
 
-    /// Remove a feature from an accumulator.
+    // / Remove a feature from an accumulator.
     pub fn remove_feature(&mut self, feature_idx: usize, net: &Parameters) {
         for (i, d) in self
             .vals
@@ -283,7 +283,7 @@ pub fn feature_index(our_side: bool, piece: Piece, square: Square, king_square: 
 
 #[inline]
 pub fn input_context(king_square: Square) -> bool {
-    //Which Half of the board the king is on
+    // Which Half of the board the king is on
     king_square.to_file() > 3
 }
 
@@ -336,12 +336,12 @@ mod tests {
         println!("{}", move_list);
         let m = data.board.parse_move("e2d1").unwrap();
 
-        //Make the move
+        // Make the move
         data.make_move(m, 0);
 
         println!("Second Eval: {}", data.network.evaluate(&data.board));
 
-        //Unmake the move
+        // Unmake the move
         data.unmake_move();
 
         let final_eval = data.network.evaluate(&data.board);

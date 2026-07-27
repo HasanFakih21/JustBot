@@ -23,7 +23,7 @@ pub fn generate_random_openings(amount: usize, plies: isize, seed: u64) {
         let mut random_number = pseudo_rand(&mut SEED.lock().unwrap());
         let mut random_board = randomize_from_startpos(plies, random_number);
 
-        //Regenerate imbalanced positions
+        // Regenerate imbalanced positions
         while random_board.is_err() {
             random_number = pseudo_rand(&mut SEED.lock().unwrap());
             random_board = randomize_from_startpos(plies, random_number);
@@ -38,15 +38,15 @@ pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board
     let mut state = random_number;
     data.network.full_refresh(&data.board);
 
-    // let plies = if rand::random_bool(0.5) {
-    //     plies
-    // } else {
-    //     plies + 1
-    // };
+    //  let plies = if rand::random_bool(0.5) {
+    //      plies
+    //  } else {
+    //      plies + 1
+    //  };
 
     for ply in 0..plies {
         let move_list = data.board.generate_moves(MoveGenKind::All);
-        //Check if there's atleast one legal move first
+        // Check if there's atleast one legal move first
         if move_list.is_empty() {
             return Err(BadRandomBoard);
         }
@@ -56,7 +56,7 @@ pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board
         data.make_move(random_move, ply);
     }
 
-    //Check if eval is not too uneven
+    // Check if eval is not too uneven
     if data.network.evaluate(&data.board).abs() > 1000 {
         return Err(BadRandomBoard);
     }

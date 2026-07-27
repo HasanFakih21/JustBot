@@ -4,7 +4,7 @@ use crate::types::{MAX_PLY, Move, Piece, PieceToHistory, Side};
 
 #[derive(Debug)]
 pub struct PlyTable {
-    data: [PlyData; MAX_PLY + 16], //Add some padding so we can start the first ply further down the array so when we do ply - index, we don't have to have any if statements,
+    data: [PlyData; MAX_PLY + 16], // Add some padding so we can start the first ply further down the array so when we do ply - index, we don't have to have any if statements,
     sentinel: PieceToHistory<i16>,
 }
 
@@ -13,7 +13,7 @@ impl PlyTable {
         let mut table = Box::new(PlyTable::default());
         let sentinel_ptr = &raw mut table.sentinel;
         for data in table.data.iter_mut() {
-            data.conthistory = sentinel_ptr; //Gets rid of the null pointers so they instead point to an "empty" table
+            data.conthistory = sentinel_ptr; // Gets rid of the null pointers so they instead point to an "empty" table
         }
 
         table
@@ -48,7 +48,7 @@ impl Index<isize> for PlyTable {
     type Output = PlyData;
 
     fn index(&self, index: isize) -> &Self::Output {
-        &self.data[(index + 8) as usize] //Allows us to check atleast 8 plies back without going out of bounds
+        &self.data[(index + 8) as usize] // Allows us to check atleast 8 plies back without going out of bounds
     }
 }
 

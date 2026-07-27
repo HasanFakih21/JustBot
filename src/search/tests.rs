@@ -160,15 +160,15 @@ fn test_pv_line() {
 fn test_bugged_position() {
     let mut board = Board::from_fen("6k1/5pp1/7p/8/5Pn1/2R4P/B5P1/4qQ1K b - - 6 39").unwrap();
     println!("Hash: {}", board.state.keys.full);
-    //Position hash: 6128121706435820836
+    // Position hash: 6128121706435820836
 
     board = Board::from_fen("6k1/5pp1/7p/8/5Pn1/2RQ3P/B4qP1/6K1 w - - 3 38").unwrap();
     println!("Hash 2: {}", board.state.keys.full);
-    //Position hash: 16381162810209017462
+    // Position hash: 16381162810209017462
 
     board = Board::from_fen("6k1/5pp1/7p/8/5Pnq/2RQ3P/B5P1/6K1 b - - 2 37").unwrap();
     println!("Hash 3: {}", board.state.keys.full);
-    //Position hash: 3246015867840709621
+    // Position hash: 3246015867840709621
 }
 
 #[test]

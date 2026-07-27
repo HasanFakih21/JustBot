@@ -197,7 +197,7 @@ pub fn go(
             go(args, pool, board, time, shared, mute)
         }
         "wtime" => {
-            //Example: go wtime 900000 btime 900000 winc 0 binc 0
+            // Example: go wtime 900000 btime 900000 winc 0 binc 0
             let (wtime, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.wtime = Some(wtime.trim().parse().unwrap_or(500));
             go(args, pool, board, time, shared, mute)

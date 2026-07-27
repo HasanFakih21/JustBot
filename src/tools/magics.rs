@@ -139,7 +139,7 @@ pub static ROOK_MAGIC_NUMBERS: [u64; 64] = [
     0x1004081002402,
 ];
 
-//XOR Shift Pseudo-Random Number Generator
+// XOR Shift Pseudo-Random Number Generator
 pub fn get_random_num() -> u32 {
     let mut number = SEED.lock().unwrap();
 
@@ -264,20 +264,20 @@ pub fn set_occupancy(index: usize, num_bits_in_mask: usize, mut attack_mask: Bit
 mod tests {
     use super::*;
 
-    //#[test]
-    //    fn magic_test() {
-    //for i in 0..64 {
-    //let square = Square::from(i);
-    //println!("0x{:x}, ", find_magic_number(square, Piece::Rook));
-    //}
+    // #[test]
+    //     fn magic_test() {
+    // for i in 0..64 {
+    // let square = Square::from(i);
+    // println!("0x{:x}, ", find_magic_number(square, Piece::Rook));
+    // }
 
-    //println!();
+    // println!();
 
-    //for i in 0..64 {
-    //let square = Square::from(i);
-    //println!("0x{:x}, ", find_magic_number(square, Piece::Bishop));
-    //}
-    //}
+    // for i in 0..64 {
+    // let square = Square::from(i);
+    // println!("0x{:x}, ", find_magic_number(square, Piece::Bishop));
+    // }
+    // }
 
     #[test]
     fn test_random_num() {

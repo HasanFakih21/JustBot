@@ -4,7 +4,7 @@ pub type FromToHistory<T> = [[T; 64]; 64];
 pub type PieceToHistory<T> = [[T; 64]; 13];
 
 #[derive(Debug, Clone)]
-//[Side to Move][From Threatened][To Threatened][From][To]
+// [Side to Move][From Threatened][To Threatened][From][To]
 pub struct QuietHistory(Box<[[[FromToHistory<i16>; 2]; 2]; 2]>);
 
 impl QuietHistory {
@@ -39,7 +39,7 @@ impl QuietHistory {
 }
 
 #[derive(Debug, Clone)]
-//[Piece][To][Captured Piece][To Threatened]
+// [Piece][To][Captured Piece][To Threatened]
 pub struct NoisyHistory(Box<PieceToHistory<[[i16; 2]; 7]>>);
 
 impl NoisyHistory {
@@ -94,7 +94,7 @@ impl NoisyHistory {
 }
 
 #[derive(Debug, Clone)]
-//[Piece][To][Piece][To]
+// [Piece][To][Piece][To]
 pub struct ContinuationHistory(Box<PieceToHistory<PieceToHistory<i16>>>);
 
 impl ContinuationHistory {
@@ -138,7 +138,7 @@ impl ContinuationHistory {
 }
 
 #[derive(Debug, Clone)]
-//[Side to Move][Key]
+// [Side to Move][Key]
 pub struct CorrectionHistory(Box<[[i16; Self::SIZE]; 2]>);
 
 impl CorrectionHistory {

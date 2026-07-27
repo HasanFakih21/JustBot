@@ -78,7 +78,7 @@ impl Board {
             self.place_piece(side, piece, to);
         }
 
-        //Irreversible Move
+        //  Irreversible Move
         if kind.is_capture() || piece == Piece::Pawn {
             self.state.half_move_clock = 0
         } else {
@@ -101,7 +101,7 @@ impl Board {
             let king_square = self.get_king_square(stm);
             let pawn_square = Square::from(enpassant as usize ^ 8);
 
-            //Update occupancy as if enpassant pawn was taken for each possible ep taker
+            // Update occupancy as if enpassant pawn was taken for each possible ep taker
             let occupancies = self.get_all_occupancy() ^ enpassant.to_bb() ^ pawn_square.to_bb();
             let possible_takers =
                 self.get_pawn_attacks(enpassant, stm.other()) & self.get_piece_bb(stm, Piece::Pawn);
@@ -121,12 +121,12 @@ impl Board {
                 let checkers = bishop_queen_checkers | rook_queen_checkers;
 
                 if checkers.is_empty() {
-                    //En Passant is allowed
+                    // En Passant is allowed
                     return;
                 }
             }
 
-            //Toggle en passant off
+            // Toggle en passant off
             self.state.keys.toggle_en_passant(enpassant);
             self.state.enpassant = None;
         }
@@ -153,7 +153,6 @@ impl Board {
         self.state.side_to_move = self.state.side_to_move.other();
         self.state.keys.toggle_side();
         self.state.plies_from_null = 0;
-        self.state.half_move_clock += 1;
 
         if let Some(square) = self.state.enpassant {
             self.state.keys.toggle_en_passant(square);

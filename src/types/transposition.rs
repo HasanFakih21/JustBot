@@ -49,12 +49,12 @@ impl Flags {
 
 #[derive(Debug, Clone)]
 pub struct Entry {
-    key: u16,        //2 bytes
-    best_move: Move, //2 bytes
-    score: i16,      //2 bytes
-    eval: i16,       //2 bytes
-    depth: u8,       //1 byte
-    flags: Flags,    //1 byte
+    key: u16,        // 2 bytes
+    best_move: Move, // 2 bytes
+    score: i16,      // 2 bytes
+    eval: i16,       // 2 bytes
+    depth: u8,       // 1 byte
+    flags: Flags,    // 1 byte
 }
 
 impl Entry {
@@ -187,23 +187,23 @@ impl TranspositionTable {
         let entry = &mut cluster.entries[replacement_index];
         let same_key = key == entry.get_key();
 
-        //Keep the stored move if the new move is null for the same position
+        // Keep the stored move if the new move is null for the same position
         if !(same_key && best_move.is_null()) {
             entry.best_move = best_move;
         }
 
-        //Don't replace entry if this is true
+        // Don't replace entry if this is true
         if same_key && depth + 4 + 2 * pv as i32 <= entry.get_depth() && entry.flags.age() == tt_age
         {
             return;
         }
 
-        //Adjust mate scores
+        // Adjust mate scores
         if is_mate(score) {
             score += score.signum() * ply as i32;
         }
 
-        //Replace entry
+        // Replace entry
         entry.key = key;
         entry.score = score as i16;
         entry.eval = eval as i16;
@@ -263,7 +263,7 @@ impl TranspositionTable {
     }
 }
 
-//https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
+// https:// lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
 const fn index(hash: u64, len: usize) -> usize {
     (((hash as u128) * (len as u128)) >> 64) as usize
 }
