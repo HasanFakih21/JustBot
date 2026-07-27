@@ -26,19 +26,9 @@ fn screlu(x: i16) -> i32 {
 /// This is the quantised format that bullet outputs.
 #[repr(C)]
 pub struct Network {
-    /// Column-Major `HIDDEN_SIZE x 768` matrix.
-    /// Values have quantization of QA.
     feature_weights: [Accumulator; 768],
-    /// Vector with dimension `HIDDEN_SIZE`.
-    /// Values have quantization of QA.
     feature_bias: Accumulator,
-    /// Column-Major `1 x (2 * HIDDEN_SIZE)`
-    /// matrix, we use it like this to make the
-    /// code nicer in `Network::evaluate`.
-    /// Values have quantization of QB.
     output_weights: [[i16; 2 * HIDDEN_SIZE]; NUM_OUTPUT_BUCKETS],
-    /// Scalar output bias.
-    /// Value has quantization of QA * QB.
     output_bias: [i16; NUM_OUTPUT_BUCKETS],
 }
 
@@ -98,7 +88,6 @@ impl Accumulator {
         net.feature_bias
     }
 
-    //64 * Piece + Square
     /// Add a feature to an accumulator.
     pub fn add_feature(&mut self, feature_idx: usize, net: &Network) {
         for (i, d) in self
@@ -121,15 +110,30 @@ impl Accumulator {
         }
     }
 
-    pub fn toggle_on(&mut self, our_side: bool, piece: Piece, square: Square) {
-        let feature_idx = 64 * ((!our_side as usize * 6) + piece as usize) + square as usize;
-        self.add_feature(feature_idx, &NNUE);
+    pub fn toggle_on(&mut self, our_side: bool, piece: Piece, square: Square, king_square: Square) {
+        self.add_feature(feature_index(our_side, piece, square, king_square), &NNUE);
     }
 
-    pub fn toggle_off(&mut self, our_side: bool, piece: Piece, square: Square) {
-        let feature_idx = 64 * ((!our_side as usize * 6) + piece as usize) + square as usize;
-        self.remove_feature(feature_idx, &NNUE);
+    pub fn toggle_off(
+        &mut self,
+        our_side: bool,
+        piece: Piece,
+        square: Square,
+        king_square: Square,
+    ) {
+        self.remove_feature(feature_index(our_side, piece, square, king_square), &NNUE);
     }
+}
+
+pub fn feature_index(our_side: bool, piece: Piece, square: Square, king_square: Square) -> usize {
+    let king_file = king_square.to_file();
+
+    (((!our_side as usize * 6) + piece as usize) * 64) + (square as usize ^ ((king_file > 3) as usize * 7))
+}
+
+pub fn input_context(king_square: Square) -> bool {
+    //Which Half of the board the king is on
+    king_square.to_file() > 3
 }
 
 #[cfg(test)]
