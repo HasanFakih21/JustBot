@@ -15,7 +15,10 @@ impl Board {
     }
 
     pub fn detect_repetition(&self) -> bool {
-        let half_moves = self.state.half_move_clock as usize;
+        let half_moves = self
+            .state
+            .plies_from_null
+            .min(self.state.half_move_clock as usize);
         self.game_history
             .iter()
             .rev()

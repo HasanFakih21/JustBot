@@ -23,6 +23,7 @@ pub struct BoardState {
     pub pinners: [BitBoard; 2],
     pub checkers: BitBoard,
     pub checking_squares: [BitBoard; 6],
+    pub plies_from_null: usize,
 
     pub half_move_clock: u8,
     pub full_move: usize,
@@ -43,6 +44,7 @@ impl BoardState {
             pinners: [BitBoard(0); 2],
             checkers: BitBoard(0),
             checking_squares: [BitBoard(0); 6],
+            plies_from_null: 0,
 
             half_move_clock: 0,
             full_move: 0,
