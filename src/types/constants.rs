@@ -63,7 +63,7 @@ pub const fn to_piece_index(piece: Option<(Side, Piece)>) -> usize {
     }
 }
 
-// / `[Is Quiet][Depth][Move Count]`
+/// `[Is Quiet][Depth][Move Count]`
 pub static LMR_TABLE: LazyLock<Box<[[[i32; 64]; 128]; 2]>> = {
     LazyLock::new(|| {
         let mut quiet_table = [[0; 64]; 128];

@@ -40,7 +40,7 @@ impl Network {
     }
 
     pub fn evaluate(&self, board: &Board) -> i32 {
-        //  Initialise output.
+        // Initialise output.
         let mut output = 0;
         let stm = board.state.side_to_move;
         let (us, them) = (
@@ -51,26 +51,26 @@ impl Network {
         let bucket = output_bucket(board);
         let weights = &self.parameters.output_weights[bucket];
 
-        //  Side-To-Move Accumulator -> Output.
+        // Side-To-Move Accumulator -> Output.
         for (&input, &weight) in us.vals.iter().zip(&weights[..HIDDEN_SIZE]) {
             output += screlu(input) * i32::from(weight);
         }
 
-        //  Not-Side-To-Move Accumulator -> Output.
+        // Not-Side-To-Move Accumulator -> Output.
         for (&input, &weight) in them.vals.iter().zip(&weights[HIDDEN_SIZE..]) {
             output += screlu(input) * i32::from(weight);
         }
 
-        //  Reduce quantization from QA * QA * QB to QA * QB.
+        // Reduce quantization from QA * QA * QB to QA * QB.
         output /= i32::from(QA);
 
-        //  Add bias.
+        // Add bias.
         output += i32::from(self.parameters.output_bias[bucket]);
 
-        //  Apply eval scale.
+        // Apply eval scale.
         output *= SCALE;
 
-        //  Remove quantisation altogether
+        // Remove quantisation altogether
         output /= i32::from(QA) * i32::from(QB);
 
         output
@@ -212,7 +212,7 @@ impl Default for Network {
     }
 }
 
-// / This is the quantised format that bullet outputs.
+/// This is the quantised format that bullet outputs.
 #[repr(C)]
 pub struct Parameters {
     feature_weights: [Accumulator; 768],
@@ -221,8 +221,8 @@ pub struct Parameters {
     output_bias: [i16; NUM_OUTPUT_BUCKETS],
 }
 
-// / A column of the feature-weights matrix.
-// / Note the `align(64)`.
+/// A column of the feature-weights matrix.
+/// Note the `align(64)`.
 #[derive(Clone, Copy, Debug)]
 #[repr(C, align(64))]
 pub struct Accumulator {
@@ -230,13 +230,13 @@ pub struct Accumulator {
 }
 
 impl Accumulator {
-    // / Initialised with bias so we can just efficiently
-    // / operate on it afterwards.
+    /// Initialised with bias so we can just efficiently
+    /// operate on it afterwards.
     pub fn new(net: &Parameters) -> Self {
         net.feature_bias
     }
 
-    // / Add a feature to an accumulator.
+    /// Add a feature to an accumulator.
     pub fn add_feature(&mut self, feature_idx: usize, net: &Parameters) {
         for (i, d) in self
             .vals
@@ -247,7 +247,7 @@ impl Accumulator {
         }
     }
 
-    // / Remove a feature from an accumulator.
+    /// Remove a feature from an accumulator.
     pub fn remove_feature(&mut self, feature_idx: usize, net: &Parameters) {
         for (i, d) in self
             .vals
