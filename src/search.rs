@@ -306,8 +306,8 @@ pub fn search<Node: NodeType>(
             extension = 1 + (singular_score < singular_beta - double_margin) as i32;
         }
         // Multi-Cut
-        else if !Node::PV && singular_score >= beta && !is_mate(singular_score) {
-            return ilerp::<1024>(singular_score, beta, 500);
+        else if singular_beta >= beta {
+            return singular_beta;
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
