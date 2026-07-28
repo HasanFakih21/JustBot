@@ -29,7 +29,7 @@ impl Network {
         }
     }
 
-    //Pushes the current accumulators into the stack
+    // Pushes the current accumulators into the stack
     pub fn push(&mut self) {
         self.index += 1;
         self.stack[self.index] = self.stack[self.index - 1].clone();
@@ -83,7 +83,7 @@ impl Network {
         let stm = board.state.side_to_move;
         let moving_piece = board.get_piece_at_square(from).unwrap().1;
 
-        //Need to toggle off extra captured piece in case of capture
+        // Need to toggle off extra captured piece in case of capture
         if kind.is_capture() {
             let capture_square = m.get_capture_square();
             let (_, captured_piece) = board.get_piece_at_square(capture_square).unwrap();
@@ -91,7 +91,7 @@ impl Network {
             self.toggle_accumulators_off(board, stm.other(), captured_piece, capture_square);
         }
 
-        //Need to toggle rook in case of castling
+        // Need to toggle rook in case of castling
         if kind == MoveKind::KingCastle {
             debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
             let king_rook_square = match stm {
@@ -103,7 +103,7 @@ impl Network {
             self.toggle_accumulators_on(board, stm, Piece::Rook, from.shift(1).unwrap());
         }
 
-        //Need to toggle rook in case of castling
+        // Need to toggle rook in case of castling
         if kind == MoveKind::QueenCastle {
             debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
             let queen_rook_square = match stm {
@@ -115,7 +115,7 @@ impl Network {
             self.toggle_accumulators_on(board, stm, Piece::Rook, from.shift(-1).unwrap());
         }
 
-        //Need to handle promotions
+        // Need to handle promotions
         if kind.is_promotion() {
             let promotion_piece = m.get_promoted_piece().unwrap();
             self.toggle_accumulators_off(board, stm, moving_piece, from);
@@ -283,7 +283,7 @@ pub fn feature_index(our_side: bool, piece: Piece, square: Square, king_square: 
 
 #[inline]
 pub fn input_context(king_square: Square) -> bool {
-    //Which Half of the board the king is on
+    // Which Half of the board the king is on
     king_square.to_file() > 3
 }
 
@@ -336,12 +336,12 @@ mod tests {
         println!("{}", move_list);
         let m = data.board.parse_move("e2d1").unwrap();
 
-        //Make the move
+        // Make the move
         data.make_move(m, 0);
 
         println!("Second Eval: {}", data.network.evaluate(&data.board));
 
-        //Unmake the move
+        // Unmake the move
         data.unmake_move();
 
         let final_eval = data.network.evaluate(&data.board);

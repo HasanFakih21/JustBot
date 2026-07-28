@@ -17,6 +17,7 @@ impl Board {
         let opp_queen_rook_square = CASTLING_ROOK_SQAURES[side.other()][Castling::QUEEN_SIDE];
 
         self.copy_state();
+        self.state.plies_from_null += 1;
         self.state.keys.toggle_castling(self.state.castling_rights);
 
         if let Some(square) = self.state.enpassant {
@@ -77,7 +78,7 @@ impl Board {
             self.place_piece(side, piece, to);
         }
 
-        //Irreversible Move
+        //  Irreversible Move
         if kind.is_capture() || piece == Piece::Pawn {
             self.state.half_move_clock = 0
         } else {
@@ -89,9 +90,9 @@ impl Board {
         }
 
         self.state.keys.toggle_castling(self.state.castling_rights);
-        self.game_history.push(self.state.keys.full);
         self.update_all_threats();
         self.update_en_passant();
+        self.game_history.push(self.state.keys.full);
     }
 
     pub fn update_en_passant(&mut self) {
@@ -100,7 +101,7 @@ impl Board {
             let king_square = self.get_king_square(stm);
             let pawn_square = Square::from(enpassant as usize ^ 8);
 
-            //Update occupancy as if enpassant pawn was taken for each possible ep taker
+            // Update occupancy as if enpassant pawn was taken for each possible ep taker
             let occupancies = self.get_all_occupancy() ^ enpassant.to_bb() ^ pawn_square.to_bb();
             let possible_takers =
                 self.get_pawn_attacks(enpassant, stm.other()) & self.get_piece_bb(stm, Piece::Pawn);
@@ -120,12 +121,12 @@ impl Board {
                 let checkers = bishop_queen_checkers | rook_queen_checkers;
 
                 if checkers.is_empty() {
-                    //En Passant is allowed
+                    // En Passant is allowed
                     return;
                 }
             }
 
-            //Toggle en passant off
+            // Toggle en passant off
             self.state.keys.toggle_en_passant(enpassant);
             self.state.enpassant = None;
         }
@@ -151,14 +152,18 @@ impl Board {
         self.copy_state();
         self.state.side_to_move = self.state.side_to_move.other();
         self.state.keys.toggle_side();
+        self.state.plies_from_null = 0;
+
         if let Some(square) = self.state.enpassant {
             self.state.keys.toggle_en_passant(square);
             self.state.enpassant = None;
         }
-        self.game_history.push(self.state.keys.full);
+
         if self.state.side_to_move == Side::White {
             self.state.full_move += 1
         }
+
+        self.game_history.push(self.state.keys.full);
         self.update_all_threats();
     }
 }

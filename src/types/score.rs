@@ -1,4 +1,4 @@
-use crate::{search::data::SearchData, types::MAX_PLY};
+use crate::types::MAX_PLY;
 
 pub struct Score;
 
@@ -28,21 +28,4 @@ pub const fn from_tt(score: i16, ply: isize) -> i16 {
     } else {
         score
     }
-}
-
-pub fn is_draw(data: &SearchData) -> bool {
-    if data.board.state.half_move_clock > 4 {
-        //50 move rule
-        if data.board.state.half_move_clock >= 100 {
-            return true;
-        }
-
-        //We need to check history if positions were repeated only for the side to move.
-        let count = data.board.detect_repetitions();
-        if count >= 2 {
-            return true;
-        }
-    }
-
-    false
 }

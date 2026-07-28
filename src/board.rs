@@ -23,6 +23,7 @@ pub struct BoardState {
     pub pinners: [BitBoard; 2],
     pub checkers: BitBoard,
     pub checking_squares: [BitBoard; 6],
+    pub plies_from_null: usize,
 
     pub half_move_clock: u8,
     pub full_move: usize,
@@ -43,6 +44,7 @@ impl BoardState {
             pinners: [BitBoard(0); 2],
             checkers: BitBoard(0),
             checking_squares: [BitBoard(0); 6],
+            plies_from_null: 0,
 
             half_move_clock: 0,
             full_move: 0,
@@ -70,7 +72,7 @@ impl Default for Board {
     }
 }
 
-//Little-Endian Rank-File Mapping
+// Little-Endian Rank-File Mapping
 impl Board {
     pub fn new() -> Self {
         Board {
@@ -164,22 +166,22 @@ impl Board {
     }
 
     pub fn place_piece(&mut self, side: Side, piece: Piece, square: Square) {
-        //Bitboards
+        // Bitboards
         self.state.pieces[piece as usize].set_bit(square);
         self.state.occupancies[side as usize].set_bit(square);
-        //Mailbox
+        // Mailbox
         self.state.mailbox[square as usize] = Some((side, piece));
-        //Zobrist Hash
+        // Zobrist Hash
         self.state.keys.toggle(side, piece, square);
     }
 
     pub fn remove_piece(&mut self, side: Side, piece: Piece, square: Square) {
-        //Bitboards
+        // Bitboards
         self.state.pieces[piece as usize].clear_bit(square);
         self.state.occupancies[side as usize].clear_bit(square);
-        //Mailbox
+        // Mailbox
         self.state.mailbox[square as usize] = None;
-        //Zobrist Hash
+        // Zobrist Hash
         self.state.keys.toggle(side, piece, square);
     }
 

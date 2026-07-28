@@ -87,7 +87,7 @@ impl MovePicker {
             self.status = Stage::BadNoisy;
         }
 
-        //Bad Noisy
+        // Bad Noisy
         if self.bad_index < self.bad_noisy.len() {
             let m = self.bad_noisy.get(self.bad_index);
             self.bad_index += 1;
@@ -103,7 +103,7 @@ impl MovePicker {
             let mv = entry.mv;
             let mut score = 0;
 
-            //Bonus for promotions
+            // Bonus for promotions
             if mv.get_kind().is_queen_promotion() {
                 score += 5000;
             }

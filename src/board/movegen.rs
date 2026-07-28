@@ -49,7 +49,7 @@ impl Board {
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
-            //Only moves that can block the check
+            // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
@@ -63,7 +63,7 @@ impl Board {
             let single_pushes = pushes ^ promotions;
             let double_pushes = (single_pushes & third_rank).shift(offset) & !occupied;
 
-            //Single Push
+            // Single Push
             for to in (single_pushes & target).iter() {
                 move_list.push(Move::new(
                     to.shift(-offset).unwrap(),
@@ -72,7 +72,7 @@ impl Board {
                 ));
             }
 
-            //Double Push
+            // Double Push
             for to in (double_pushes & target).iter() {
                 move_list.push(Move::new(
                     to.shift(-offset * 2).unwrap(),
@@ -83,7 +83,7 @@ impl Board {
         }
 
         if kind.is_noisy() {
-            //Normal Promotions
+            // Normal Promotions
             for to in promotions.iter() {
                 move_list.push(Move::new(
                     to.shift(-offset).unwrap(),
@@ -107,7 +107,7 @@ impl Board {
                 ));
             }
 
-            //Captures
+            // Captures
             let target = target & self.state.occupancies[stm.other() as usize];
 
             let left_pawns = (pawns & (!pinned | DIAGONALS[1][king_square as usize]))
@@ -199,7 +199,7 @@ impl Board {
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
-            //Only moves that can block the check
+            // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
@@ -261,7 +261,7 @@ impl Board {
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
-            //Only moves that can block the check
+            // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
@@ -304,7 +304,7 @@ impl Board {
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
-            //Only moves that can block the check
+            // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {
@@ -340,7 +340,7 @@ impl Board {
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
-            //Only moves that can block the check
+            // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
             BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
         } else {

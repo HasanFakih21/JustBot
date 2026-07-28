@@ -111,7 +111,7 @@ impl Display for MoveList {
     }
 }
 
-//12 bits for to and from square and 4 bits for move type
+// 12 bits for to and from square and 4 bits for move type
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Move(u16);
 

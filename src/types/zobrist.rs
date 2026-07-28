@@ -69,10 +69,10 @@ pub const ZOBRIST: Zobrist = {
     }
 
     Zobrist {
-        pieces,    //Number for each piece on each square 12 pieces 64 squares
-        side,      //Number to indicate the side to move is black
-        castling,  //Castling rights 2^4 aka all possible castling combinations.
-        enpassant, //File of valid en-passant square
+        pieces,    // Number for each piece on each square 12 pieces 64 squares
+        side,      // Number to indicate the side to move is black
+        castling,  // Castling rights 2^4 aka all possible castling combinations.
+        enpassant, // File of valid en-passant square
     }
 };
 
@@ -88,7 +88,7 @@ mod tests {
         let zobrist = ZOBRIST;
         println!("{:?}", zobrist);
 
-        //want to check if every number is unique
+        // want to check if every number is unique
         let mut seen = HashSet::new();
         assert!(
             zobrist
