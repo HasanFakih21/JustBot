@@ -241,7 +241,7 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    // Null Move Pruning
+    // Null Move Pruning (NMP)
     if cutnode
         && depth >= 3
         && !excluded
@@ -302,6 +302,7 @@ pub fn search<Node: NodeType>(
         }
 
         if singular_score < singular_beta {
+            // Double Extension
             let double_margin = 10 + 250 * Node::PV as i32;
             extension = 1 + (singular_score < singular_beta - double_margin) as i32;
         }
