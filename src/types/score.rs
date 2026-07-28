@@ -29,3 +29,7 @@ pub const fn from_tt(score: i16, ply: isize) -> i16 {
         score
     }
 }
+
+pub const fn ilerp<const K: i32>(a: i32, b: i32, t: i32) -> i32 {
+    (a * (K - t) + b * t) / K
+}
