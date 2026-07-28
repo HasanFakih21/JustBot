@@ -303,7 +303,10 @@ pub fn search<Node: NodeType>(
 
         if singular_score < singular_beta {
             let double_margin = 10 + 250 * Node::PV as i32;
-            extension = 1 + (singular_score < singular_beta - double_margin) as i32;
+            let triple_margin = 100 + 400 * Node::PV as i32;
+            extension = 1
+                + (singular_score < singular_beta - double_margin) as i32
+                + (singular_score < singular_beta - triple_margin) as i32;
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
