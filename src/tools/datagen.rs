@@ -1,9 +1,10 @@
 use std::sync::Mutex;
 
+use rand::random;
+
 use crate::{
     board::{Board, movegen::MoveGenKind},
     search::data::SearchData,
-    tools::bench::bench,
     types::pseudo_rand,
 };
 
@@ -16,7 +17,7 @@ pub fn generate_random_openings(amount: usize, plies: isize, seed: u64) {
     if seed != 0 {
         *SEED.lock().unwrap() = seed;
     } else {
-        *SEED.lock().unwrap() = bench().1;
+        *SEED.lock().unwrap() = random();
     }
 
     for _ in 0..amount {
@@ -38,11 +39,11 @@ pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board
     let mut state = random_number;
     data.network.full_refresh(&data.board);
 
-    //  let plies = if rand::random_bool(0.5) {
-    //      plies
-    //  } else {
-    //      plies + 1
-    //  };
+    let plies = if rand::random_bool(0.5) {
+        plies
+    } else {
+        plies + 1
+    };
 
     for ply in 0..plies {
         let move_list = data.board.generate_moves(MoveGenKind::All);

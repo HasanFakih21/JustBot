@@ -57,7 +57,7 @@ pub fn search_runner(data: &mut SearchData) {
             || data
                 .time
                 .node_limit()
-                .is_some_and(|node_limit| data.nodes() >= node_limit)
+                .is_some_and(|_| data.nodes() >= 1_000_000)
             || depth > data.time.depth_limit()
             || data.shared.status.get() == Status::STOPPED
         {
@@ -87,7 +87,12 @@ pub fn search_runner(data: &mut SearchData) {
         best_move = data.pv.line().first().copied();
         data.print_uci_info(score, depth);
 
-        if data.time.soft_limit() {
+        if data.time.soft_limit()
+            || data
+                .time
+                .node_limit()
+                .is_some_and(|node_limit| data.nodes() >= node_limit)
+        {
             if data.id == 0 {
                 data.shared.status.stop();
             }
@@ -147,13 +152,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Check for Time Outs
-    if data.time.hard_limit(data.nodes(), data.id)
-        || data.shared.status.get() == Status::STOPPED
-        || data
-            .time
-            .node_limit()
-            .is_some_and(|node_limit| data.nodes() >= node_limit)
-    {
+    if data.time.hard_limit(data.nodes(), data.id) || data.shared.status.get() == Status::STOPPED {
         data.shared.status.stop();
         return Score::TIMEOUT;
     }
@@ -548,13 +547,7 @@ pub fn quiesce<Node: NodeType>(
         return Score::DRAW;
     }
 
-    if data.time.hard_limit(data.nodes(), data.id)
-        || data.shared.status.get() == Status::STOPPED
-        || data
-            .time
-            .node_limit()
-            .is_some_and(|node_limit| data.nodes() >= node_limit)
-    {
+    if data.time.hard_limit(data.nodes(), data.id) || data.shared.status.get() == Status::STOPPED {
         data.shared.status.stop();
         return Score::TIMEOUT;
     }
