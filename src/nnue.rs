@@ -12,6 +12,20 @@ const NUM_OUTPUT_BUCKETS: usize = 8;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
+#[rustfmt::skip]
+const BUCKET_LAYOUT: [usize; 32] = [
+    0, 0, 0, 0, 
+    0, 0, 0, 0,
+    1, 1, 1, 1, 
+    1, 1, 1, 1,
+    1, 1, 1, 1,
+    2, 2, 2, 2, 
+    2, 2, 2, 2,
+    2, 2, 2, 2,
+];
+
+const NUM_INPUT_BUCKETS: usize = 3;
+
 pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!("../model.nnue")) };
 
 pub struct Network {
@@ -215,7 +229,7 @@ impl Default for Network {
 /// This is the quantised format that bullet outputs.
 #[repr(C)]
 pub struct Parameters {
-    feature_weights: [Accumulator; 768],
+    feature_weights: [Accumulator; 768 * NUM_INPUT_BUCKETS],
     feature_bias: Accumulator,
     output_weights: [[i16; 2 * HIDDEN_SIZE]; NUM_OUTPUT_BUCKETS],
     output_bias: [i16; NUM_OUTPUT_BUCKETS],
@@ -275,16 +289,21 @@ impl Accumulator {
 
 #[inline]
 pub fn feature_index(our_side: bool, piece: Piece, square: Square, king_square: Square) -> usize {
-    let king_file = king_square.to_file();
-
-    (((!our_side as usize * 6) + piece as usize) * 64)
-        + (square as usize ^ ((king_file > 3) as usize * 7))
+    input_bucket(king_square) * 768
+        + (((!our_side as usize * 6) + piece as usize) * 64)
+        + (square as usize ^ ((king_square.to_file() > 3) as usize * 7))
 }
 
 #[inline]
-pub fn input_context(king_square: Square) -> bool {
-    // Which Half of the board the king is on
-    king_square.to_file() > 3
+// Input Bucket, Which Half
+pub fn input_context(king_square: Square) -> (usize, bool) {
+    (input_bucket(king_square), king_square.to_file() > 3)
+}
+
+#[inline]
+fn input_bucket(king_square: Square) -> usize {
+    let (rank, file) = king_square.to_rank_and_file();
+    BUCKET_LAYOUT[rank * 4 + (file.min(7 - file))]
 }
 
 #[inline]
