@@ -234,11 +234,12 @@ pub fn search<Node: NodeType>(
     }
 
     // Reverse Futillity Pruning (RFP)
-    if !in_check && !Node::PV && !excluded {
-        let margin = 148 * depth - (92 * improving as i32);
-        if static_eval >= beta + margin {
-            return static_eval;
-        }
+    if !in_check
+        && !Node::PV
+        && !excluded
+        && static_eval >= beta + 148 * depth - (92 * improving as i32)
+    {
+        return ilerp::<1024>(static_eval, beta, 700);
     }
 
     // Null Move Pruning
