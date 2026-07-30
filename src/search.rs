@@ -328,12 +328,27 @@ pub fn search<Node: NodeType>(
 
         let null_move_score = -search::<NonPV>(data, depth - r, -beta, -beta + 1, ply + 1, false);
         data.board.unmake_move();
-        if null_move_score >= beta {
-            return null_move_score;
-        }
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;
+        }
+
+        if null_move_score >= beta {
+            if depth <= 14 || data.nmp_min_ply > 0 {
+                return null_move_score
+            }
+
+            data.nmp_min_ply = ply as i32 + (depth - r) * 3 / 4;
+            let verified_score = search::<NonPV>(data, depth - r, beta - 1, beta, ply, false);
+            data.nmp_min_ply = 0;
+
+            if data.shared.status.get() == Status::STOPPED {
+                return Score::TIMEOUT;
+            }
+
+            if verified_score >= beta {
+                return verified_score
+            }
         }
     }
 
