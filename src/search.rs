@@ -312,6 +312,7 @@ pub fn search<Node: NodeType>(
         && depth >= 3
         && !excluded
         && !in_check
+        && ply as i32 >= data.nmp_min_ply
         && !data.board.only_king_and_pawns()
         && tt_bound.is_none_or(|b| b != Bound::Upper)
         && static_eval >= beta + (200 - 1250 * depth / 128 - 63 * improving as i32).max(0)
