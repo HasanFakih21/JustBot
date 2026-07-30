@@ -1,9 +1,6 @@
 use crate::{
     board::Board,
-    types::{
-        KING_SIDE_ROOK_BLACK, KING_SIDE_ROOK_WHITE, MAX_PLY, Move, MoveKind, Piece,
-        QUEEN_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_WHITE, Side, Square, to_file_bb,
-    },
+    types::{CASTLING_ROOK_SQAURES, MAX_PLY, Move, Piece, Side, Square},
 };
 
 const HIDDEN_SIZE: usize = 512;
@@ -28,6 +25,8 @@ const NUM_INPUT_BUCKETS: usize = 3;
 
 pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!("../model.nnue")) };
 
+pub type FeatureIndex = usize;
+
 pub struct Network {
     parameters: &'static Parameters,
     stack: Box<[DualAccumulators]>,
@@ -43,10 +42,8 @@ impl Network {
         }
     }
 
-    // Pushes the current accumulators into the stack
     pub fn push(&mut self) {
         self.index += 1;
-        self.stack[self.index] = self.stack[self.index - 1].clone();
     }
 
     pub fn pop(&mut self) {
@@ -91,101 +88,70 @@ impl Network {
     }
 
     pub fn update(&mut self, board: &Board, m: Move) {
-        let kind = m.get_kind();
         let from = m.get_from();
         let to = m.get_to();
         let stm = board.state.side_to_move;
         let moving_piece = board.get_piece_at_square(from).unwrap().1;
-
-        // Need to toggle off extra captured piece in case of capture
-        if kind.is_capture() {
-            let capture_square = m.get_capture_square();
-            let (_, captured_piece) = board.get_piece_at_square(capture_square).unwrap();
-
-            self.toggle_accumulators_off(board, stm.other(), captured_piece, capture_square);
-        }
-
-        // Need to toggle rook in case of castling
-        if kind == MoveKind::KingCastle {
-            debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
-            let king_rook_square = match stm {
-                Side::White => KING_SIDE_ROOK_WHITE,
-                Side::Black => KING_SIDE_ROOK_BLACK,
-            };
-
-            self.toggle_accumulators_off(board, stm, Piece::Rook, king_rook_square);
-            self.toggle_accumulators_on(board, stm, Piece::Rook, from.shift(1).unwrap());
-        }
-
-        // Need to toggle rook in case of castling
-        if kind == MoveKind::QueenCastle {
-            debug_assert!(!(from.to_bb() & to_file_bb(Square::E4)).is_empty());
-            let queen_rook_square = match stm {
-                Side::White => QUEEN_SIDE_ROOK_WHITE,
-                Side::Black => QUEEN_SIDE_ROOK_BLACK,
-            };
-
-            self.toggle_accumulators_off(board, stm, Piece::Rook, queen_rook_square);
-            self.toggle_accumulators_on(board, stm, Piece::Rook, from.shift(-1).unwrap());
-        }
-
-        // Need to handle promotions
-        if kind.is_promotion() {
-            let promotion_piece = m.get_promoted_piece().unwrap();
-            self.toggle_accumulators_off(board, stm, moving_piece, from);
-            self.toggle_accumulators_on(board, stm, promotion_piece, to);
+        let resulting_piece = if m.is_promotion() {
+            m.get_promoted_piece().unwrap()
         } else {
-            self.toggle_accumulators_off(board, stm, moving_piece, from);
-            self.toggle_accumulators_on(board, stm, moving_piece, to);
+            moving_piece
+        };
+
+        for pov in [Side::White, Side::Black] {
+            let king_square = board.get_king_square(pov);
+            let add1 = feature_index(stm, resulting_piece, to, king_square, pov);
+            let sub1 = feature_index(stm, moving_piece, from, king_square, pov);
+
+            if m.is_capture() {
+                let capture_square = m.get_capture_square();
+                let (_, captured_piece) = board.get_piece_at_square(capture_square).unwrap();
+                let sub2 = feature_index(
+                    stm.other(),
+                    captured_piece,
+                    capture_square,
+                    king_square,
+                    pov,
+                );
+                self.apply_updates([add1], [sub1, sub2], pov);
+            } else if let Some(castle_kind) = m.castle_kind() {
+                let offset = [1, -1];
+                let rook_square = CASTLING_ROOK_SQAURES[stm][castle_kind];
+                let rook_landing_square = from.shift(offset[castle_kind]).unwrap();
+                let add2 = feature_index(stm, Piece::Rook, rook_landing_square, king_square, pov);
+                let sub2 = feature_index(stm, Piece::Rook, rook_square, king_square, pov);
+                self.apply_updates([add1, add2], [sub1, sub2], pov);
+            } else {
+                self.apply_updates([add1], [sub1], pov);
+            }
         }
     }
 
-    pub fn toggle_accumulators_on(
+    pub fn apply_updates<const ADDS: usize, const SUBS: usize>(
         &mut self,
-        board: &Board,
+        adds: [FeatureIndex; ADDS],
+        subs: [FeatureIndex; SUBS],
         pov: Side,
-        piece: Piece,
-        square: Square,
     ) {
-        let white_king = board.get_king_square(Side::White);
-        let black_king = board.get_king_square(Side::Black) ^ 56;
+        let current = self.stack[self.index - 1].values[pov as usize]
+            .vals
+            .as_ptr();
+        let updated = self.stack[self.index].values[pov].vals.as_mut_ptr();
 
-        self.stack[self.index].values[Side::White as usize].toggle_on(
-            pov == Side::White,
-            piece,
-            square,
-            white_king,
-        );
-        self.stack[self.index].values[Side::Black as usize].toggle_on(
-            pov == Side::Black,
-            piece,
-            square ^ 56,
-            black_king,
-        );
-    }
+        unsafe {
+            for i in 0..HIDDEN_SIZE {
+                let mut change = *current.add(i);
+                for feature_index in adds {
+                    change += self.parameters.feature_weights[feature_index].vals[i];
+                }
 
-    pub fn toggle_accumulators_off(
-        &mut self,
-        board: &Board,
-        pov: Side,
-        piece: Piece,
-        square: Square,
-    ) {
-        let white_king = board.get_king_square(Side::White);
-        let black_king = board.get_king_square(Side::Black) ^ 56;
+                for feature_index in subs {
+                    change -= self.parameters.feature_weights[feature_index].vals[i];
+                }
 
-        self.stack[self.index].values[Side::White as usize].toggle_off(
-            pov == Side::White,
-            piece,
-            square,
-            white_king,
-        );
-        self.stack[self.index].values[Side::Black as usize].toggle_off(
-            pov == Side::Black,
-            piece,
-            square ^ 56,
-            black_king,
-        );
+                *updated.add(i) = change;
+            }
+        }
     }
 
     pub fn clear_features(&mut self) {
@@ -195,7 +161,12 @@ impl Network {
     pub fn full_refresh(&mut self, board: &Board) {
         for square in board.get_all_occupancy().iter() {
             if let Some((side, piece)) = board.get_piece_at_square(square) {
-                self.toggle_accumulators_on(board, side, piece, square);
+                for pov in [Side::White, Side::Black] {
+                    self.stack[self.index].values[pov as usize].add_feature(
+                        feature_index(side, piece, square, board.get_king_square(pov), pov),
+                        self.parameters,
+                    );
+                }
             }
         }
     }
@@ -271,26 +242,21 @@ impl Accumulator {
             *i -= *d
         }
     }
-
-    pub fn toggle_on(&mut self, our_side: bool, piece: Piece, square: Square, king_square: Square) {
-        self.add_feature(feature_index(our_side, piece, square, king_square), &MODEL);
-    }
-
-    pub fn toggle_off(
-        &mut self,
-        our_side: bool,
-        piece: Piece,
-        square: Square,
-        king_square: Square,
-    ) {
-        self.remove_feature(feature_index(our_side, piece, square, king_square), &MODEL);
-    }
 }
 
 #[inline]
-pub fn feature_index(our_side: bool, piece: Piece, square: Square, king_square: Square) -> usize {
+pub fn feature_index(
+    side: Side,
+    piece: Piece,
+    square: Square,
+    king_square: Square,
+    pov: Side,
+) -> FeatureIndex {
+    let square = square ^ (56 * pov as u8);
+    let king_square = king_square ^ (56 * pov as u8);
+
     input_bucket(king_square) * 768
-        + (((!our_side as usize * 6) + piece as usize) * 64)
+        + ((((pov != side) as usize * 6) + piece as usize) * 64)
         + (square as usize ^ ((king_square.to_file() > 3) as usize * 7))
 }
 
