@@ -336,11 +336,11 @@ pub fn search<Node: NodeType>(
 
         if null_move_score >= beta {
             if depth <= 14 || data.nmp_min_ply > 0 {
-                return null_move_score
+                return null_move_score;
             }
 
-            data.nmp_min_ply = ply as i32 + (depth - r) * 3 / 4;
-            let verified_score = search::<NonPV>(data, depth - r, beta - 1, beta, ply, false);
+            data.nmp_min_ply = ply as i32 + (3 * (depth - r) / 4);
+            let verified_score = search::<NonPV>(data, depth - r, beta - 1, beta, ply, true);
             data.nmp_min_ply = 0;
 
             if data.shared.status.get() == Status::STOPPED {
@@ -348,7 +348,7 @@ pub fn search<Node: NodeType>(
             }
 
             if verified_score >= beta {
-                return verified_score
+                return verified_score;
             }
         }
     }
