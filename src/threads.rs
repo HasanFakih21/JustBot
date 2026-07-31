@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     board::Board,
     search::{
-        data::{SearchData, SharedData},
+        data::{RootMove, SearchData, SharedData},
         search_runner,
         time::TimeManager,
     },
@@ -34,6 +34,15 @@ impl SearchThreads {
         shared.tt.increase_age();
         time.set_time_limits(board.state.side_to_move);
         shared.reset_all_nodes();
+        let root_moves: Vec<RootMove> = board
+            .generate_moves(crate::board::movegen::MoveGenKind::All)
+            .iter()
+            .map(|e| RootMove {
+                m: e.mv,
+                nodes: 0,
+                score: 0,
+            })
+            .collect();
 
         std::thread::scope(|scope| {
             let mut handles = Vec::new();
@@ -44,6 +53,7 @@ impl SearchThreads {
 
                 t.board = board.clone();
                 t.time = time.clone();
+                t.root_moves = root_moves.clone();
 
                 handles.push(scope.spawn(|| search_runner(t)));
             }

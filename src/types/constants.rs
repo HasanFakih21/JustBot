@@ -51,6 +51,8 @@ pub const CASTLING_ROOK_SQAURES: [[Square; 2]; 2] = [
 pub const MAX_PLY: usize = 248;
 pub const MAX_MOVE_NUM: usize = 256;
 
+pub const MOVE_OVERHEAD: u64 = 100;
+
 pub const fn to_file_bb(square: Square) -> BitBoard {
     let file = square.to_file();
     BitBoard(A_FILE).shift(EAST * file as i8)

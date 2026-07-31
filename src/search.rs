@@ -48,6 +48,11 @@ pub fn search_runner(data: &mut SearchData) {
     let mut depth = 1;
     let mut best_move = None;
 
+    if data.root_moves.is_empty() {
+        data.best_move = None;
+        return;
+    }
+
     // Iterative Deepening
     loop {
         data.ply_table = PlyTable::new();
@@ -86,7 +91,19 @@ pub fn search_runner(data: &mut SearchData) {
         best_move = data.pv.line().first().copied();
         data.print_uci_info(score, depth);
 
-        if data.time.soft_limit() {
+        let multiplier = || {
+            (3.0 - (data
+                .root_moves
+                .iter()
+                .find(|rm| rm.m == best_move.unwrap())
+                .unwrap()
+                .nodes as f32
+                / data.nodes() as f32)
+                * 2.5)
+                .max(0.55)
+        };
+
+        if data.time.soft_limit(multiplier) {
             if data.id == 0 {
                 data.shared.status.stop();
             }
@@ -382,6 +399,8 @@ pub fn search<Node: NodeType>(
             }
         }
 
+        let initial_nodes = data.nodes();
+
         // Make Move
         data.make_move(m, ply);
         let new_depth = (depth - 1) + (in_check as i32) + ((move_count == 1) as i32 * extension);
@@ -416,6 +435,13 @@ pub fn search<Node: NodeType>(
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;
+        }
+
+        if Node::ROOT {
+            let nodes = data.nodes();
+            if let Some(root_move) = data.root_moves.iter_mut().find(|rm| rm.m == m) {
+                root_move.nodes += nodes - initial_nodes;
+            };
         }
 
         if score > best_score {

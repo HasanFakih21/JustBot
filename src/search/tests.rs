@@ -1,5 +1,5 @@
 use super::*;
-use crate::board::Board;
+use crate::{board::Board, search::data::RootMove};
 
 #[test]
 fn test_search() {
@@ -101,6 +101,16 @@ fn test_mate_in_four() {
 
     data.get_time_settings().nodes = 8000;
     data.time.set_nodes_limit();
+    data.root_moves = data
+        .board
+        .generate_moves(crate::board::movegen::MoveGenKind::All)
+        .iter()
+        .map(|e| RootMove {
+            m: e.mv,
+            nodes: 0,
+            score: 0,
+        })
+        .collect();
 
     search_runner(&mut data);
     let best_move = data.best_move.unwrap();
@@ -120,7 +130,16 @@ fn test_pv_line() {
     let mut data = SearchData::default();
     let board = Board::from_fen("6k1/5pp1/5n1p/8/5P1q/2RQ3P/B5PK/8 b - - 0 36").unwrap();
     data.board = board;
-
+    data.root_moves = data
+        .board
+        .generate_moves(crate::board::movegen::MoveGenKind::All)
+        .iter()
+        .map(|e| RootMove {
+            m: e.mv,
+            nodes: 0,
+            score: 0,
+        })
+        .collect();
     data.get_time_settings().nodes = 20000;
     data.time.set_nodes_limit();
 
@@ -177,6 +196,16 @@ fn test_transposition_timeout() {
     let board = Board::from_fen("6k1/2p5/4R1pp/1p1r4/pP1p4/P5PP/2P2P2/6K1 b - - 0 32").unwrap();
     data.time.set_time_limits(board.state.side_to_move);
     data.board = board;
+    data.root_moves = data
+        .board
+        .generate_moves(crate::board::movegen::MoveGenKind::All)
+        .iter()
+        .map(|e| RootMove {
+            m: e.mv,
+            nodes: 0,
+            score: 0,
+        })
+        .collect();
 
     search_runner(&mut data);
     data.shared.status.run();
