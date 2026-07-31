@@ -202,9 +202,10 @@ pub fn search<Node: NodeType>(
         if let Some(tt_move) = tt_move
             && tt_score >= beta
             && tt_move.get_kind().is_quiet()
+            && data.board.is_legal(tt_move)
         {
-            let quiet_bonus = (250 * depth - 350).clamp(0, 3000);
-            let cont_bonus = (250 * depth - 350).clamp(0, 3000); 
+            let quiet_bonus = (300 * depth - 150).min(1500);
+            let cont_bonus = (250 * depth - 150).min(1500); 
 
             data.quiet_history
                 .update(data.board.state.threats, stm, tt_move, quiet_bonus);
