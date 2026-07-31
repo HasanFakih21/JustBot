@@ -54,6 +54,7 @@ impl Network {
             };
 
             let needs_refresh = delta.piece == Piece::King
+                && delta.stm == pov
                 && input_context(delta.m.get_from() ^ (56 * (delta.stm == Side::Black) as u8))
                     != input_context(delta.m.get_to() ^ (56 * (delta.stm == Side::Black) as u8));
 
