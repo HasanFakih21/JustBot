@@ -203,9 +203,12 @@ pub fn search<Node: NodeType>(
             && tt_score >= beta
             && tt_move.get_kind().is_quiet()
         {
-            let quiet_bonus = (200 * depth - 80).min(1500);
+            let quiet_bonus = (250 * depth - 350).clamp(0, 3000);
+            let cont_bonus = (250 * depth - 350).clamp(0, 3000); 
+
             data.quiet_history
                 .update(data.board.state.threats, stm, tt_move, quiet_bonus);
+            data.update_conthistories(tt_move, ply, cont_bonus);
         }
 
         if data.board.state.half_move_clock < 90 {
