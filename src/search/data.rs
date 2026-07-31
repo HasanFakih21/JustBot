@@ -3,13 +3,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use crate::board::Board;
-use crate::nnue::{Network, input_context};
+use crate::nnue::Network;
 use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
 use crate::types::{
-    ContinuationHistory, CorrectionHistory, Move, NoisyHistory, Piece, STARTING_FEN, Score, Side,
-    is_mate,
+    ContinuationHistory, CorrectionHistory, Move, NoisyHistory, STARTING_FEN, Score, Side, is_mate,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -234,38 +233,21 @@ impl SearchData {
         }
     }
 
-    // Called before move is made on the board
     pub fn make_move(&mut self, m: Move, ply: isize) {
-        self.network.push();
+        self.network.push(&self.board, m);
 
         let from = m.get_from();
         let to = m.get_to();
         let stm = self.board.state.side_to_move;
         let moving_piece = self.board.get_piece_at_square(from).unwrap().1;
 
-        let needs_refresh = moving_piece == Piece::King
-            && input_context(from ^ (56 * (stm == Side::Black) as u8))
-                != input_context(to ^ (56 * (stm == Side::Black) as u8));
-
-        if !needs_refresh {
-            self.network.update(&self.board, m);
-        }
-
         self.ply_table[ply].m = m;
         self.ply_table[ply].piece = Some((stm, moving_piece));
-        self.ply_table[ply].conthistory = self
-            .conthistory
-            .subtable(Some((stm, moving_piece)), m.get_to());
+        self.ply_table[ply].conthistory = self.conthistory.subtable(Some((stm, moving_piece)), to);
 
         self.board.make_move(m);
-
-        if needs_refresh {
-            self.network.clear_features();
-            self.network.full_refresh(&self.board);
-        }
     }
 
-    // Called after move is already unmade on the board
     pub fn unmake_move(&mut self) {
         self.board.unmake_move();
         self.network.pop();
