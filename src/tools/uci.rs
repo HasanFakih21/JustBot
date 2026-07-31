@@ -48,8 +48,6 @@ pub fn input_loop(cli_args: String) {
             }
             "go" => {
                 time.clear_limits();
-                shared.status.run();
-
                 if let Some(m) = go(args, &mut pool, &mut board, &mut time, &shared, false) {
                     println!("bestmove {}", m);
                 } else {

@@ -34,6 +34,8 @@ impl SearchThreads {
         shared.tt.increase_age();
         time.set_time_limits(board.state.side_to_move);
         shared.reset_all_nodes();
+        shared.status.run();
+
         let root_moves: Vec<RootMove> = board
             .generate_moves(crate::board::movegen::MoveGenKind::All)
             .iter()
