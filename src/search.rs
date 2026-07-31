@@ -298,8 +298,10 @@ pub fn search<Node: NodeType>(
         && !is_mate(tt_score)
         && tt_bound != Bound::Upper
     {
+        let singular_margin = 150 + 150 * (tt_pv && !Node::PV) as i32;
+        let singular_beta = tt_score - depth * singular_margin / 128;
+
         let singular_depth = (depth - 1) / 2;
-        let singular_beta = tt_score - (depth + depth);
 
         data.ply_table[ply].excluded = tt_move;
         data.ply_table[ply].m = Move::default();
