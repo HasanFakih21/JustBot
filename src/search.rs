@@ -86,7 +86,7 @@ pub fn search_runner(data: &mut SearchData) {
         best_move = data.pv.line().first().copied();
         data.print_uci_info(score, depth);
 
-        let multiplier = || 3.0 - 2.5 * (data.root_moves[0].nodes as f32 / data.nodes() as f32);
+        let multiplier = || (2.5 - (data.root_moves[0].nodes as f32 / data.nodes() as f32) * 1.5).max(0.2);
 
         if data.time.soft_limit(multiplier) {
             if data.id == 0 {
