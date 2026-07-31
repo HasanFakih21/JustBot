@@ -292,7 +292,7 @@ pub fn search<Node: NodeType>(
     let mut extension = 0;
     if !Node::ROOT
         && !excluded
-        && depth >= 6
+        && depth >= 6 + tt_pv as i32
         && tt_depth.is_some_and(|d| d >= depth - 3)
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
@@ -301,8 +301,8 @@ pub fn search<Node: NodeType>(
         && !is_mate(tt_score)
         && tt_bound != Bound::Upper
     {
-        let singular_margin = 150 + 150 * (tt_pv && !Node::PV) as i32;
-        let singular_beta = tt_score - depth * singular_margin / 128;
+        let singular_margin = depth + depth * (tt_pv && !Node::PV) as i32;
+        let singular_beta = tt_score - singular_margin;
 
         let singular_depth = (depth - 1) / 2;
 
