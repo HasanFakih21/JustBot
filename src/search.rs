@@ -49,6 +49,7 @@ pub fn search_runner(data: &mut SearchData) {
     let mut best_move = None;
 
     if data.root_moves.is_empty() {
+        data.best_move = None;
         return;
     }
 
