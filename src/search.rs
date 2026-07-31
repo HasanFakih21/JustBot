@@ -38,7 +38,6 @@ impl NodeType for Root {
 pub fn search_runner(data: &mut SearchData) {
     data.reset_pv();
     data.start_time();
-    data.network.clear_features();
     data.network.full_refresh(&data.board);
 
     let mut alpha_window = 31;

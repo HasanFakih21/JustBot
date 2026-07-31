@@ -62,7 +62,6 @@ fn test_repetion_detection() {
         ..Default::default()
     };
 
-    data.network.clear_features();
     data.network.full_refresh(&data.board);
 
     let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0, false);
