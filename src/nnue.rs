@@ -6,7 +6,7 @@ use crate::{
 
 mod accumulator;
 
-const HIDDEN_SIZE: usize = 512;
+const HIDDEN_SIZE: usize = 1024;
 const SCALE: i32 = 400;
 const NUM_OUTPUT_BUCKETS: usize = 8;
 const QA: i16 = 255;
@@ -14,17 +14,17 @@ const QB: i16 = 64;
 
 #[rustfmt::skip]
 const BUCKET_LAYOUT: [usize; 32] = [
-    0, 0, 0, 0, 
-    0, 0, 0, 0,
-    1, 1, 1, 1, 
-    1, 1, 1, 1,
-    1, 1, 1, 1,
-    2, 2, 2, 2, 
-    2, 2, 2, 2,
-    2, 2, 2, 2,
+    1, 1, 0, 0, // Rank 1
+    2, 2, 2, 2, // Rank 2
+    3, 3, 3, 3, // Rank 3
+    3, 3, 3, 3, // Rank 4
+    3, 3, 3, 3, // Rank 5
+    3, 3, 3, 3, // Rank 6
+    3, 3, 3, 3, // Rank 7
+    3, 3, 3, 3, // Rank 8
 ];
 
-const NUM_INPUT_BUCKETS: usize = 3;
+const NUM_INPUT_BUCKETS: usize = 4;
 
 pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!("../model.nnue")) };
 
