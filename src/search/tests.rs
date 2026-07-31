@@ -96,6 +96,16 @@ fn test_mate_in_one() {
 #[test]
 fn test_mate_in_four() {
     let mut data = SearchData::default();
+    data.root_moves = data
+        .board
+        .generate_moves(crate::board::movegen::MoveGenKind::All)
+        .iter()
+        .map(|e| RootMove {
+            m: e.mv,
+            nodes: 0,
+            score: 0,
+        })
+        .collect();
     let board = Board::from_fen("6k1/5pp1/5n1p/8/5P1q/2RQ3P/B5PK/8 b - - 0 36").unwrap();
     data.board = board;
 
@@ -120,7 +130,16 @@ fn test_pv_line() {
     let mut data = SearchData::default();
     let board = Board::from_fen("6k1/5pp1/5n1p/8/5P1q/2RQ3P/B5PK/8 b - - 0 36").unwrap();
     data.board = board;
-
+    data.root_moves = data
+        .board
+        .generate_moves(crate::board::movegen::MoveGenKind::All)
+        .iter()
+        .map(|e| RootMove {
+            m: e.mv,
+            nodes: 0,
+            score: 0,
+        })
+        .collect();
     data.get_time_settings().nodes = 20000;
     data.time.set_nodes_limit();
 

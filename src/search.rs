@@ -48,6 +48,10 @@ pub fn search_runner(data: &mut SearchData) {
     let mut depth = 1;
     let mut best_move = None;
 
+    if data.root_moves.is_empty() {
+        return;
+    }
+
     // Iterative Deepening
     loop {
         data.ply_table = PlyTable::new();
