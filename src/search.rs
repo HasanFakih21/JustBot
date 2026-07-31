@@ -187,11 +187,9 @@ pub fn search<Node: NodeType>(
     // TT Cutoffs
     if let Some(tt_score) = tt_score
         && let Some(tt_bound) = tt_bound
-        && let Some(tt_depth) = tt_depth
-        && let Some(tt_move) = tt_move
         && tt_score != -Score::INFINITY
         && !Node::PV
-        && tt_depth >= depth
+        && tt_depth.is_some_and(|d| d >= depth)
         && (tt_score <= alpha || cutnode)
         && !excluded
         && match tt_bound {
@@ -201,7 +199,10 @@ pub fn search<Node: NodeType>(
             _ => unreachable!(),
         }
     {
-        if tt_move.get_kind().is_quiet() && tt_score >= beta {
+        if let Some(tt_move) = tt_move
+            && tt_score >= beta
+            && tt_move.get_kind().is_quiet()
+        {
             let quiet_bonus = (200 * depth - 80).min(1500);
             data.quiet_history
                 .update(data.board.state.threats, stm, tt_move, quiet_bonus);
