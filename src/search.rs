@@ -199,22 +199,7 @@ pub fn search<Node: NodeType>(
             _ => unreachable!(),
         }
     {
-        if let Some(tt_move) = tt_move
-            && tt_score >= beta
-            && tt_move.get_kind().is_quiet()
-            && data.board.is_legal(tt_move)
-        {
-            let quiet_bonus = (300 * depth - 150).min(1500);
-            let cont_bonus = (250 * depth - 150).min(1500); 
-
-            data.quiet_history
-                .update(data.board.state.threats, stm, tt_move, quiet_bonus);
-            data.update_conthistories(tt_move, ply, cont_bonus);
-        }
-
-        if data.board.state.half_move_clock < 90 {
-            return tt_score;
-        }
+        return tt_score;
     }
 
     // Evaluation
