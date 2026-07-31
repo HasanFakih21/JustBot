@@ -81,6 +81,7 @@ pub struct SearchData {
     pub time: TimeManager,
     pub report: bool,
     pub ply_table: Box<PlyTable>,
+    pub root_moves: Vec<RootMove>,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -101,6 +102,7 @@ impl SearchData {
             time: TimeManager::new(),
             report: true,
             ply_table: PlyTable::new(),
+            root_moves: Vec::new(),
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -264,4 +266,11 @@ impl Default for SearchData {
 pub struct CorrectionHistories {
     pub pawn: CorrectionHistory,
     pub non_pawn: [CorrectionHistory; 2],
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct RootMove {
+    pub m: Move,
+    pub score: i32,
+    pub nodes: u64,
 }

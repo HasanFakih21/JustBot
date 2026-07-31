@@ -86,7 +86,9 @@ pub fn search_runner(data: &mut SearchData) {
         best_move = data.pv.line().first().copied();
         data.print_uci_info(score, depth);
 
-        if data.time.soft_limit() {
+        let multiplier = || 3.0 - 2.5 * (data.root_moves[0].nodes as f32 / data.nodes() as f32);
+
+        if data.time.soft_limit(multiplier) {
             if data.id == 0 {
                 data.shared.status.stop();
             }
@@ -321,6 +323,7 @@ pub fn search<Node: NodeType>(
     let mut quiets_searched = StackVec::<Move, 32>::new();
     let mut noisies_searched = StackVec::<Move, 32>::new();
     let mut skip_quiets = false;
+    let initial_nodes = data.nodes();
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
         if m == data.ply_table[ply].excluded {
@@ -416,6 +419,13 @@ pub fn search<Node: NodeType>(
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;
+        }
+
+        if Node::ROOT {
+            let nodes = data.nodes();
+            if let Some(root_move) = data.root_moves.iter_mut().find(|rm| rm.m == m) {
+                root_move.nodes += nodes - initial_nodes;
+            };
         }
 
         if score > best_score {

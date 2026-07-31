@@ -1,5 +1,5 @@
 use super::*;
-use crate::board::Board;
+use crate::{board::Board, search::data::RootMove};
 
 #[test]
 fn test_search() {
@@ -177,6 +177,16 @@ fn test_transposition_timeout() {
     let board = Board::from_fen("6k1/2p5/4R1pp/1p1r4/pP1p4/P5PP/2P2P2/6K1 b - - 0 32").unwrap();
     data.time.set_time_limits(board.state.side_to_move);
     data.board = board;
+    data.root_moves = data
+        .board
+        .generate_moves(crate::board::movegen::MoveGenKind::All)
+        .iter()
+        .map(|e| RootMove {
+            m: e.mv,
+            nodes: 0,
+            score: 0,
+        })
+        .collect();
 
     search_runner(&mut data);
     data.shared.status.run();

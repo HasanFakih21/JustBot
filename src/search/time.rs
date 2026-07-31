@@ -124,9 +124,9 @@ impl TimeManager {
         self.clock.elapsed()
     }
 
-    pub fn soft_limit(&self) -> bool {
+    pub fn soft_limit(&self, multiplier: impl Fn() -> f32) -> bool {
         if let Some(soft_limit) = self.limits.soft_time {
-            self.elapsed() >= soft_limit
+            self.elapsed() >= Duration::from_secs_f32(soft_limit.as_secs_f32() * multiplier())
         } else {
             false
         }
