@@ -1,7 +1,9 @@
+EXE := justbot
+
 ifeq ($(OS),Windows_NT)
-	OUT := justbot.exe
+	NAME := $(EXE).exe
 else
-	OUT := justbot
+	NAME := $(EXE)
 endif
 
 RUSTFLAGS ?= -C target-cpu=native
@@ -10,7 +12,7 @@ export RUSTFLAGS
 .PHONY: build pgo
 
 build:
-	cargo rustc --release --bin justbot -- --emit link=$(OUT)
+	cargo rustc --release --bin justbot -- --emit link=$(NAME)
 
 pgo:
 	cargo pgo instrument
