@@ -97,12 +97,8 @@ impl TimeManager {
         };
 
         let max_time = remaining_time.saturating_sub(MOVE_OVERHEAD);
-        self.limits.soft_time = Some(Duration::from_millis(
-            (max_time / 20) + (increment / 2),
-        )); // Simple time managment strategy: remaining time/20 + increment/2
-        self.limits.hard_time = Some(Duration::from_millis(
-            (max_time / 2) + (increment / 2),
-        ));
+        self.limits.soft_time = Some(Duration::from_millis((max_time / 20) + (increment / 2))); // Simple time managment strategy: remaining time/20 + increment/2
+        self.limits.hard_time = Some(Duration::from_millis((max_time / 2) + (increment / 2)));
     }
 
     pub fn set_depth_limit(&mut self) {

@@ -1,5 +1,5 @@
 use crate::search::data::{SearchData, Status};
-use crate::search::movepicker::MovePicker;
+use crate::search::movepicker::{MovePicker, Stage};
 use crate::types::plytable::PlyTable;
 use crate::types::stackvec::StackVec;
 use crate::types::*;
@@ -175,29 +175,31 @@ pub fn search<Node: NodeType>(
     }
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_move = tt_entry
+        .as_ref()
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // TT Cutoffs
-    if let Some(e) = &tt_entry
+    if let Some(tt_score) = tt_score
+        && let Some(tt_bound) = tt_bound
+        && tt_score != -Score::INFINITY
         && !Node::PV
-        && e.get_depth() >= depth
-        && (e.get_score() <= alpha || cutnode)
+        && tt_depth.is_some_and(|d| d >= depth)
+        && (tt_score <= alpha || cutnode)
         && !excluded
-    {
-        let tt_score = e.get_score();
-        match e.get_bound() {
-            Bound::Exact => return tt_score,
-            Bound::Lower => {
-                if tt_score >= beta {
-                    return tt_score;
-                }
-            }
-            Bound::Upper => {
-                if tt_score < alpha {
-                    return tt_score;
-                }
-            }
+        && match tt_bound {
+            Bound::Exact => true,
+            Bound::Lower => tt_score >= beta,
+            Bound::Upper => tt_score < alpha,
             _ => unreachable!(),
         }
+    {
+        return tt_score;
     }
 
     // Evaluation
@@ -229,15 +231,6 @@ pub fn search<Node: NodeType>(
     } else {
         false
     };
-
-    let tt_move = tt_entry
-        .as_ref()
-        .map(|e| e.get_best_move())
-        .filter(|m| !m.is_null());
-    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
-    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
-    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
-    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // Razoring
     if !Node::PV
@@ -385,6 +378,15 @@ pub fn search<Node: NodeType>(
             {
                 skip_quiets = true;
                 continue;
+            }
+
+            // Bad Noisy Futility Pruning (BNFP)
+            if !in_check
+                && depth < 10
+                && move_picker.stage() == Stage::BadNoisy
+                && static_eval + 150 * depth <= alpha
+            {
+                break;
             }
 
             // History Pruning (HP)
