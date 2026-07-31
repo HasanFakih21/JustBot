@@ -175,28 +175,40 @@ pub fn search<Node: NodeType>(
     }
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_move = tt_entry
+        .as_ref()
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // TT Cutoffs
-    if let Some(e) = &tt_entry
+    if let Some(tt_score) = tt_score
+        && let Some(tt_bound) = tt_bound
+        && let Some(tt_depth) = tt_depth
+        && let Some(tt_move) = tt_move
+        && tt_score != -Score::INFINITY
         && !Node::PV
-        && e.get_depth() >= depth
-        && (e.get_score() <= alpha || cutnode)
+        && tt_depth >= depth
+        && (tt_score <= alpha || cutnode)
         && !excluded
-    {
-        let tt_score = e.get_score();
-        match e.get_bound() {
-            Bound::Exact => return tt_score,
-            Bound::Lower => {
-                if tt_score >= beta {
-                    return tt_score;
-                }
-            }
-            Bound::Upper => {
-                if tt_score < alpha {
-                    return tt_score;
-                }
-            }
+        && match tt_bound {
+            Bound::Exact => true,
+            Bound::Lower => tt_score >= beta,
+            Bound::Upper => tt_score < alpha,
             _ => unreachable!(),
+        }
+    {
+        if tt_move.get_kind().is_quiet() && tt_score >= beta {
+            let quiet_bonus = (200 * depth - 80).min(1500);
+            data.quiet_history
+                .update(data.board.state.threats, stm, tt_move, quiet_bonus);
+        }
+
+        if data.board.state.half_move_clock < 90 {
+            return tt_score;
         }
     }
 
@@ -229,15 +241,6 @@ pub fn search<Node: NodeType>(
     } else {
         false
     };
-
-    let tt_move = tt_entry
-        .as_ref()
-        .map(|e| e.get_best_move())
-        .filter(|m| !m.is_null());
-    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
-    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
-    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
-    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // Razoring
     if !Node::PV
