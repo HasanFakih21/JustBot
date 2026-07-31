@@ -49,6 +49,7 @@ pub fn search_runner(data: &mut SearchData) {
     let mut best_move = None;
 
     if data.root_moves.is_empty() {
+        data.best_move = None;
         return;
     }
 
@@ -91,15 +92,15 @@ pub fn search_runner(data: &mut SearchData) {
         data.print_uci_info(score, depth);
 
         let multiplier = || {
-            (2.5 - (data
+            (3.0 - (data
                 .root_moves
                 .iter()
                 .find(|rm| rm.m == best_move.unwrap())
                 .unwrap()
                 .nodes as f32
                 / data.nodes() as f32)
-                * 1.5)
-                .max(0.2)
+                * 2.5)
+                .max(0.55)
         };
 
         if data.time.soft_limit(multiplier) {

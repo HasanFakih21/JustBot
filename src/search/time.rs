@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::types::{MAX_PLY, Side};
+use crate::types::{MAX_PLY, MOVE_OVERHEAD, Side};
 
 #[derive(Debug, Clone)]
 pub struct TimeManager {
@@ -96,11 +96,12 @@ impl TimeManager {
             return;
         };
 
+        let max_time = remaining_time.saturating_sub(MOVE_OVERHEAD);
         self.limits.soft_time = Some(Duration::from_millis(
-            (remaining_time / 20) + (increment / 2),
+            (max_time / 20) + (increment / 2),
         )); // Simple time managment strategy: remaining time/20 + increment/2
         self.limits.hard_time = Some(Duration::from_millis(
-            (remaining_time / 2) + (increment / 2),
+            (max_time / 2) + (increment / 2),
         ));
     }
 
