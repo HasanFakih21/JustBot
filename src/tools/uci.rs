@@ -7,7 +7,10 @@ use crate::search::data::SharedData;
 use crate::search::time::TimeManager;
 use crate::threads::SearchThreads;
 use crate::tools::bench::bench;
+#[cfg(feature = "datagen")]
 use crate::tools::datagen::generate_random_openings;
+#[cfg(feature = "tuning")]
+use crate::tools::parameters::{list_params, print_params_ob, set_param};
 use crate::types::*;
 
 pub fn input_loop(cli_args: String) {
@@ -68,9 +71,12 @@ pub fn input_loop(cli_args: String) {
                 println!("{} nodes {} nps", total_node_count, nps);
                 break;
             }
+            #[cfg(feature = "datagen")]
             "genfens" => {
                 genfens(args);
             }
+            #[cfg(feature = "tuning")]
+            "params" => print_params_ob(),
             _ => (),
         }
 
@@ -170,6 +176,16 @@ pub fn set_option(args: &str, shared: Arc<SharedData>, pool: &mut SearchThreads)
             shared.tt.clear();
             println!("info string TT cleared");
         }
+        #[cfg(feature = "tuning")]
+        ["name", name, "value", amount] => {
+            match amount.parse::<i32>() {
+                Ok(amount) => set_param(name, amount),
+                Err(_) => {
+                    println!("info error: invalid value '{}'", amount);
+                    return;
+                }
+            };
+        }
         _ => eprintln!("Unkown option"),
     }
 }
@@ -241,9 +257,12 @@ pub fn uci() {
     println!("option name Threads type spin default 1 min 1 max 512");
     println!("option name Hash type spin default 16 min 1 max 1048576");
     println!("option name Clear Hash type button");
+    #[cfg(feature = "tuning")]
+    list_params();
     println!("uciok");
 }
 
+#[cfg(feature = "datagen")]
 pub fn genfens(args: &str) {
     let args = args.to_ascii_lowercase();
     let args: Vec<&str> = args.split_ascii_whitespace().collect();
