@@ -370,7 +370,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && !mating(beta)
                 && is_quiet
-                && move_count > (3 + depth as usize * depth as usize) / (2 - (improving as usize))
+                && move_count >= (2500 + 1200 * depth * depth) / 1024
             {
                 skip_quiets = true;
                 continue;
@@ -408,7 +408,7 @@ pub fn search<Node: NodeType>(
 
         // Late Move Reductions (LMR)
         if depth > 2 && move_count > 1 {
-            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63) as usize];
             r += 217 * !improving as i32;
             r -= 200 * tt_pv as i32;
             r += 450 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
