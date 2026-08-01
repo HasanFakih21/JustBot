@@ -292,7 +292,7 @@ pub fn search<Node: NodeType>(
     let mut extension = 0;
     if !Node::ROOT
         && !excluded
-        && depth >= 5 + tt_pv as i32
+        && depth >= 6
         && tt_depth.is_some_and(|d| d >= depth - 3)
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
@@ -301,7 +301,7 @@ pub fn search<Node: NodeType>(
         && !is_mate(tt_score)
         && tt_bound != Bound::Upper
     {
-        let singular_margin = depth + depth * (tt_pv && !Node::PV) as i32;
+        let singular_margin = depth + depth;
         let singular_beta = tt_score - singular_margin;
 
         let singular_depth = (depth - 1) / 2;
@@ -324,7 +324,7 @@ pub fn search<Node: NodeType>(
         }
 
         if singular_score < singular_beta {
-            let double_margin = 10 + 250 * Node::PV as i32 + 50 * (tt_pv && !Node::PV) as i32;
+            let double_margin = 10 + 250 * Node::PV as i32;
             extension = 1 + (singular_score < singular_beta - double_margin) as i32;
         }
         // Negative Extensions
