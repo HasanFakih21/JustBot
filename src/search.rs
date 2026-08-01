@@ -403,7 +403,7 @@ pub fn search<Node: NodeType>(
 
         // Make Move
         data.make_move(m, ply);
-        let new_depth = (depth - 1) + (in_check as i32) + ((move_count == 1) as i32 * extension);
+        let new_depth = (depth - 1) + ((move_count == 1) as i32 * extension);
         let mut score = -Score::INFINITY;
 
         // Late Move Reductions (LMR)
