@@ -248,6 +248,7 @@ impl SearchData {
         self.ply_table[ply].conthistory = self.conthistory.subtable(Some((stm, moving_piece)), to);
 
         self.board.make_move(m);
+        self.shared.tt.prefetch(self.board.state.keys.full);
     }
 
     pub fn unmake_move(&mut self) {

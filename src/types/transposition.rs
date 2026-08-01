@@ -247,6 +247,20 @@ impl TranspositionTable {
         count / NUM_ENTRIES_PER_CLUSTER
     }
 
+    pub fn prefetch(&self, hash: u64) {
+        #[cfg(target_arch = "x86_64")]
+        unsafe {
+            use std::arch::x86_64::{_MM_HINT_T0, _mm_prefetch};
+
+            let index = index(hash, self.len());
+            let ptr = self.ptr().add(index).cast();
+            _mm_prefetch::<_MM_HINT_T0>(ptr);
+        }
+
+        #[cfg(not(target_arch = "x86_64"))]
+        let _ = hash;
+    }
+
     pub fn get_age(&self) -> u8 {
         self.age.load(Ordering::Relaxed)
     }
