@@ -236,7 +236,10 @@ pub fn search<Node: NodeType>(
         .filter(|m| !m.is_null());
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
-    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_pv = tt_entry
+        .as_ref()
+        .map(|e| e.is_pv() | Node::PV)
+        .unwrap_or(Node::PV);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // Razoring
@@ -619,6 +622,13 @@ pub fn quiesce<Node: NodeType>(
         }
     }
 
+    let tt_move = tt_entry
+        .as_ref()
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+
     // Evaluation
     let raw_eval;
     let static_eval;
@@ -634,6 +644,17 @@ pub fn quiesce<Node: NodeType>(
         raw_eval = e.get_eval();
         static_eval = raw_eval + data.correction();
         best_score = static_eval;
+        if let Some(tt_score) = tt_score
+            && tt_score != -Score::INFINITY
+            && tt_bound.is_some_and(|tt_bound| match tt_bound {
+                Bound::Exact => true,
+                Bound::Lower => tt_score < best_score,
+                Bound::Upper => tt_score > best_score,
+                _ => unreachable!(),
+            })
+        {
+            best_score = tt_score
+        }
     } else {
         raw_eval = data.network.evaluate(&data.board);
         static_eval = raw_eval + data.correction();
@@ -648,8 +669,6 @@ pub fn quiesce<Node: NodeType>(
     if best_score > alpha {
         alpha = best_score;
     }
-
-    let tt_move = tt_entry.map(|e| e.get_best_move()).filter(|m| !m.is_null());
 
     let mut move_picker = MovePicker::new(tt_move);
     let mut move_count = 0;
