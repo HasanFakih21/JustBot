@@ -220,15 +220,17 @@ pub fn search<Node: NodeType>(
 
     data.ply_table[ply].eval = static_eval;
 
-    let improving = if in_check {
-        false
+    let improvement = if in_check {
+        0
     } else if data.ply_table[ply - 2].eval != -Score::INFINITY {
-        (static_eval - data.ply_table[ply - 2].eval) > 0
+        static_eval - data.ply_table[ply - 2].eval
     } else if data.ply_table[ply - 4].eval != -Score::INFINITY {
-        (static_eval - data.ply_table[ply - 4].eval) > 0
+        static_eval - data.ply_table[ply - 4].eval
     } else {
-        false
+        0
     };
+
+    let improving = improvement > 0;
 
     let tt_move = tt_entry
         .as_ref()
@@ -409,7 +411,7 @@ pub fn search<Node: NodeType>(
         // Late Move Reductions (LMR)
         if depth > 2 && move_count > 1 {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
-            r += 217 * !improving as i32;
+            r -= 217 * improvement / 128;
             r -= 200 * tt_pv as i32;
             r += 450 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 300 * (tt_depth.is_some_and(|d| d < depth)) as i32;
