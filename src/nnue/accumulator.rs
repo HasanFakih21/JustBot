@@ -3,7 +3,7 @@ use crate::{
     nnue::{
         HIDDEN_SIZE, MODEL, Parameters,
         cache::{AccumulatorCache, CacheData},
-        input_bucket, input_context,
+        input_bucket, input_context, simd,
     },
     types::{CASTLING_ROOK_SQAURES, Move, Piece, Side, Square, stackvec::StackVec},
 };
@@ -86,17 +86,31 @@ impl DualAccumulators {
         let updated = self.values[pov].vals.as_mut_ptr();
 
         unsafe {
-            for i in 0..HIDDEN_SIZE {
-                let mut change = *current.add(i);
+            for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
+                let mut change = *current.add(i).cast();
                 for feature_index in adds {
-                    change += parameters.feature_weights[feature_index as usize].vals[i];
+                    change = simd::add_i16(
+                        change,
+                        *parameters.feature_weights[feature_index as usize]
+                            .vals
+                            .as_ptr()
+                            .add(i)
+                            .cast(),
+                    );
                 }
 
                 for feature_index in subs {
-                    change -= parameters.feature_weights[feature_index as usize].vals[i];
+                    change = simd::sub_i16(
+                        change,
+                        *parameters.feature_weights[feature_index as usize]
+                            .vals
+                            .as_ptr()
+                            .add(i)
+                            .cast(),
+                    );
                 }
 
-                *updated.add(i) = change;
+                *updated.add(i).cast() = change;
             }
         }
     }
@@ -142,24 +156,48 @@ impl DualAccumulators {
     }
 }
 
+const REGISTERS: usize = 4;
+const UNROLL: usize = simd::I16_CHUNK * REGISTERS;
+
 pub fn update_from_cache(
     adds: StackVec<FeatureIndex, 64>,
     subs: StackVec<FeatureIndex, 64>,
     parameters: &Parameters,
     cache_data: &mut CacheData,
 ) {
-    let acc = &mut cache_data.accumulator.vals;     
-    for &feature in adds.iter() {
-        let weights = &parameters.feature_weights[feature as usize].vals;
-        for (output, &weight) in acc.iter_mut().zip(weights) {
-            *output += weight;
-        }
-    }
+    unsafe {
+        let mut registers = [simd::zeroed(); REGISTERS];
 
-    for &feature in subs.iter() {
-        let weights = &parameters.feature_weights[feature as usize].vals;
-        for (output, &weight) in acc.iter_mut().zip(weights) {
-            *output -= weight;
+        for i in (0..HIDDEN_SIZE).step_by(UNROLL) {
+            let src = cache_data.accumulator.vals.as_mut_ptr().add(i);
+            for (r_idx, r) in registers.iter_mut().enumerate() {
+                *r = *src.add(r_idx * simd::I16_CHUNK).cast();
+            }
+
+            for &add in adds.iter() {
+                let weights = parameters.feature_weights[add as usize]
+                    .vals
+                    .as_ptr()
+                    .add(i);
+
+                for (r_idx, r) in registers.iter_mut().enumerate() {
+                    *r = simd::add_i16(*r, *weights.add(r_idx * simd::I16_CHUNK).cast());
+                }
+            }
+
+            for &sub in subs.iter() {
+                let weights = parameters.feature_weights[sub as usize]
+                    .vals
+                    .as_ptr()
+                    .add(i);
+                for (r_idx, r) in registers.iter_mut().enumerate() {
+                    *r = simd::sub_i16(*r, *weights.add(r_idx * simd::I16_CHUNK).cast());
+                }
+            }
+
+            for (r_idx, r) in registers.into_iter().enumerate() {
+                *src.add(r_idx * simd::I16_CHUNK).cast() = r;
+            }
         }
     }
 }

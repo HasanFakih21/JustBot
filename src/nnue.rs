@@ -9,6 +9,22 @@ use crate::{
 
 mod accumulator;
 mod cache;
+mod simd {
+    #[cfg(target_feature = "avx512f")]
+    mod avx512;
+    #[cfg(target_feature = "avx512f")]
+    pub use avx512::*;
+
+    #[cfg(all(target_feature = "avx2", not(target_feature = "avx512f")))]
+    mod avx2;
+    #[cfg(all(target_feature = "avx2", not(target_feature = "avx512f")))]
+    pub use avx2::*;
+
+    #[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
+    mod scalar;
+    #[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
+    pub use scalar::*;
+}
 
 const HIDDEN_SIZE: usize = 512;
 const SCALE: i32 = 400;
