@@ -1,4 +1,5 @@
 EXE := justbot
+TARGET := $(shell rustc --print host-tuple)
 
 ifeq ($(OS),Windows_NT)
 	NAME := $(EXE).exe
@@ -18,6 +19,7 @@ pgo:
 	cargo pgo instrument
 	cargo pgo run -- bench
 	cargo pgo optimize
+	mv "target/$(TARGET)/release/$(EXE)" "$(NAME)"
 
 check-all:
 	RUSTFLAGS="-C target-cpu=x86-64" cargo check
