@@ -12,6 +12,9 @@ pub enum Side {
 }
 
 impl Side {
+    pub const NUM: usize = 2;
+    pub const ALL: [Self; Self::NUM] = [Self::White, Self::Black];
+
     pub const fn other(&self) -> Self {
         match self {
             Self::White => Self::Black,

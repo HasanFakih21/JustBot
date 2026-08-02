@@ -1,7 +1,11 @@
 use crate::{
     board::Board,
-    nnue::{HIDDEN_SIZE, MODEL, Parameters, input_bucket},
-    types::{CASTLING_ROOK_SQAURES, Move, Piece, Side, Square},
+    nnue::{
+        HIDDEN_SIZE, MODEL, Parameters,
+        cache::{AccumulatorCache, CacheData},
+        input_bucket, input_context,
+    },
+    types::{CASTLING_ROOK_SQAURES, Move, Piece, Side, Square, stackvec::StackVec},
 };
 
 #[derive(Clone)]
@@ -18,6 +22,8 @@ pub struct DualAccumulators {
     pub accurate: [bool; 2],
     pub delta: Option<Delta>,
 }
+
+pub type FeatureIndex = u16;
 
 impl DualAccumulators {
     pub fn new() -> Self {
@@ -83,11 +89,11 @@ impl DualAccumulators {
             for i in 0..HIDDEN_SIZE {
                 let mut change = *current.add(i);
                 for feature_index in adds {
-                    change += parameters.feature_weights[feature_index].vals[i];
+                    change += parameters.feature_weights[feature_index as usize].vals[i];
                 }
 
                 for feature_index in subs {
-                    change -= parameters.feature_weights[feature_index].vals[i];
+                    change -= parameters.feature_weights[feature_index as usize].vals[i];
                 }
 
                 *updated.add(i) = change;
@@ -95,19 +101,68 @@ impl DualAccumulators {
         }
     }
 
-    pub fn refresh(&mut self, board: &Board, pov: Side, parameters: &Parameters) {
-        self.values[pov] = Accumulator::new(parameters);
+    pub fn refresh(
+        &mut self,
+        board: &Board,
+        pov: Side,
+        parameters: &Parameters,
+        cache: &mut AccumulatorCache,
+    ) {
+        let king_square = board.get_king_square(pov);
+        let (input_bucket, hm) = input_context(king_square ^ (56 * pov as u8));
+        let cache_data = cache.get_mut(pov, hm, input_bucket);
 
-        for square in board.get_all_occupancy().iter() {
-            if let Some((side, piece)) = board.get_piece_at_square(square) {
-                self.values[pov as usize].add_feature(
-                    feature_index(side, piece, square, board.get_king_square(pov), pov),
-                    parameters,
-                );
+        let mut adds = StackVec::<FeatureIndex, 64>::new();
+        let mut subs = StackVec::<FeatureIndex, 64>::new();
+
+        for side in Side::ALL {
+            for piece in Piece::ALL {
+                let piece_bb = board.get_piece_bb(side, piece);
+                let to_add = piece_bb & !(cache_data.pieces[piece] & cache_data.occupancies[side]);
+                let to_sub = !piece_bb & (cache_data.pieces[piece] & cache_data.occupancies[side]);
+
+                for square in to_add.iter() {
+                    adds.push(feature_index(side, piece, square, king_square, pov));
+                }
+
+                for square in to_sub.iter() {
+                    subs.push(feature_index(side, piece, square, king_square, pov));
+                }
             }
         }
 
+        // Apply updates
+        update_from_cache(adds, subs, parameters, cache_data);
+
+        cache_data.pieces = board.state.pieces;
+        cache_data.occupancies = board.state.occupancies;
+
+        self.values[pov] = cache_data.accumulator;
         self.accurate[pov] = true;
+    }
+}
+
+pub fn update_from_cache(
+    adds: StackVec<FeatureIndex, 64>,
+    subs: StackVec<FeatureIndex, 64>,
+    parameters: &Parameters,
+    cache_data: &mut CacheData,
+) {
+    let acc = cache_data.accumulator.vals.as_mut_ptr();
+
+    unsafe {
+        for i in 0..HIDDEN_SIZE {
+            let mut change = *acc.add(i);
+            for feature_index in adds.iter() {
+                change += parameters.feature_weights[*feature_index as usize].vals[i];
+            }
+
+            for feature_index in subs.iter() {
+                change -= parameters.feature_weights[*feature_index as usize].vals[i];
+            }
+
+            *acc.add(i) = change;
+        }
     }
 }
 
@@ -131,31 +186,7 @@ impl Accumulator {
     pub fn new(net: &Parameters) -> Self {
         net.feature_bias
     }
-
-    /// Add a feature to an accumulator.
-    pub fn add_feature(&mut self, feature_idx: usize, net: &Parameters) {
-        for (i, d) in self
-            .vals
-            .iter_mut()
-            .zip(&net.feature_weights[feature_idx].vals)
-        {
-            *i += *d
-        }
-    }
-
-    // /// Remove a feature from an accumulator.
-    // pub fn remove_feature(&mut self, feature_idx: usize, net: &Parameters) {
-    //     for (i, d) in self
-    //         .vals
-    //         .iter_mut()
-    //         .zip(&net.feature_weights[feature_idx].vals)
-    //     {
-    //         *i -= *d
-    //     }
-    // }
 }
-
-pub type FeatureIndex = usize;
 
 #[inline]
 pub fn feature_index(
@@ -168,7 +199,7 @@ pub fn feature_index(
     let square = square ^ (56 * pov as u8);
     let king_square = king_square ^ (56 * pov as u8);
 
-    input_bucket(king_square) * 768
-        + ((((pov != side) as usize * 6) + piece as usize) * 64)
-        + (square as usize ^ ((king_square.to_file() > 3) as usize * 7))
+    input_bucket(king_square) as FeatureIndex * 768
+        + ((((pov != side) as FeatureIndex * 6) + piece as FeatureIndex) * 64)
+        + (square as FeatureIndex ^ ((king_square.to_file() > 3) as FeatureIndex * 7))
 }

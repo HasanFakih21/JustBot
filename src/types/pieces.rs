@@ -1,4 +1,7 @@
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    ops::{Index, IndexMut},
+};
 
 use crate::types::Side;
 
@@ -28,6 +31,16 @@ impl TryFrom<usize> for Piece {
 }
 
 impl Piece {
+    pub const NUM: usize = 6;
+    pub const ALL: [Self; Self::NUM] = [
+        Self::Pawn,
+        Self::Knight,
+        Self::Bishop,
+        Self::Rook,
+        Self::Queen,
+        Self::King,
+    ];
+
     pub const fn from(value: usize) -> Self {
         debug_assert!(value < 6);
         unsafe { std::mem::transmute(value as u8) }
@@ -78,5 +91,19 @@ impl Display for Piece {
         };
 
         write!(f, "{output}")
+    }
+}
+
+impl<T> Index<Piece> for [T] {
+    type Output = T;
+
+    fn index(&self, index: Piece) -> &Self::Output {
+        &self[index as usize]
+    }
+}
+
+impl<T> IndexMut<Piece> for [T] {
+    fn index_mut(&mut self, index: Piece) -> &mut Self::Output {
+        &mut self[index as usize]
     }
 }
