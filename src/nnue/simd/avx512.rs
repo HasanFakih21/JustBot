@@ -1,6 +1,7 @@
 use std::arch::x86_64::*;
 
 pub const I16_CHUNK: usize = std::mem::size_of::<__m512i>() / std::mem::size_of::<i16>();
+pub const I32_CHUNK: usize = std::mem::size_of::<__m512i>() / std::mem::size_of::<i32>();
 
 #[inline(always)]
 pub fn add_i16(a: __m512i, b: __m512i) -> __m512i {
@@ -38,8 +39,8 @@ pub fn add_i32(a: __m512i, b: __m512i) -> __m512i {
 }
 
 #[inline(always)]
-pub fn reduce_add_i32(a: __m512i) -> i32 {
-    unsafe { _mm512_reduce_add_epi32(a) }
+pub fn reduce_add_i32(a: &[__m512i]) -> i32 {
+    unsafe { _mm512_reduce_add_epi32(a[0]) }
 }
 
 #[inline(always)]

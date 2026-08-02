@@ -136,6 +136,8 @@ impl Network {
 
     #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
     pub fn output_layer(&self, board: &Board) -> i32 {
+        const CHUNKS: usize = 16 / simd::I32_CHUNK;
+
         let stm = board.state.side_to_move;
         let (us, them) = (
             self.stack[self.index].values[stm as usize].vals.as_ptr(),
@@ -148,7 +150,7 @@ impl Network {
         let weights = &self.parameters.output_weights[bucket].as_ptr();
 
         // Initialise output.
-        let mut output = simd::zeroed();
+        let mut sums = [simd::zeroed(); CHUNKS];
 
         unsafe {
             // Side-To-Move Accumulator -> Output.
@@ -158,7 +160,7 @@ impl Network {
                 let v = simd::clamp_i16(*x.cast(), simd::zeroed(), simd::splat_i16(QA));
                 let t = simd::mul_low_i16(v, *w.cast());
                 let p = simd::madd_i16_to_i32(v, t);
-                output = simd::add_i32(output, p);
+                sums[0] = simd::add_i32(sums[0], p);
             }
 
             // Not-Side-To-Move Accumulator -> Output.
@@ -168,16 +170,15 @@ impl Network {
                 let v = simd::clamp_i16(*x.cast(), simd::zeroed(), simd::splat_i16(QA));
                 let t = simd::mul_low_i16(v, *w.cast());
                 let p = simd::madd_i16_to_i32(v, t);
-                output = simd::add_i32(output, p);
+                sums[CHUNKS - 1] = simd::add_i32(sums[CHUNKS - 1], p);
             }
         }
 
-        let mut output = simd::reduce_add_i32(output);
+        let mut output = simd::reduce_add_i32(&sums);
         output /= i32::from(QA);
         output += i32::from(self.parameters.output_bias[bucket]);
         output *= SCALE;
         output /= i32::from(QA) * i32::from(QB);
-
         output
     }
 
