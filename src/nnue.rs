@@ -134,6 +134,55 @@ impl Network {
         self.output_layer(board)
     }
 
+    #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
+    pub fn output_layer(&self, board: &Board) -> i32 {
+        const CHUNKS: usize = 16 / simd::I32_CHUNK;
+
+        let stm = board.state.side_to_move;
+        let (us, them) = (
+            self.stack[self.index].values[stm as usize].vals.as_ptr(),
+            self.stack[self.index].values[stm.other() as usize]
+                .vals
+                .as_ptr(),
+        );
+
+        let bucket = output_bucket(board);
+        let weights = &self.parameters.output_weights[bucket].as_ptr();
+
+        // Initialise output.
+        let mut sums = [simd::zeroed(); CHUNKS];
+
+        unsafe {
+            // Side-To-Move Accumulator -> Output.
+            for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
+                let x = us.add(i);
+                let w = weights.add(i);
+                let v = simd::clamp_i16(*x.cast(), simd::zeroed(), simd::splat_i16(QA));
+                let t = simd::mul_low_i16(v, *w.cast());
+                let p = simd::madd_i16_to_i32(v, t);
+                sums[0] = simd::add_i32(sums[0], p);
+            }
+
+            // Not-Side-To-Move Accumulator -> Output.
+            for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
+                let x = them.add(i);
+                let w = weights.add(HIDDEN_SIZE + i);
+                let v = simd::clamp_i16(*x.cast(), simd::zeroed(), simd::splat_i16(QA));
+                let t = simd::mul_low_i16(v, *w.cast());
+                let p = simd::madd_i16_to_i32(v, t);
+                sums[CHUNKS - 1] = simd::add_i32(sums[CHUNKS - 1], p);
+            }
+        }
+
+        let mut output = simd::reduce_add_i32(&sums);
+        output /= i32::from(QA);
+        output += i32::from(self.parameters.output_bias[bucket]);
+        output *= SCALE;
+        output /= i32::from(QA) * i32::from(QB);
+        output
+    }
+
+    #[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
     pub fn output_layer(&self, board: &Board) -> i32 {
         // Initialise output.
         let mut output = 0;
@@ -148,12 +197,16 @@ impl Network {
 
         // Side-To-Move Accumulator -> Output.
         for (&input, &weight) in us.vals.iter().zip(&weights[..HIDDEN_SIZE]) {
-            output += screlu(input) * i32::from(weight);
+            let mut y = i32::from(input).clamp(0, i32::from(QA));
+            y *= y;
+            output += y * i32::from(weight);
         }
 
         // Not-Side-To-Move Accumulator -> Output.
         for (&input, &weight) in them.vals.iter().zip(&weights[HIDDEN_SIZE..]) {
-            output += screlu(input) * i32::from(weight);
+            let mut y = i32::from(input).clamp(0, i32::from(QA));
+            y *= y;
+            output += y * i32::from(weight);
         }
 
         output /= i32::from(QA);
@@ -201,12 +254,6 @@ fn input_bucket(king_square: Square) -> usize {
 fn output_bucket(pos: &Board) -> usize {
     let divisor = 32usize.div_ceil(NUM_OUTPUT_BUCKETS);
     ((pos.get_all_occupancy().count_bits() - 2) / divisor).min(NUM_OUTPUT_BUCKETS - 1)
-}
-
-#[inline]
-fn screlu(x: i16) -> i32 {
-    let y = i32::from(x).clamp(0, i32::from(QA));
-    y * y
 }
 
 #[cfg(test)]
