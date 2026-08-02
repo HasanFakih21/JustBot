@@ -148,20 +148,18 @@ pub fn update_from_cache(
     parameters: &Parameters,
     cache_data: &mut CacheData,
 ) {
-    let acc = cache_data.accumulator.vals.as_mut_ptr();
+    let acc = &mut cache_data.accumulator.vals;     
+    for &feature in adds.iter() {
+        let weights = &parameters.feature_weights[feature as usize].vals;
+        for (output, &weight) in acc.iter_mut().zip(weights) {
+            *output += weight;
+        }
+    }
 
-    unsafe {
-        for i in 0..HIDDEN_SIZE {
-            let mut change = *acc.add(i);
-            for feature_index in adds.iter() {
-                change += parameters.feature_weights[*feature_index as usize].vals[i];
-            }
-
-            for feature_index in subs.iter() {
-                change -= parameters.feature_weights[*feature_index as usize].vals[i];
-            }
-
-            *acc.add(i) = change;
+    for &feature in subs.iter() {
+        let weights = &parameters.feature_weights[feature as usize].vals;
+        for (output, &weight) in acc.iter_mut().zip(weights) {
+            *output -= weight;
         }
     }
 }
