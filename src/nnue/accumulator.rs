@@ -156,7 +156,7 @@ impl DualAccumulators {
     }
 }
 
-const REGISTERS: usize = 4;
+const REGISTERS: usize = 8;
 const UNROLL: usize = simd::I16_CHUNK * REGISTERS;
 
 pub fn update_from_cache(
