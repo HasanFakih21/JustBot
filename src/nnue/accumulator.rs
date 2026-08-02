@@ -159,6 +159,7 @@ impl DualAccumulators {
 const REGISTERS: usize = 8;
 const UNROLL: usize = simd::I16_CHUNK * REGISTERS;
 
+#[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
 pub fn update_from_cache(
     adds: StackVec<FeatureIndex, 64>,
     subs: StackVec<FeatureIndex, 64>,
@@ -198,6 +199,29 @@ pub fn update_from_cache(
             for (r_idx, r) in registers.into_iter().enumerate() {
                 *src.add(r_idx * simd::I16_CHUNK).cast() = r;
             }
+        }
+    }
+}
+
+#[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
+pub fn update_from_cache(
+    adds: StackVec<FeatureIndex, 64>,
+    subs: StackVec<FeatureIndex, 64>,
+    parameters: &Parameters,
+    cache_data: &mut CacheData,
+) {
+    let acc = &mut cache_data.accumulator.vals;     
+    for &feature in adds.iter() {
+        let weights = &parameters.feature_weights[feature as usize].vals;
+        for (output, &weight) in acc.iter_mut().zip(weights) {
+            *output += weight;
+        }
+    }
+
+    for &feature in subs.iter() {
+        let weights = &parameters.feature_weights[feature as usize].vals;
+        for (output, &weight) in acc.iter_mut().zip(weights) {
+            *output -= weight;
         }
     }
 }
