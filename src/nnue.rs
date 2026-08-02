@@ -1,10 +1,30 @@
 use crate::{
     board::Board,
-    nnue::accumulator::{Accumulator, Delta, DualAccumulators},
+    nnue::{
+        accumulator::{Accumulator, Delta, DualAccumulators},
+        cache::AccumulatorCache,
+    },
     types::{MAX_PLY, Move, Piece, Side, Square},
 };
 
 mod accumulator;
+mod cache;
+mod simd {
+    #[cfg(target_feature = "avx512f")]
+    mod avx512;
+    #[cfg(target_feature = "avx512f")]
+    pub use avx512::*;
+
+    #[cfg(all(target_feature = "avx2", not(target_feature = "avx512f")))]
+    mod avx2;
+    #[cfg(all(target_feature = "avx2", not(target_feature = "avx512f")))]
+    pub use avx2::*;
+
+    #[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
+    mod scalar;
+    #[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
+    pub use scalar::*;
+}
 
 const HIDDEN_SIZE: usize = 512;
 const SCALE: i32 = 400;
@@ -32,6 +52,7 @@ pub struct Network {
     parameters: &'static Parameters,
     stack: Box<[DualAccumulators]>,
     index: usize,
+    cache: AccumulatorCache,
 }
 
 impl Network {
@@ -40,6 +61,7 @@ impl Network {
             parameters: &MODEL,
             stack: vec![DualAccumulators::new(); MAX_PLY].into_boxed_slice(),
             index: 0,
+            cache: AccumulatorCache::new(&MODEL),
         }
     }
 
@@ -103,7 +125,9 @@ impl Network {
                         }
                     }
                 }
-                None => self.stack[self.index].refresh(board, pov, self.parameters),
+                None => {
+                    self.stack[self.index].refresh(board, pov, self.parameters, &mut self.cache)
+                }
             }
         }
 
@@ -142,7 +166,7 @@ impl Network {
 
     pub fn full_refresh(&mut self, board: &Board) {
         for pov in [Side::White, Side::Black] {
-            self.stack[self.index].refresh(board, pov, self.parameters);
+            self.stack[self.index].refresh(board, pov, self.parameters, &mut self.cache);
         }
     }
 }

@@ -1,7 +1,11 @@
 use crate::{
     board::Board,
-    nnue::{HIDDEN_SIZE, MODEL, Parameters, input_bucket},
-    types::{CASTLING_ROOK_SQAURES, Move, Piece, Side, Square},
+    nnue::{
+        HIDDEN_SIZE, MODEL, Parameters,
+        cache::{AccumulatorCache, CacheData},
+        input_bucket, input_context, simd,
+    },
+    types::{CASTLING_ROOK_SQAURES, Move, Piece, Side, Square, stackvec::StackVec},
 };
 
 #[derive(Clone)]
@@ -18,6 +22,8 @@ pub struct DualAccumulators {
     pub accurate: [bool; 2],
     pub delta: Option<Delta>,
 }
+
+pub type FeatureIndex = u16;
 
 impl DualAccumulators {
     pub fn new() -> Self {
@@ -80,34 +86,143 @@ impl DualAccumulators {
         let updated = self.values[pov].vals.as_mut_ptr();
 
         unsafe {
-            for i in 0..HIDDEN_SIZE {
-                let mut change = *current.add(i);
+            for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
+                let mut change = *current.add(i).cast();
                 for feature_index in adds {
-                    change += parameters.feature_weights[feature_index].vals[i];
+                    change = simd::add_i16(
+                        change,
+                        *parameters.feature_weights[feature_index as usize]
+                            .vals
+                            .as_ptr()
+                            .add(i)
+                            .cast(),
+                    );
                 }
 
                 for feature_index in subs {
-                    change -= parameters.feature_weights[feature_index].vals[i];
+                    change = simd::sub_i16(
+                        change,
+                        *parameters.feature_weights[feature_index as usize]
+                            .vals
+                            .as_ptr()
+                            .add(i)
+                            .cast(),
+                    );
                 }
 
-                *updated.add(i) = change;
+                *updated.add(i).cast() = change;
             }
         }
     }
 
-    pub fn refresh(&mut self, board: &Board, pov: Side, parameters: &Parameters) {
-        self.values[pov] = Accumulator::new(parameters);
+    pub fn refresh(
+        &mut self,
+        board: &Board,
+        pov: Side,
+        parameters: &Parameters,
+        cache: &mut AccumulatorCache,
+    ) {
+        let king_square = board.get_king_square(pov);
+        let (input_bucket, hm) = input_context(king_square ^ (56 * pov as u8));
+        let cache_data = cache.get_mut(pov, hm, input_bucket);
 
-        for square in board.get_all_occupancy().iter() {
-            if let Some((side, piece)) = board.get_piece_at_square(square) {
-                self.values[pov as usize].add_feature(
-                    feature_index(side, piece, square, board.get_king_square(pov), pov),
-                    parameters,
-                );
+        let mut adds = StackVec::<FeatureIndex, 64>::new();
+        let mut subs = StackVec::<FeatureIndex, 64>::new();
+
+        for side in Side::ALL {
+            for piece in Piece::ALL {
+                let piece_bb = board.get_piece_bb(side, piece);
+                let to_add = piece_bb & !(cache_data.pieces[piece] & cache_data.occupancies[side]);
+                let to_sub = !piece_bb & (cache_data.pieces[piece] & cache_data.occupancies[side]);
+
+                for square in to_add.iter() {
+                    adds.push(feature_index(side, piece, square, king_square, pov));
+                }
+
+                for square in to_sub.iter() {
+                    subs.push(feature_index(side, piece, square, king_square, pov));
+                }
             }
         }
 
+        // Apply updates
+        update_from_cache(adds, subs, parameters, cache_data);
+
+        cache_data.pieces = board.state.pieces;
+        cache_data.occupancies = board.state.occupancies;
+
+        self.values[pov] = cache_data.accumulator;
         self.accurate[pov] = true;
+    }
+}
+
+const REGISTERS: usize = 8;
+const UNROLL: usize = simd::I16_CHUNK * REGISTERS;
+
+#[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
+pub fn update_from_cache(
+    adds: StackVec<FeatureIndex, 64>,
+    subs: StackVec<FeatureIndex, 64>,
+    parameters: &Parameters,
+    cache_data: &mut CacheData,
+) {
+    unsafe {
+        let mut registers = [simd::zeroed(); REGISTERS];
+
+        for i in (0..HIDDEN_SIZE).step_by(UNROLL) {
+            let src = cache_data.accumulator.vals.as_mut_ptr().add(i);
+            for (r_idx, r) in registers.iter_mut().enumerate() {
+                *r = *src.add(r_idx * simd::I16_CHUNK).cast();
+            }
+
+            for &add in adds.iter() {
+                let weights = parameters.feature_weights[add as usize]
+                    .vals
+                    .as_ptr()
+                    .add(i);
+
+                for (r_idx, r) in registers.iter_mut().enumerate() {
+                    *r = simd::add_i16(*r, *weights.add(r_idx * simd::I16_CHUNK).cast());
+                }
+            }
+
+            for &sub in subs.iter() {
+                let weights = parameters.feature_weights[sub as usize]
+                    .vals
+                    .as_ptr()
+                    .add(i);
+                for (r_idx, r) in registers.iter_mut().enumerate() {
+                    *r = simd::sub_i16(*r, *weights.add(r_idx * simd::I16_CHUNK).cast());
+                }
+            }
+
+            for (r_idx, r) in registers.into_iter().enumerate() {
+                *src.add(r_idx * simd::I16_CHUNK).cast() = r;
+            }
+        }
+    }
+}
+
+#[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
+pub fn update_from_cache(
+    adds: StackVec<FeatureIndex, 64>,
+    subs: StackVec<FeatureIndex, 64>,
+    parameters: &Parameters,
+    cache_data: &mut CacheData,
+) {
+    let acc = &mut cache_data.accumulator.vals;     
+    for &feature in adds.iter() {
+        let weights = &parameters.feature_weights[feature as usize].vals;
+        for (output, &weight) in acc.iter_mut().zip(weights) {
+            *output += weight;
+        }
+    }
+
+    for &feature in subs.iter() {
+        let weights = &parameters.feature_weights[feature as usize].vals;
+        for (output, &weight) in acc.iter_mut().zip(weights) {
+            *output -= weight;
+        }
     }
 }
 
@@ -131,31 +246,7 @@ impl Accumulator {
     pub fn new(net: &Parameters) -> Self {
         net.feature_bias
     }
-
-    /// Add a feature to an accumulator.
-    pub fn add_feature(&mut self, feature_idx: usize, net: &Parameters) {
-        for (i, d) in self
-            .vals
-            .iter_mut()
-            .zip(&net.feature_weights[feature_idx].vals)
-        {
-            *i += *d
-        }
-    }
-
-    // /// Remove a feature from an accumulator.
-    // pub fn remove_feature(&mut self, feature_idx: usize, net: &Parameters) {
-    //     for (i, d) in self
-    //         .vals
-    //         .iter_mut()
-    //         .zip(&net.feature_weights[feature_idx].vals)
-    //     {
-    //         *i -= *d
-    //     }
-    // }
 }
-
-pub type FeatureIndex = usize;
 
 #[inline]
 pub fn feature_index(
@@ -168,7 +259,7 @@ pub fn feature_index(
     let square = square ^ (56 * pov as u8);
     let king_square = king_square ^ (56 * pov as u8);
 
-    input_bucket(king_square) * 768
-        + ((((pov != side) as usize * 6) + piece as usize) * 64)
-        + (square as usize ^ ((king_square.to_file() > 3) as usize * 7))
+    input_bucket(king_square) as FeatureIndex * 768
+        + ((((pov != side) as FeatureIndex * 6) + piece as FeatureIndex) * 64)
+        + (square as FeatureIndex ^ ((king_square.to_file() > 3) as FeatureIndex * 7))
 }
