@@ -156,7 +156,9 @@ impl DualAccumulators {
     }
 }
 
+#[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
 const REGISTERS: usize = 8;
+#[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
 const UNROLL: usize = simd::I16_CHUNK * REGISTERS;
 
 #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
@@ -210,7 +212,7 @@ pub fn update_from_cache(
     parameters: &Parameters,
     cache_data: &mut CacheData,
 ) {
-    let acc = &mut cache_data.accumulator.vals;     
+    let acc = &mut cache_data.accumulator.vals;
     for &feature in adds.iter() {
         let weights = &parameters.feature_weights[feature as usize].vals;
         for (output, &weight) in acc.iter_mut().zip(weights) {
