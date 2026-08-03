@@ -182,7 +182,6 @@ pub fn set_option(args: &str, shared: Arc<SharedData>, pool: &mut SearchThreads)
                 Ok(amount) => set_param(name, amount),
                 Err(_) => {
                     println!("info error: invalid value '{}'", amount);
-                    return;
                 }
             };
         }
