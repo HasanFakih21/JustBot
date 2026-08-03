@@ -419,7 +419,7 @@ pub fn search<Node: NodeType>(
 
         // Late Move Reductions (LMR)
         if depth > 2 && move_count > 1 {
-            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            let mut r = 250 * depth.ilog2() as i32;
             r += 217 * !improving as i32;
             r -= 200 * tt_pv as i32;
             r += 450 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
