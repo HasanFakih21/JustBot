@@ -20,8 +20,9 @@ pub fn perft(depth: usize, board: &mut Board) -> usize {
     }
 
     println!(
-        "Number of nodes: {nodes_count}\nTime: {}ms",
-        clock.elapsed().as_millis()
+        "Number of nodes: {nodes_count}\nTime: {}ms\nNPS: {}",
+        clock.elapsed().as_millis(),
+        (nodes_count as f64 / clock.elapsed().as_secs_f64()) as usize
     );
 
     nodes_count

@@ -124,7 +124,7 @@ pub fn search<Node: NodeType>(
     data: &mut SearchData,
     depth: i32,
     mut alpha: i32,
-    beta: i32,
+    mut beta: i32,
     ply: isize,
     cutnode: bool,
 ) -> i32 {
@@ -153,12 +153,20 @@ pub fn search<Node: NodeType>(
             return Score::DRAW;
         }
 
+        // Prevent from going to deep
         if ply >= MAX_PLY as isize - 1 {
             if in_check {
                 return Score::DRAW;
             } else {
                 return data.network.evaluate(&data.board);
             }
+        }
+
+        // Mate Distance Pruning (MDP)
+        alpha = alpha.max(-Score::MATE + ply as i32);
+        beta = beta.min(Score::MATE - ply as i32 + 1);
+        if alpha >= beta {
+            return alpha;
         }
     }
 
@@ -208,6 +216,9 @@ pub fn search<Node: NodeType>(
     if in_check {
         raw_eval = -Score::INFINITY;
         static_eval = -Score::INFINITY;
+    } else if excluded {
+        raw_eval = -Score::INFINITY;
+        static_eval = data.ply_table[ply].eval
     } else if let Some(e) = &tt_entry
         && e.get_eval() != -Score::INFINITY
     {
