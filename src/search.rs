@@ -61,7 +61,7 @@ pub fn search_runner(data: &mut SearchData) {
             || data
                 .time
                 .node_limit()
-                .is_some_and(|node_limit| data.nodes() >= node_limit)
+                .is_some_and(|_| data.nodes() >= 320000)
             || depth > data.time.depth_limit()
             || data.shared.status.get() == Status::STOPPED
         {
@@ -103,7 +103,12 @@ pub fn search_runner(data: &mut SearchData) {
                 .max(0.55)
         };
 
-        if data.time.soft_limit(multiplier) {
+        if data.time.soft_limit(multiplier)
+            || data
+                .time
+                .node_limit()
+                .is_some_and(|node_limit| data.nodes() >= node_limit)
+        {
             if data.id == 0 {
                 data.shared.status.stop();
             }
@@ -176,7 +181,7 @@ pub fn search<Node: NodeType>(
         || data
             .time
             .node_limit()
-            .is_some_and(|node_limit| data.nodes() >= node_limit)
+            .is_some_and(|_| data.nodes() >= 320000)
     {
         data.shared.status.stop();
         return Score::TIMEOUT;
@@ -591,7 +596,7 @@ pub fn quiesce<Node: NodeType>(
         || data
             .time
             .node_limit()
-            .is_some_and(|node_limit| data.nodes() >= node_limit)
+            .is_some_and(|_| data.nodes() >= 320000)
     {
         data.shared.status.stop();
         return Score::TIMEOUT;
