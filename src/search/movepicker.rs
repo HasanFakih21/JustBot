@@ -73,7 +73,9 @@ impl MovePicker {
                 self.status = Stage::Quiet;
                 board.append_moves(MoveGenKind::Quiet, &mut self.moves);
                 self.remove_tt_move();
-                self.score_quiet_moves(data, ply);
+                if !self.moves.is_empty() {
+                    self.score_quiet_moves(data, ply);
+                }
             } else {
                 self.status = Stage::BadNoisy;
             }
@@ -126,15 +128,17 @@ impl MovePicker {
     fn score_quiet_moves(&mut self, data: &SearchData, ply: isize) {
         let side = data.board.state.side_to_move;
         let threats = data.board.state.threats;
+        let random_i = data.nodes() as usize % self.moves.len();
 
-        for entry in self.moves.iter_mut() {
+        for (i, entry) in self.moves.iter_mut().enumerate() {
             let mv = entry.mv;
             let conthistory_score = 1588 * data.get_conthistory(mv, ply, 1) / 1024
                 + 1040 * data.get_conthistory(mv, ply, 2) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score
-                + (9808 * data.board.is_direct_check(mv) as i32);
+                + (9808 * data.board.is_direct_check(mv) as i32)
+                + 5000 * (random_i == i) as i32;
         }
     }
 
