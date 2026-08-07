@@ -237,7 +237,7 @@ pub fn go(
         }
         "movetime" => {
             let (movetime, args) = args.split_once(" ").unwrap_or((args, ""));
-            time.settings.movetime = movetime.trim().parse().unwrap_or(0);
+            time.settings.movetime = Some(movetime.trim().parse().unwrap_or(500));
             go(args, pool, board, time, shared, mute)
         }
         "nodes" => {
