@@ -193,7 +193,6 @@ pub fn search<Node: NodeType>(
     {
         let tt_score = e.get_score();
         match e.get_bound() {
-            Bound::Exact => return tt_score,
             Bound::Lower => {
                 if tt_score >= beta {
                     return tt_score;
@@ -204,7 +203,7 @@ pub fn search<Node: NodeType>(
                     return tt_score;
                 }
             }
-            _ => unreachable!(),
+            _ => return tt_score,
         }
     }
 
@@ -230,6 +229,18 @@ pub fn search<Node: NodeType>(
     };
 
     data.stack[ply].eval = static_eval;
+    if !excluded && tt_entry.is_none() {
+        data.shared.tt.add_entry(
+            Move::default(),
+            -Score::INFINITY,
+            raw_eval,
+            Bound::None,
+            data.board.state.keys.full,
+            depth,
+            ply,
+            Node::PV,
+        );
+    }
 
     let improvement = if in_check {
         0
@@ -635,7 +646,6 @@ pub fn quiesce<Node: NodeType>(
     {
         let tt_score = e.get_score();
         match e.get_bound() {
-            Bound::Exact => return tt_score,
             Bound::Lower => {
                 if tt_score >= beta {
                     return tt_score;
@@ -646,7 +656,7 @@ pub fn quiesce<Node: NodeType>(
                     return tt_score;
                 }
             }
-            _ => unreachable!(),
+            _ => return tt_score,
         }
     }
 

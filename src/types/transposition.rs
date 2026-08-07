@@ -111,7 +111,7 @@ impl Cluster {
     pub fn lookup_key(&self, key: u16) -> Option<&Entry> {
         self.entries
             .iter()
-            .find(|e| e.get_key() == key && e.get_bound() != Bound::None)
+            .find(|e| e.get_key() == key)
     }
 }
 
