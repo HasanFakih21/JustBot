@@ -47,7 +47,6 @@ pub fn search_runner(data: &mut SearchData) {
 
     let mut depth = 1;
     let mut best_move = None;
-    let mut best_score = -Score::INFINITY;
 
     if data.root_moves.is_empty() {
         data.best_move = None;
@@ -90,7 +89,6 @@ pub fn search_runner(data: &mut SearchData) {
 
         depth += 1;
         best_move = data.pv.line().first().copied();
-        best_score = score;
         data.print_uci_info(score, depth);
 
         let multiplier = || {
@@ -119,7 +117,6 @@ pub fn search_runner(data: &mut SearchData) {
         beta = score + beta_window;
     }
 
-    data.print_uci_info(best_score, depth);
     data.best_move = best_move;
 }
 
