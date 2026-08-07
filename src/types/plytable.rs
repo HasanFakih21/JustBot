@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use crate::types::{MAX_PLY, Move, Piece, PieceToHistory, Side};
+use crate::types::{MAX_PLY, Move, Piece, PieceToHistory, Score, Side};
 
 #[derive(Debug)]
 pub struct PlyTable {
@@ -33,13 +33,25 @@ impl Default for PlyTable {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct PlyData {
     pub m: Move,
     pub piece: Option<(Side, Piece)>,
     pub conthistory: *mut PieceToHistory<i16>,
     pub eval: i32,
     pub excluded: Move,
+}
+
+impl Default for PlyData {
+    fn default() -> Self {
+        PlyData {
+            m: Move::default(),
+            piece: None,
+            conthistory: std::ptr::null_mut(),
+            eval: -Score::INFINITY,
+            excluded: Move::default(),
+        }
+    }
 }
 
 unsafe impl Send for PlyData {}
