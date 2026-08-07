@@ -47,7 +47,6 @@ pub fn search_runner(data: &mut SearchData) {
 
     let mut depth = 1;
     let mut best_move = None;
-    let mut best_score = -Score::INFINITY;
 
     if data.root_moves.is_empty() {
         data.best_move = None;
@@ -90,7 +89,6 @@ pub fn search_runner(data: &mut SearchData) {
 
         depth += 1;
         best_move = data.pv.line().first().copied();
-        best_score = score;
         data.print_uci_info(score, depth);
 
         let multiplier = || {
@@ -119,7 +117,6 @@ pub fn search_runner(data: &mut SearchData) {
         beta = score + beta_window;
     }
 
-    data.print_uci_info(best_score, depth);
     data.best_move = best_move;
 }
 
@@ -234,15 +231,17 @@ pub fn search<Node: NodeType>(
 
     data.ply_table[ply].eval = static_eval;
 
-    let improving = if in_check {
-        false
+    let improvement = if in_check {
+        0
     } else if data.ply_table[ply - 2].eval != -Score::INFINITY {
-        (static_eval - data.ply_table[ply - 2].eval) > 0
+        static_eval - data.ply_table[ply - 2].eval
     } else if data.ply_table[ply - 4].eval != -Score::INFINITY {
-        (static_eval - data.ply_table[ply - 4].eval) > 0
+        static_eval - data.ply_table[ply - 4].eval
     } else {
-        false
+        0
     };
+
+    let improving = improvement > 0;
 
     let tt_move = tt_entry
         .as_ref()
@@ -384,7 +383,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && !mating(beta)
                 && is_quiet
-                && move_count > (3 + depth as usize * depth as usize) / (2 - (improving as usize))
+                && move_count as i32 > (3000 + 1500 * depth * depth) / 1024
             {
                 skip_quiets = true;
                 continue;
