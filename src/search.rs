@@ -383,7 +383,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && !mating(beta)
                 && is_quiet
-                && move_count as i32 > (3000 + 1500 * depth * depth) / 1024
+                && move_count as i32 > (3000 + (improvement * 50) + 1500 * depth * depth) / 1024
             {
                 skip_quiets = true;
                 continue;
