@@ -183,28 +183,29 @@ pub fn search<Node: NodeType>(
 
     let mut depth = depth.min(MAX_PLY as i32 - 1);
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_move = tt_entry
+        .as_ref()
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // TT Cutoffs
-    if let Some(e) = &tt_entry
-        && !Node::PV
-        && e.get_depth() >= depth
-        && (e.get_score() <= alpha || cutnode)
+    if !Node::PV
+        && let Some(tt_score) = tt_score
+        && tt_depth.is_some_and(|d| d >= depth)
+        && (tt_score <= alpha || cutnode)
         && !excluded
+        && tt_bound.is_some_and(|b| match b {
+            Bound::Lower => tt_score >= beta,
+            Bound::Upper => tt_score < alpha,
+            Bound::Exact => true,
+            Bound::None => false,
+        })
     {
-        let tt_score = e.get_score();
-        match e.get_bound() {
-            Bound::Lower => {
-                if tt_score >= beta {
-                    return tt_score;
-                }
-            }
-            Bound::Upper => {
-                if tt_score < alpha {
-                    return tt_score;
-                }
-            }
-            _ => return tt_score,
-        }
+        return tt_score;
     }
 
     // Evaluation
@@ -639,25 +640,20 @@ pub fn quiesce<Node: NodeType>(
     }
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
 
     // TT Cutoffs
-    if let Some(e) = &tt_entry
-        && !Node::PV
+    if !Node::PV
+        && let Some(tt_score) = tt_score
+        && tt_bound.is_some_and(|b| match b {
+            Bound::Lower => tt_score >= beta,
+            Bound::Upper => tt_score < alpha,
+            Bound::Exact => true,
+            Bound::None => false,
+        })
     {
-        let tt_score = e.get_score();
-        match e.get_bound() {
-            Bound::Lower => {
-                if tt_score >= beta {
-                    return tt_score;
-                }
-            }
-            Bound::Upper => {
-                if tt_score < alpha {
-                    return tt_score;
-                }
-            }
-            _ => return tt_score,
-        }
+        return tt_score;
     }
 
     let in_check = data.board.king_in_check();

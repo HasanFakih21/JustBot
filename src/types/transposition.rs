@@ -109,9 +109,7 @@ pub struct Cluster {
 
 impl Cluster {
     pub fn lookup_key(&self, key: u16) -> Option<&Entry> {
-        self.entries
-            .iter()
-            .find(|e| e.get_key() == key)
+        self.entries.iter().find(|e| e.get_key() == key)
     }
 }
 
