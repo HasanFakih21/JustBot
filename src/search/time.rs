@@ -20,7 +20,7 @@ pub struct TimeSettings {
     pub depth: i32,
     pub nodes: u64,
     pub mate: usize,
-    pub movetime: u64,
+    pub movetime: Option<u64>,
 }
 
 impl Default for TimeSettings {
@@ -34,7 +34,7 @@ impl Default for TimeSettings {
             depth: MAX_PLY as i32 - 1,
             nodes: 0,
             mate: 0,
-            movetime: 0,
+            movetime: None,
         }
     }
 }
@@ -92,13 +92,14 @@ impl TimeManager {
             }
         }
 
-        let Some(remaining_time) = remaining_time else {
-            return;
-        };
-
-        let max_time = remaining_time.saturating_sub(MOVE_OVERHEAD);
-        self.limits.soft_time = Some(Duration::from_millis((max_time / 20) + (increment / 2))); // Simple time managment strategy: remaining time/20 + increment/2
-        self.limits.hard_time = Some(Duration::from_millis((max_time / 2) + (increment / 2)));
+        if let Some(remaining_time) = remaining_time {
+            let max_time = remaining_time.saturating_sub(MOVE_OVERHEAD);
+            self.limits.soft_time = Some(Duration::from_millis((max_time / 20) + (increment / 2)));
+            self.limits.hard_time = Some(Duration::from_millis((max_time / 2) + (increment / 2)));
+        } else if let Some(movetime) = self.settings.movetime {
+            let max_time = movetime.saturating_sub(MOVE_OVERHEAD);
+            self.limits.hard_time = Some(Duration::from_millis(max_time));
+        }
     }
 
     pub fn set_depth_limit(&mut self) {
