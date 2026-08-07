@@ -234,15 +234,17 @@ pub fn search<Node: NodeType>(
 
     data.ply_table[ply].eval = static_eval;
 
-    let improving = if in_check {
-        false
+    let improvement = if in_check {
+        0
     } else if data.ply_table[ply - 2].eval != -Score::INFINITY {
-        (static_eval - data.ply_table[ply - 2].eval) > 0
+        static_eval - data.ply_table[ply - 2].eval
     } else if data.ply_table[ply - 4].eval != -Score::INFINITY {
-        (static_eval - data.ply_table[ply - 4].eval) > 0
+        static_eval - data.ply_table[ply - 4].eval
     } else {
-        false
+        0
     };
+
+    let improving = improvement > 0;
 
     let tt_move = tt_entry
         .as_ref()
@@ -384,7 +386,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && !mating(beta)
                 && is_quiet
-                && move_count > (3 + depth as usize * depth as usize) / (2 - (improving as usize))
+                && move_count as i32 > (3000 + 1500 * depth * depth) / 1024
             {
                 skip_quiets = true;
                 continue;
