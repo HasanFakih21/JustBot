@@ -265,6 +265,7 @@ pub fn search<Node: NodeType>(
 
     // Reverse Futillity Pruning (RFP)
     if !in_check
+        && depth <= 12
         && !Node::PV
         && !excluded
         && static_eval >= beta + 148 * depth - (92 * improving as i32)
