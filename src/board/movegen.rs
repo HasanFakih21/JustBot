@@ -150,34 +150,42 @@ impl Board {
 
     pub fn gen_castling_moves(&self, move_list: &mut MoveList) {
         let stm = self.state.side_to_move;
-        let king_square = self.get_king_square(stm);
-        let occupancies = self.get_all_occupancy();
-        let kinds = [MoveKind::KingCastle, MoveKind::QueenCastle];
-
         // Need to check whether the path between is occupied and whether the path between where the king is and where the king lands is under attack
         // Need to also make sure rook is not pinned for Chess 960
-        for dir in [Castling::KING_SIDE, Castling::QUEEN_SIDE] {
-            let king_to = KING_TO[stm][dir];
-            let rook_square = self.castling_rooks[stm][dir];
-            let rook_to = ROOK_TO[stm][dir];
-
-            // Needs to be empty
-            let mut between = BETWEEN[king_square][king_to]
-                | BETWEEN[rook_square][rook_to]
-                | rook_to.to_bb()
-                | king_to.to_bb();
-            between &= !king_square.to_bb();
-            between &= !rook_square.to_bb();
-
-            // Can't be under attack
-            let king_path = BETWEEN[king_square][king_to] | king_square.to_bb() | king_to.to_bb();
-            if self.state.castling_rights.can(Castling::KINDS[stm][dir])
-                && (between & occupancies).is_empty()
-                && (king_path & self.state.threats).is_empty()
-                && !self.state.pinned[stm].contains(rook_square)
-            {
-                move_list.push(Move::new(king_square, king_to, kinds[dir]));
+        for (dir, move_kind) in [Castling::KING_SIDE, Castling::QUEEN_SIDE]
+            .into_iter()
+            .zip([MoveKind::KingCastle, MoveKind::QueenCastle])
+        {   
+            if self.state.castling_rights.can(Castling::KINDS[stm][dir]) {
+                self.push_castle_move(move_kind, dir, move_list);
             }
+        }
+    }
+
+    fn push_castle_move(&self, move_kind: MoveKind, dir: usize, move_list: &mut MoveList) {
+        let stm = self.state.side_to_move;
+        let king_square = self.get_king_square(stm);
+        let occupancies = self.get_all_occupancy();
+
+        let king_to = KING_TO[stm][dir];
+        let rook_square = self.castling_rooks[stm][dir];
+        let rook_to = ROOK_TO[stm][dir];
+
+        // Needs to be empty
+        let mut between = BETWEEN[king_square][king_to]
+            | BETWEEN[rook_square][rook_to]
+            | rook_to.to_bb()
+            | king_to.to_bb();
+        between &= !king_square.to_bb();
+        between &= !rook_square.to_bb();
+
+        // Can't be under attack
+        let king_path = BETWEEN[king_square][king_to] | king_square.to_bb() | king_to.to_bb();
+        if (between & occupancies).is_empty()
+            && (king_path & self.state.threats).is_empty()
+            && !self.state.pinned[stm].contains(rook_square)
+        {
+            move_list.push(Move::new(king_square, king_to, move_kind));
         }
     }
 
