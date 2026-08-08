@@ -76,7 +76,7 @@ impl TimeManager {
         self.clock = Instant::now();
     }
 
-    pub fn set_time_limits(&mut self, side: Side) {
+    pub fn set_time_limits(&mut self, side: Side, full_moves: usize) {
         let remaining_time;
         let increment;
 
@@ -93,12 +93,19 @@ impl TimeManager {
         }
 
         if let Some(remaining_time) = remaining_time {
+            let soft_scale = 0.025 - 0.05 * (-0.05 * full_moves as f64).exp();
+            let hard_scale = 0.75;
+
             let max_time = remaining_time.saturating_sub(MOVE_OVERHEAD);
-            self.limits.soft_time = Some(Duration::from_millis((max_time / 20) + (increment / 2)));
-            self.limits.hard_time = Some(Duration::from_millis((max_time / 2) + (increment / 2)));
+            self.limits.soft_time = Some(Duration::from_millis(
+                (soft_scale * max_time as f64 + increment as f64 * 0.75) as u64,
+            ));
+            self.limits.hard_time = Some(Duration::from_millis(
+                (hard_scale * max_time as f64 + increment as f64 * 0.75) as u64,
+            ));
         } else if let Some(movetime) = self.settings.movetime {
-            let max_time = movetime.saturating_sub(MOVE_OVERHEAD);
-            self.limits.hard_time = Some(Duration::from_millis(max_time));
+            self.limits.hard_time = Some(Duration::from_millis(movetime));
+            self.limits.soft_time = Some(Duration::from_millis(movetime));
         }
     }
 

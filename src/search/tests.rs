@@ -198,7 +198,8 @@ fn test_transposition_timeout() {
     let mut data = SearchData::default();
     data.get_time_settings().btime = Some(8080);
     let board = Board::from_fen("6k1/2p5/4R1pp/1p1r4/pP1p4/P5PP/2P2P2/6K1 b - - 0 32").unwrap();
-    data.time.set_time_limits(board.state.side_to_move);
+    data.time
+        .set_time_limits(board.state.side_to_move, board.state.full_move);
     data.board = board;
     data.root_moves = data
         .board
