@@ -184,7 +184,7 @@ impl CastlingRights {
             }
             if self.can_king_side(Side::Black) {
                 let file =
-                    b'a' + board.castling_rooks[Side::White][Castling::KING_SIDE].to_file() as u8;
+                    b'a' + board.castling_rooks[Side::Black][Castling::KING_SIDE].to_file() as u8;
                 output_string.push(file as char);
             }
             if self.can_queen_side(Side::Black) {

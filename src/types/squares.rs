@@ -8,7 +8,7 @@ use crate::types::{A_FILE, BitBoard, RANK_1};
 #[derive(Debug)]
 pub struct InvalidSquare;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 #[repr(u8)]
 #[rustfmt::skip]
 pub enum Square {

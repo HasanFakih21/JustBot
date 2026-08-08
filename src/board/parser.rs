@@ -117,14 +117,21 @@ impl Board {
     }
 
     fn parse_castling(&mut self, castling_rights: &str) {
-        for (i, c) in castling_rights.chars().enumerate() {
+        for c in castling_rights.chars() {
             if matches!(c.to_ascii_uppercase(), 'A'..='H') {
+                let side = if c.is_ascii_uppercase() {
+                    Side::White
+                } else {
+                    Side::Black
+                };
                 let file = File::from(c.to_ascii_uppercase() as u8 - b'A');
-                self.castling_rooks[c.is_ascii_lowercase() as usize][i % 2] = (file.to_bb()
-                    & HOME_RANK[c.is_ascii_lowercase() as usize].to_bb())
-                .least_sig_bit()
-                .unwrap();
-                let mask = Castling::KINDS[c.is_ascii_lowercase() as usize][i % 2] as u8;
+                let rook_square = (file.to_bb() & HOME_RANK[side].to_bb())
+                    .least_sig_bit()
+                    .unwrap();
+                let king_square = self.get_king_square(side);
+                let dir = (rook_square > king_square) as usize;
+                self.castling_rooks[side][dir] = rook_square;
+                let mask = Castling::KINDS[side][dir] as u8;
                 self.state.castling_rights.set(mask);
             } else if matches!(c.to_ascii_uppercase(), 'K' | 'Q') {
                 self.state.castling_rights.set(Castling::from(c) as u8);
