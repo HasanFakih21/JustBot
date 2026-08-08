@@ -161,6 +161,10 @@ impl Board {
         // Need to check whether the path between is occupied and whether the path between where the king is and where the king lands is under attack
         // Need to also make sure rook is not pinned for Chess 960
         for dir in [Castling::KING_SIDE, Castling::QUEEN_SIDE] {
+            if !can_castle[dir] {
+                continue;
+            }
+
             let king_to = Castling::KINDS[stm][dir].king_landing_square();
             let rook_square = self.castling_rooks[stm][dir];
             let rook_to = ROOK_TO[stm][dir];
@@ -175,8 +179,7 @@ impl Board {
 
             // Can't be under attack
             let king_path = BETWEEN[king_square][king_to] | king_square.to_bb() | king_to.to_bb();
-            if can_castle[dir]
-                && (between & occupancies).is_empty()
+            if (between & occupancies).is_empty()
                 && (king_path & self.state.threats).is_empty()
                 && !self.state.pinned[stm].contains(rook_square)
             {

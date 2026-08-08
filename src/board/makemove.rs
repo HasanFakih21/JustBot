@@ -11,11 +11,6 @@ impl Board {
         let kind = m.get_kind();
         let (side, piece) = self.get_piece_at_square(from).unwrap();
 
-        let king_rook_square = self.castling_rooks[side][Castling::KING_SIDE];
-        let queen_rook_square = self.castling_rooks[side][Castling::QUEEN_SIDE];
-        let opp_king_rook_square = self.castling_rooks[side.other()][Castling::KING_SIDE];
-        let opp_queen_rook_square = self.castling_rooks[side.other()][Castling::QUEEN_SIDE];
-
         self.copy_state();
         self.state.plies_from_null += 1;
         self.state.keys.toggle_castling(self.state.castling_rights);
@@ -34,11 +29,15 @@ impl Board {
         self.state.keys.toggle_side();
 
         if let Piece::Rook = piece {
-            if from == king_rook_square && self.state.castling_rights.can_king_side(side) {
+            if self.state.castling_rights.can_king_side(side)
+                && from == self.castling_rooks[side][Castling::KING_SIDE]
+            {
                 self.state.castling_rights.clear_king_side(side);
             }
 
-            if from == queen_rook_square && self.state.castling_rights.can_queen_side(side) {
+            if self.state.castling_rights.can_queen_side(side)
+                && from == self.castling_rooks[side][Castling::QUEEN_SIDE]
+            {
                 self.state.castling_rights.clear_queen_side(side);
             }
         }
@@ -62,10 +61,11 @@ impl Board {
             self.remove_piece(side, piece, from);
             self.remove_piece(other_side, captured_piece, m.get_capture_square());
             if captured_piece == Piece::Rook {
-                if to == opp_king_rook_square {
+                if to == self.castling_rooks[other_side][Castling::KING_SIDE] {
                     self.state.castling_rights.clear_king_side(other_side);
                 }
-                if to == opp_queen_rook_square {
+
+                if to == self.castling_rooks[other_side][Castling::QUEEN_SIDE] {
                     self.state.castling_rights.clear_queen_side(other_side);
                 }
             }

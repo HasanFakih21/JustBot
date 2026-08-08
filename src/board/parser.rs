@@ -129,7 +129,11 @@ impl Board {
                     .least_sig_bit()
                     .unwrap();
                 let king_square = self.get_king_square(side);
-                let dir = (rook_square > king_square) as usize;
+                let dir = if rook_square > king_square {
+                    Castling::KING_SIDE
+                } else {
+                    Castling::QUEEN_SIDE
+                };
                 self.castling_rooks[side][dir] = rook_square;
                 let mask = Castling::KINDS[side][dir] as u8;
                 self.state.castling_rights.set(mask);
