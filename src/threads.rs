@@ -94,6 +94,6 @@ mod tests {
 
         let mut pool = SearchThreads::new(shared.clone(), 3);
         let m = pool.start(&board, time, &shared, false).unwrap();
-        println!("{}", m);
+        println!("{}", m.to_uci(&board));
     }
 }

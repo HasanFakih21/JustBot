@@ -64,6 +64,8 @@ pub struct Board {
     pub state: BoardState,
     pub state_stack: Vec<BoardState>,
     pub game_history: Vec<u64>,
+    pub castling_rooks: [[Square; 2]; 2],
+    pub frc: bool,
 }
 
 impl Default for Board {
@@ -79,6 +81,8 @@ impl Board {
             state_stack: Vec::new(),
             state: BoardState::new(),
             game_history: Vec::new(),
+            castling_rooks: CASTLING_ROOK_SQAURES,
+            frc: false,
         }
     }
 

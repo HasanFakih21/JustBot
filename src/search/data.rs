@@ -201,7 +201,7 @@ impl SearchData {
         }
     }
 
-    pub fn print_uci_info(&self, score: i32, depth: i32) {
+    pub fn print_uci_info(&self, score: i32, depth: i32, board: &Board) {
         // All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
         if self.report {
             // Report mate score
@@ -216,7 +216,7 @@ impl SearchData {
             let pv_display = {
                 let mut output = String::new();
                 for m in self.pv.line() {
-                    output = format!("{output}{m} ");
+                    output = format!("{output}{} ", m.to_uci(board));
                 }
 
                 output

@@ -179,9 +179,8 @@ pub mod tests {
         };
 
         let mut move_picker = MovePicker::new(None);
-        println!("{}", move_picker.moves);
         while let Some(m) = move_picker.next(&data, true, 0) {
-            print!("{m}: ");
+            print!("{}: ", m.to_uci(&data.board));
             print!(
                 "Value: {}, Value: {}",
                 if m.is_capture() {

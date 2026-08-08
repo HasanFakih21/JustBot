@@ -1,4 +1,5 @@
 pub mod bitboard;
+pub mod castling;
 pub mod constants;
 pub mod history;
 pub mod keys;
@@ -14,6 +15,7 @@ pub mod transposition;
 pub mod zobrist;
 
 pub use bitboard::*;
+pub use castling::*;
 pub use constants::*;
 pub use history::*;
 pub use moves::*;

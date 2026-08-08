@@ -2,8 +2,8 @@ use crate::{
     attacks::{BETWEEN, RAYS},
     board::Board,
     types::{
-        B_FILE, BitBoard, Move, MoveKind, NORTH, Piece, RANK_1, RANK_8, SOUTH, Side, WK_SIDE,
-        WQ_SIDE,
+        BitBoard, Castling, KING_TO, Move, MoveKind, NORTH, Piece, RANK_1, RANK_8, ROOK_TO, SOUTH,
+        Side,
     },
 };
 
@@ -24,31 +24,26 @@ impl Board {
 
         // Verify King Moves
         if moving_piece == Piece::King {
-            if m.get_kind() == MoveKind::KingCastle {
-                let king_side_path = match stm {
-                    Side::White => BitBoard(WK_SIDE),
-                    Side::Black => BitBoard(WK_SIDE).shift(NORTH * 7),
-                };
+            if let Some(dir) = m.castle_direction() {
+                let king_to = KING_TO[stm][dir];
+                let rook_to = ROOK_TO[stm][dir];
+                let rook_square = self.castling_rooks[stm][dir];
 
-                let path =
-                    (king_side_path | self.get_piece_bb(stm, Piece::King)) & self.state.threats;
-                return self.state.castling_rights.can_king_side(stm)
-                    && (king_side_path & self.get_all_occupancy()).is_empty()
-                    && path.is_empty();
-            }
+                // Needs to be empty
+                let mut between = BETWEEN[king_square][king_to]
+                    | BETWEEN[rook_square][rook_to]
+                    | rook_to.to_bb()
+                    | king_to.to_bb();
+                between &= !king_square.to_bb();
+                between &= !rook_square.to_bb();
 
-            if m.get_kind() == MoveKind::QueenCastle {
-                let queen_side_path = match stm {
-                    Side::White => BitBoard(WQ_SIDE),
-                    Side::Black => BitBoard(WQ_SIDE).shift(NORTH * 7),
-                };
+                // Can't be under attack
+                let king_path = BETWEEN[king_square][to] | king_square.to_bb() | to.to_bb();
 
-                let need_to_be_safe = (queen_side_path ^ BitBoard(B_FILE)) & queen_side_path;
-                let path =
-                    (need_to_be_safe | self.get_piece_bb(stm, Piece::King)) & self.state.threats;
-                return self.state.castling_rights.can_queen_side(stm)
-                    && (queen_side_path & self.get_all_occupancy()).is_empty()
-                    && path.is_empty();
+                return self.state.castling_rights.can(Castling::KINDS[stm][dir])
+                    && (between & self.get_all_occupancy()).is_empty()
+                    && (king_path & self.state.threats).is_empty()
+                    && !self.state.pinned[stm].contains(rook_square);
             }
 
             return matches!(m.get_kind(), MoveKind::Capture | MoveKind::QuietMove)
@@ -61,8 +56,8 @@ impl Board {
             || self.state.pinned[stm as usize].contains(from) && !RAYS[from as usize][king_square as usize].contains(to) // If piece is pinned and the to square isn't on the same ray as the king
             || self.king_in_check()
                 && (self.state.checkers.count_bits() > 1 // If there's multiple checkers then the king has to move 
+                // If it's a check and it also doesn't contain a move that's between the king and checking piece or a capture of the checking piece
                 || ((m.get_kind() != MoveKind::EnPassant) && !(self.state.checkers | BETWEEN[king_square as usize][self.state.checkers.least_sig_bit().unwrap() as usize]).contains(to)))
-        // If it's a check and it also doesn't contain a move that's between the king and checking piece or a capture of the checking piece
         {
             return false;
         }
