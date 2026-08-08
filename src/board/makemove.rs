@@ -156,7 +156,7 @@ impl Board {
             self.state.enpassant = None;
         }
 
-        if self.state.side_to_move == Side::White {
+        if self.state.side_to_move == Side::Black {
             self.state.full_move += 1
         }
 
