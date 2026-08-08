@@ -53,58 +53,46 @@ mod tests {
     use super::*;
     use crate::types::STARTING_FEN;
 
+    macro_rules! assert_perft {
+        ($($fen:expr, [$($nodes:expr), *]), *) => {
+            $(
+                let mut board = Board::from_fen($fen).unwrap();
+                for (depth, nodes) in [$($nodes), *].iter().enumerate() {
+                    assert_eq!(perft(depth + 1, &mut board), *nodes);
+                }
+            )*
+        };
+    }
+
     #[test]
     fn test_perft() {
-        let mut board = Board::from_fen(STARTING_FEN).unwrap();
-
-        assert_eq!(perft(1, &mut board), 20);
-        assert_eq!(perft(2, &mut board), 400);
-        assert_eq!(perft(3, &mut board), 8902);
-        assert_eq!(perft(4, &mut board), 197281);
-        assert_eq!(perft(5, &mut board), 4865609);
-
-        let mut kiwipete =
-            Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ")
-                .unwrap();
-
-        assert_eq!(perft(1, &mut kiwipete), 48);
-        assert_eq!(perft(2, &mut kiwipete), 2039);
-        assert_eq!(perft(3, &mut kiwipete), 97862);
-        assert_eq!(perft(4, &mut kiwipete), 4085603);
-
-        let mut board3 = Board::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ").unwrap();
-
-        assert_eq!(perft(1, &mut board3), 14);
-        assert_eq!(perft(2, &mut board3), 191);
-        assert_eq!(perft(3, &mut board3), 2812);
-        assert_eq!(perft(4, &mut board3), 43238);
-        assert_eq!(perft(5, &mut board3), 674624);
-
-        let mut board4 =
-            Board::from_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
-                .unwrap();
-
-        assert_eq!(perft(1, &mut board4), 6);
-        assert_eq!(perft(2, &mut board4), 264);
-        assert_eq!(perft(3, &mut board4), 9467);
-        assert_eq!(perft(4, &mut board4), 422333);
-
-        let mut board5 =
-            Board::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ").unwrap();
-
-        assert_eq!(perft(1, &mut board5), 44);
-        assert_eq!(perft(2, &mut board5), 1486);
-        assert_eq!(perft(3, &mut board5), 62379);
-        assert_eq!(perft(4, &mut board5), 2103487);
-
-        let mut board6 = Board::from_fen(
+        assert_perft!(
+            STARTING_FEN,
+            [20, 400, 8902, 197281, 4865609],
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ",
+            [48, 2039, 97862, 4085603],
+            "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ",
+            [14, 191, 2812, 43238, 674624],
+            "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+            [6, 264, 9467, 422333],
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
+            [44, 1486, 62379, 2103487],
             "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
-        )
-        .unwrap();
+            [46, 2079, 89890, 3894594]
+        );
+    }
 
-        assert_eq!(perft(1, &mut board6), 46);
-        assert_eq!(perft(2, &mut board6), 2079);
-        assert_eq!(perft(3, &mut board6), 89890);
-        assert_eq!(perft(4, &mut board6), 3894594);
+    #[test]
+    fn test_perft_960() {
+        assert_perft!(
+            "bqnr1kr1/pppppp1p/6p1/5n2/4B3/3N2PP/PbPPPP2/BQNR1KR1 w GDgd - 2 9",
+            [31, 1132, 36559, 1261476, 43256823],
+            "nqn2krb/p1prpppp/1pbp4/7P/5P2/8/PPPPPKP1/NQNRB1RB w g - 3 9",
+            [21, 461, 10608, 248069, 6194124],
+            "bqnb1rkr/pp3ppp/3ppn2/2p5/5P2/P2P4/NPP1P1PP/BQ1BNRKR w HFhf - 2 9",
+            [21, 528, 12189, 326672, 8146062],
+            "1nbbnrkr/p1p1ppp1/3p4/1p3P1p/3Pq2P/8/PPP1P1P1/QNBBNRKR w HFhf - 0 9",
+            [28, 1120, 31058, 1171749, 34030312]
+        );
     }
 }
