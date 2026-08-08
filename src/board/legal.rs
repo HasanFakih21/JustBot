@@ -2,7 +2,8 @@ use crate::{
     attacks::{BETWEEN, RAYS},
     board::Board,
     types::{
-        BitBoard, Castling, Move, MoveKind, NORTH, Piece, RANK_1, RANK_8, ROOK_TO, SOUTH, Side,
+        BitBoard, Castling, KING_TO, Move, MoveKind, NORTH, Piece, RANK_1, RANK_8, ROOK_TO, SOUTH,
+        Side,
     },
 };
 
@@ -24,7 +25,7 @@ impl Board {
         // Verify King Moves
         if moving_piece == Piece::King {
             if m.get_kind() == MoveKind::KingCastle {
-                let king_to = Castling::KINDS[stm][Castling::KING_SIDE].king_landing_square();
+                let king_to = KING_TO[stm][Castling::KING_SIDE];
                 let rook_to = ROOK_TO[stm][Castling::KING_SIDE];
                 let rook_square = self.castling_rooks[stm][Castling::KING_SIDE];
 
@@ -43,12 +44,10 @@ impl Board {
                     && (between & self.get_all_occupancy()).is_empty()
                     && (king_path & self.state.threats).is_empty()
                     && !self.state.pinned[stm].contains(rook_square);
-            }
-
-            if m.get_kind() == MoveKind::QueenCastle {
-                let king_to = Castling::KINDS[stm][Castling::QUEEN_SIDE].king_landing_square();
-                let rook_square = self.castling_rooks[stm][Castling::QUEEN_SIDE];
+            } else if m.get_kind() == MoveKind::QueenCastle {
+                let king_to = KING_TO[stm][Castling::QUEEN_SIDE];
                 let rook_to = ROOK_TO[stm][Castling::QUEEN_SIDE];
+                let rook_square = self.castling_rooks[stm][Castling::QUEEN_SIDE];
 
                 // Needs to be empty
                 let mut between = BETWEEN[king_square][king_to]

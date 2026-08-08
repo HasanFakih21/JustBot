@@ -165,7 +165,7 @@ impl Board {
                 continue;
             }
 
-            let king_to = Castling::KINDS[stm][dir].king_landing_square();
+            let king_to = KING_TO[stm][dir];
             let rook_square = self.castling_rooks[stm][dir];
             let rook_to = ROOK_TO[stm][dir];
 

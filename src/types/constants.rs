@@ -48,7 +48,9 @@ pub const CASTLING_ROOK_SQAURES: [[Square; 2]; 2] = [
     [KING_SIDE_ROOK_WHITE, QUEEN_SIDE_ROOK_WHITE],
     [KING_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_BLACK],
 ];
+
 pub const ROOK_TO: [[Square; 2]; 2] = [[Square::F1, Square::D1], [Square::F8, Square::D8]];
+pub const KING_TO: [[Square; 2]; 2] = [[Square::G1, Square::C1], [Square::G8, Square::C8]];
 
 pub const MAX_PLY: usize = 248;
 pub const MAX_MOVE_NUM: usize = 256;
