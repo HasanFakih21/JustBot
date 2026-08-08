@@ -289,8 +289,7 @@ mod tests {
         let first_eval = data.network.evaluate(&data.board);
 
         println!("First Eval: {}", first_eval);
-        let move_list = data.board.generate_moves(MoveGenKind::All);
-        println!("{}", move_list);
+        let _ = data.board.generate_moves(MoveGenKind::All);
         let m = data.board.parse_move("e2d1").unwrap();
 
         // Make the move

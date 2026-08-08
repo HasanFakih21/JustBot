@@ -165,7 +165,7 @@ impl Board {
         fen.push(' ');
         fen.push_str(&self.state.side_to_move.to_string());
         fen.push(' ');
-        fen.push_str(&self.state.castling_rights.to_string());
+        fen.push_str(&self.state.castling_rights.to_string(self));
         fen.push(' ');
         let ep_string = match self.state.enpassant {
             Some(square) => square.to_string(),

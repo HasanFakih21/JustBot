@@ -1,6 +1,7 @@
-use std::fmt::Display;
-
-use crate::types::{BitBoard, Castling, Piece, Square, stackvec::StackVec};
+use crate::{
+    board::Board,
+    types::{BitBoard, Castling, Piece, Square, stackvec::StackVec},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MoveEntry {
@@ -100,17 +101,6 @@ impl Default for MoveList {
     }
 }
 
-impl Display for MoveList {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut output = String::new();
-        for m in self.iter() {
-            output = format!("{output}{} ", m.mv);
-        }
-
-        write!(f, "{output}")
-    }
-}
-
 // 12 bits for to and from square and 4 bits for move type
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Move(u16);
@@ -186,12 +176,18 @@ impl Move {
             _ => None,
         }
     }
-}
 
-impl Display for Move {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    pub fn to_uci(&self, board: &Board) -> String {
         if self.is_null() {
-            return write!(f, "0000");
+            return "0000".to_string();
+        }
+
+        if board.frc
+            && let Some(castle_kind) = self.castle_kind()
+        {
+            let from = self.get_from();
+            let to = board.castling_rooks[(from as usize > 7) as usize][castle_kind];
+            return format!("{from}{to}");
         }
 
         let mut promotion_piece = "";
@@ -202,7 +198,8 @@ impl Display for Move {
             MoveKind::QPromotion | MoveKind::QPromCapture => promotion_piece = "q",
             _ => (),
         }
-        write!(f, "{}{}{}", self.get_from(), self.get_to(), promotion_piece)
+
+        format!("{}{}{}", self.get_from(), self.get_to(), promotion_piece)
     }
 }
 

@@ -3,6 +3,7 @@ use std::sync::mpsc::{Receiver, channel};
 use std::thread;
 
 use crate::board::Board;
+use crate::board::movegen::MoveGenKind;
 use crate::search::data::SharedData;
 use crate::search::time::TimeManager;
 use crate::threads::SearchThreads;
@@ -53,7 +54,7 @@ pub fn input_loop(cli_args: String) {
             "go" => {
                 time.clear_limits();
                 if let Some(m) = go(args, &mut pool, &mut board, &mut time, &shared, false) {
-                    println!("bestmove {}", m);
+                    println!("bestmove {}", m.to_uci(&board));
                 } else {
                     println!("bestmove 0000");
                 }
@@ -149,9 +150,12 @@ pub fn position(args: &str, board: &mut Board, frc: bool) {
 
     if !moves.trim().is_empty() {
         for m_str in moves.split_ascii_whitespace() {
-            let result = board.parse_move(m_str);
-            if let Ok(m) = result {
-                board.make_move(m);
+            let all_moves = board.generate_moves(MoveGenKind::All);
+            if let Some(entry) = all_moves
+                .iter()
+                .find(|entry| entry.mv.to_uci(board) == m_str)
+            {
+                board.make_move(entry.mv);
             } else {
                 eprintln!("Illegal Move!");
                 return;
@@ -300,7 +304,7 @@ pub mod tests {
     fn test_parse_move() {
         let board = Board::from_fen(STARTING_FEN).unwrap();
         if let Ok(m) = board.parse_move("e2e4") {
-            println!("bestmove {m}");
+            println!("bestmove {}", m.to_uci(&board));
         }
     }
 
@@ -335,7 +339,11 @@ pub mod tests {
             &shared,
             false,
         );
-        println!("{:?}\nBestmove: {}", time.settings, bm.unwrap());
+        println!(
+            "{:?}\nBestmove: {}",
+            time.settings,
+            bm.unwrap().to_uci(&board)
+        );
     }
 
     #[test]

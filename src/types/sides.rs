@@ -3,7 +3,7 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-use crate::types::Square;
+use crate::{board::Board, types::Square};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side {
@@ -167,35 +167,56 @@ impl CastlingRights {
             }
         }
     }
-}
 
-impl Default for CastlingRights {
-    fn default() -> Self {
-        CastlingRights::new()
-    }
-}
-
-impl Display for CastlingRights {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    pub fn to_string(&self, board: &Board) -> String {
         let mut output_string = String::from("");
 
-        if self.can_king_side(Side::White) {
-            output_string.push('K');
-        }
-        if self.can_queen_side(Side::White) {
-            output_string.push('Q');
-        }
-        if self.can_king_side(Side::Black) {
-            output_string.push('k');
-        }
-        if self.can_queen_side(Side::Black) {
-            output_string.push('q');
+        if board.frc {
+            if self.can_king_side(Side::White) {
+                let file =
+                    b'A' + board.castling_rooks[Side::White][Castling::KING_SIDE].to_file() as u8;
+                output_string.push(file as char);
+            }
+            if self.can_queen_side(Side::White) {
+                let file =
+                    b'A' + board.castling_rooks[Side::White][Castling::QUEEN_SIDE].to_file() as u8;
+                output_string.push(file as char);
+            }
+            if self.can_king_side(Side::Black) {
+                let file =
+                    b'a' + board.castling_rooks[Side::White][Castling::KING_SIDE].to_file() as u8;
+                output_string.push(file as char);
+            }
+            if self.can_queen_side(Side::Black) {
+                let file =
+                    b'a' + board.castling_rooks[Side::Black][Castling::QUEEN_SIDE].to_file() as u8;
+                output_string.push(file as char);
+            }
+        } else {
+            if self.can_king_side(Side::White) {
+                output_string.push('K');
+            }
+            if self.can_queen_side(Side::White) {
+                output_string.push('Q');
+            }
+            if self.can_king_side(Side::Black) {
+                output_string.push('k');
+            }
+            if self.can_queen_side(Side::Black) {
+                output_string.push('q');
+            }
         }
 
         if output_string.is_empty() {
             output_string.push('-');
         }
 
-        write!(f, "{output_string}")
+        output_string
+    }
+}
+
+impl Default for CastlingRights {
+    fn default() -> Self {
+        CastlingRights::new()
     }
 }

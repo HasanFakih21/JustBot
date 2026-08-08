@@ -8,13 +8,13 @@ pub fn perft(depth: usize, board: &mut Board) -> usize {
         debug_assert!(
             board.is_legal(m.mv),
             "Tried making move: {}\n{}",
-            m.mv,
+            m.mv.to_uci(board),
             board
         );
 
         board.make_move(m.mv);
         let divided_nodes = perft_divide(depth - 1, board);
-        println!("{}: {divided_nodes}", m.mv);
+        println!("{}: {divided_nodes}", m.mv.to_uci(board));
         nodes_count += divided_nodes;
         board.unmake_move();
     }

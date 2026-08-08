@@ -477,7 +477,6 @@ mod tests {
         let mut move_list = MoveList::new();
 
         data.board.append_moves(MoveGenKind::All, &mut move_list);
-        println!("{move_list}");
         assert_eq!(move_list.len(), 20);
 
         let data = SearchData {
@@ -489,7 +488,6 @@ mod tests {
         data.board.state.threats.print_board();
         let mut move_list = MoveList::new();
         data.board.append_moves(MoveGenKind::All, &mut move_list);
-        println!("{move_list}");
         RAYS[Square::D2 as usize][Square::E1 as usize].print_board();
     }
 
