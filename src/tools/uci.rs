@@ -18,6 +18,7 @@ pub fn input_loop(cli_args: String) {
     let mut pool = SearchThreads::new(shared.clone(), 1);
     let mut board = Board::from_fen(STARTING_FEN).unwrap();
     let mut time = TimeManager::new();
+    let mut frc = false;
 
     let rx = listen(shared.clone());
 
@@ -40,10 +41,10 @@ pub fn input_loop(cli_args: String) {
         let (command, args) = input.split_once(" ").unwrap_or((&input, ""));
 
         match command.trim() {
-            "position" => position(args, &mut board),
+            "position" => position(args, &mut board, frc),
             "uci" => uci(),
             "isready" => println!("readyok"),
-            "setoption" => set_option(args, shared.clone(), &mut pool),
+            "setoption" => set_option(args, &mut frc, shared.clone(), &mut pool),
             "ucinewgame" => {
                 shared.tt.clear();
                 let thread_count = pool.threads.len();
@@ -118,7 +119,7 @@ pub fn listen(shared: Arc<SharedData>) -> Receiver<String> {
     rx
 }
 
-pub fn position(args: &str, board: &mut Board) {
+pub fn position(args: &str, board: &mut Board, frc: bool) {
     if args.trim().is_empty() {
         eprintln!("Need to provide a valid argument!");
         return;
@@ -136,8 +137,9 @@ pub fn position(args: &str, board: &mut Board) {
                 eprintln!("Please provide a fen string");
                 return;
             }
-            if let Ok(b) = Board::from_fen(args) {
+            if let Ok(b) = Board::from_fen(args.trim_ascii_end()) {
                 *board = b;
+                board.frc = frc;
             } else {
                 eprintln!("Invalid FEN: {:?}", args.trim_end());
             }
@@ -158,7 +160,7 @@ pub fn position(args: &str, board: &mut Board) {
     }
 }
 
-pub fn set_option(args: &str, shared: Arc<SharedData>, pool: &mut SearchThreads) {
+pub fn set_option(args: &str, frc: &mut bool, shared: Arc<SharedData>, pool: &mut SearchThreads) {
     let args = args.to_ascii_lowercase();
     let args: Vec<&str> = args.split_ascii_whitespace().collect();
     match args.as_slice() {
@@ -175,6 +177,11 @@ pub fn set_option(args: &str, shared: Arc<SharedData>, pool: &mut SearchThreads)
         ["name", "clear", "hash"] => {
             shared.tt.clear();
             println!("info string TT cleared");
+        }
+        ["name", "uci_chess960", "value", v] => {
+            let v = v.parse().unwrap_or(false);
+            *frc = v;
+            println!("info string Set UCI_Chess960 to {v}");
         }
         #[cfg(feature = "tuning")]
         ["name", name, "value", amount] => {
@@ -256,6 +263,7 @@ pub fn uci() {
     println!("option name Threads type spin default 1 min 1 max 512");
     println!("option name Hash type spin default 16 min 1 max 1048576");
     println!("option name Clear Hash type button");
+    println!("option name UCI_Chess960 type check default false");
     #[cfg(feature = "tuning")]
     list_params();
     println!("uciok");
@@ -334,7 +342,8 @@ pub mod tests {
     fn test_set_option() {
         let shared = Arc::new(SharedData::default());
         let mut pool = SearchThreads::new(shared.clone(), 1);
+        let mut frc = false;
 
-        set_option("name Hash value 32", shared, &mut pool);
+        set_option("name Hash value 32", &mut frc, shared, &mut pool);
     }
 }

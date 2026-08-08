@@ -46,6 +46,7 @@ impl<T> IndexMut<Side> for [T] {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(u8)]
 pub enum Castling {
     WhiteKing = 0b0001,
@@ -57,6 +58,10 @@ pub enum Castling {
 impl Castling {
     pub const KING_SIDE: usize = 0;
     pub const QUEEN_SIDE: usize = 1;
+    pub const KINDS: [[Self; 2]; 2] = [
+        [Self::WhiteKing, Self::WhiteQueen],
+        [Self::BlackKing, Self::BlackQueen],
+    ];
 
     pub const fn from(c: char) -> Self {
         match c {
@@ -139,6 +144,12 @@ impl CastlingRights {
                     self.0 ^= Castling::BlackKing as u8
                 }
             }
+        }
+    }
+
+    pub fn clear(&mut self, kind: Castling) {
+        if (self.0 & kind as u8) > 0 {
+            self.0 ^= kind as u8
         }
     }
 

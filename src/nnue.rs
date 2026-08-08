@@ -121,7 +121,7 @@ impl Network {
                         if let Some((prev, [current, ..])) =
                             self.stack.split_at_mut_checked(index + 1)
                         {
-                            current.update(&prev[index], pov, king_square, self.parameters);
+                            current.update(&prev[index], board, pov, king_square, self.parameters);
                         }
                     }
                 }

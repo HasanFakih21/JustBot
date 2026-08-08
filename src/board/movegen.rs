@@ -149,45 +149,39 @@ impl Board {
     }
 
     pub fn gen_castling_moves(&self, move_list: &mut MoveList) {
-        let side = self.state.side_to_move;
-        let king = self.get_piece_bb(side, Piece::King);
+        let stm = self.state.side_to_move;
+        let king_square = self.get_king_square(stm);
         let occupancies = self.get_all_occupancy();
-        let mut king_side_occ = BitBoard(WK_SIDE);
-        let mut queen_side_occ = BitBoard(WQ_SIDE);
-        if side == Side::Black {
-            king_side_occ = king_side_occ.shift(NORTH * 7);
-            queen_side_occ = queen_side_occ.shift(NORTH * 7);
-        }
-        let need_to_be_safe = (queen_side_occ ^ BitBoard(B_FILE)) & queen_side_occ;
+        let kinds = [MoveKind::KingCastle, MoveKind::QueenCastle];
+        let can_castle = [
+            self.state.castling_rights.can_king_side(stm),
+            self.state.castling_rights.can_queen_side(stm),
+        ];
 
-        if self.state.castling_rights.can_king_side(side)
-            && ((king_side_occ & occupancies).0 == 0)
-            && !(king_side_occ | king).iter().any(|e| self.is_attacked(e))
-        {
-            let target = match side {
-                Side::White => Castling::WhiteKing.king_landing_square(),
-                Side::Black => Castling::BlackKing.king_landing_square(),
-            };
-            move_list.push(Move::new(
-                king.least_sig_bit().unwrap(),
-                target,
-                MoveKind::KingCastle,
-            ));
-        }
+        // Need to check whether the path between is occupied and whether the path between where the king is and where the king lands is under attack
+        // Need to also make sure rook is not pinned for Chess 960
+        for dir in [Castling::KING_SIDE, Castling::QUEEN_SIDE] {
+            let king_to = Castling::KINDS[stm][dir].king_landing_square();
+            let rook_square = self.castling_rooks[stm][dir];
+            let rook_to = ROOK_TO[stm][dir];
 
-        if self.state.castling_rights.can_queen_side(side)
-            && ((queen_side_occ & occupancies).0 == 0)
-            && !(need_to_be_safe | king).iter().any(|e| self.is_attacked(e))
-        {
-            let target = match side {
-                Side::White => Castling::WhiteQueen.king_landing_square(),
-                Side::Black => Castling::BlackQueen.king_landing_square(),
-            };
-            move_list.push(Move::new(
-                king.least_sig_bit().unwrap(),
-                target,
-                MoveKind::QueenCastle,
-            ));
+            // Needs to be empty
+            let mut between = BETWEEN[king_square][king_to]
+                | BETWEEN[rook_square][rook_to]
+                | rook_to.to_bb()
+                | king_to.to_bb();
+            between &= !king_square.to_bb();
+            between &= !rook_square.to_bb();
+
+            // Can't be under attack
+            let king_path = BETWEEN[king_square][king_to] | king_square.to_bb() | king_to.to_bb();
+            if can_castle[dir]
+                && (between & occupancies).is_empty()
+                && (king_path & self.state.threats).is_empty()
+                && !self.state.pinned[stm].contains(rook_square)
+            {
+                move_list.push(Move::new(king_square, king_to, kinds[dir]));
+            }
         }
     }
 
@@ -439,7 +433,7 @@ impl Board {
 
 #[cfg(test)]
 mod tests {
-    use crate::attacks::RAYS;
+    use crate::attacks::{BETWEEN, RAYS};
     use crate::board::Board;
     use crate::board::movegen::MoveGenKind;
     use crate::search::data::SearchData;
@@ -497,5 +491,11 @@ mod tests {
         data.board.append_moves(MoveGenKind::All, &mut move_list);
         println!("{move_list}");
         RAYS[Square::D2 as usize][Square::E1 as usize].print_board();
+    }
+
+    #[test]
+    fn test_frc_castling() {
+        let between = BETWEEN[Square::F1][Square::A1];
+        between.print_board();
     }
 }

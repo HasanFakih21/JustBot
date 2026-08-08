@@ -1,6 +1,6 @@
 use super::Board;
 use crate::types::{
-    CASTLING_ROOK_SQAURES, Castling, Piece, Side, Square,
+    Castling, Piece, ROOK_TO, Side, Square,
     moves::{Move, MoveKind},
 };
 
@@ -11,10 +11,10 @@ impl Board {
         let kind = m.get_kind();
         let (side, piece) = self.get_piece_at_square(from).unwrap();
 
-        let king_rook_square = CASTLING_ROOK_SQAURES[side][Castling::KING_SIDE];
-        let queen_rook_square = CASTLING_ROOK_SQAURES[side][Castling::QUEEN_SIDE];
-        let opp_king_rook_square = CASTLING_ROOK_SQAURES[side.other()][Castling::KING_SIDE];
-        let opp_queen_rook_square = CASTLING_ROOK_SQAURES[side.other()][Castling::QUEEN_SIDE];
+        let king_rook_square = self.castling_rooks[side][Castling::KING_SIDE];
+        let queen_rook_square = self.castling_rooks[side][Castling::QUEEN_SIDE];
+        let opp_king_rook_square = self.castling_rooks[side.other()][Castling::KING_SIDE];
+        let opp_queen_rook_square = self.castling_rooks[side.other()][Castling::QUEEN_SIDE];
 
         self.copy_state();
         self.state.plies_from_null += 1;
@@ -43,14 +43,6 @@ impl Board {
             }
         }
 
-        if let Some(castle_kind) = m.castle_kind() {
-            let offset = [1, -1];
-            self.remove_piece(side, Piece::Rook, CASTLING_ROOK_SQAURES[side][castle_kind]);
-            self.state.castling_rights.clear_king_side(side);
-            self.state.castling_rights.clear_queen_side(side);
-            self.place_piece(side, Piece::Rook, from.shift(offset[castle_kind]).unwrap());
-        }
-
         if kind == MoveKind::DoublePawn {
             self.state.enpassant = Some(Square::from(to as usize ^ 8));
             self.state
@@ -58,8 +50,16 @@ impl Board {
                 .toggle_en_passant(Square::from(to as usize ^ 8));
         }
 
-        if let Some((other_side, captured_piece)) = self.get_piece_at_square(m.get_capture_square())
+        if let Some(castle_kind) = m.castle_kind() {
+            self.remove_piece(side, piece, from);
+            self.remove_piece(side, Piece::Rook, self.castling_rooks[side][castle_kind]);
+            self.state.castling_rights.clear_king_side(side);
+            self.state.castling_rights.clear_queen_side(side);
+            self.place_piece(side, Piece::Rook, ROOK_TO[side][castle_kind]);
+        } else if let Some((other_side, captured_piece)) =
+            self.get_piece_at_square(m.get_capture_square())
         {
+            self.remove_piece(side, piece, from);
             self.remove_piece(other_side, captured_piece, m.get_capture_square());
             if captured_piece == Piece::Rook {
                 if to == opp_king_rook_square {
@@ -69,16 +69,17 @@ impl Board {
                     self.state.castling_rights.clear_queen_side(other_side);
                 }
             }
+        } else {
+            self.remove_piece(side, piece, from);
         }
 
-        self.remove_piece(side, piece, from);
         if let Some(promotion_piece) = m.get_promoted_piece() {
             self.place_piece(side, promotion_piece, to);
         } else {
             self.place_piece(side, piece, to);
         }
 
-        //  Irreversible Move
+        // Irreversible Move
         if kind.is_capture() || piece == Piece::Pawn {
             self.state.half_move_clock = 0
         } else {

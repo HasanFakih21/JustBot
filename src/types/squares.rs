@@ -1,6 +1,9 @@
-use std::{fmt::Display, ops::BitXor};
+use std::{
+    fmt::Display,
+    ops::{BitXor, Index, IndexMut},
+};
 
-use crate::types::BitBoard;
+use crate::types::{A_FILE, BitBoard, RANK_1};
 
 #[derive(Debug)]
 pub struct InvalidSquare;
@@ -115,6 +118,64 @@ impl BitXor<u8> for Square {
     }
 }
 
+impl<T> Index<Square> for [T] {
+    type Output = T;
+
+    fn index(&self, index: Square) -> &Self::Output {
+        &self[index as usize]
+    }
+}
+
+impl<T> IndexMut<Square> for [T] {
+    fn index_mut(&mut self, index: Square) -> &mut Self::Output {
+        &mut self[index as usize]
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[repr(u8)]
+#[rustfmt::skip]
+pub enum Rank { 
+    R1, 
+    R2, 
+    R3, 
+    R4, 
+    R5, 
+    R6, 
+    R7, 
+    R8 
+}
+
+impl Rank {
+    pub fn to_bb(&self) -> BitBoard {
+        BitBoard(RANK_1 << (*self as usize * 8))
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[repr(u8)]
+pub enum File {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+}
+
+impl File {
+    pub fn to_bb(&self) -> BitBoard {
+        BitBoard(A_FILE << *self as usize)
+    }
+
+    pub const fn from(value: u8) -> Self {
+        debug_assert!(value < 8);
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -129,7 +190,10 @@ mod tests {
 
     #[test]
     fn test_to_bb() {
-        let square = Square::E5;
-        square.to_bb().print_board();
+        let rank = Rank::R1;
+        rank.to_bb().print_board();
+
+        let file = File::H;
+        file.to_bb().print_board();
     }
 }

@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use crate::types::{BitBoard, Piece, Side, Square};
+use crate::types::{BitBoard, Piece, Rank, Side, Square};
 
 pub const A_FILE: u64 = 0x0101010101010101;
 pub const B_FILE: u64 = 0x0202020202020202;
@@ -20,6 +20,7 @@ pub const RANK_4: u64 = 0x00000000FF000000;
 pub const RANK_5: u64 = 0x000000FF00000000;
 pub const RANK_7: u64 = 0x00FF000000000000;
 pub const RANK_8: u64 = 0xFF00000000000000;
+pub const HOME_RANK: [Rank; 2] = [Rank::R1, Rank::R8];
 
 pub const FULL: u64 = 0xFFFFFFFFFFFFFFFF;
 pub const WK_SIDE: u64 = 0x0000000000000060;
@@ -47,6 +48,7 @@ pub const CASTLING_ROOK_SQAURES: [[Square; 2]; 2] = [
     [KING_SIDE_ROOK_WHITE, QUEEN_SIDE_ROOK_WHITE],
     [KING_SIDE_ROOK_BLACK, QUEEN_SIDE_ROOK_BLACK],
 ];
+pub const ROOK_TO: [[Square; 2]; 2] = [[Square::F1, Square::D1], [Square::F8, Square::D8]];
 
 pub const MAX_PLY: usize = 248;
 pub const MAX_MOVE_NUM: usize = 256;

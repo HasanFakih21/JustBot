@@ -1,6 +1,6 @@
 use crate::board::Board;
 use crate::board::movegen::MoveGenKind;
-use crate::types::{Castling, Move, Piece, Side, Square, pieces};
+use crate::types::{Castling, File, HOME_RANK, Move, Piece, Side, Square, pieces};
 
 #[derive(Debug)]
 pub struct FenParseError;
@@ -47,17 +47,11 @@ impl Board {
         match turn {
             "w" => board.state.side_to_move = Side::White,
             "b" => board.state.side_to_move = Side::Black,
-            _ => eprintln!("Invalid side to move"),
+            _ => return Err(FenParseError),
         }
 
         let castling_rights = fen.next().ok_or(FenParseError)?;
-        for c in castling_rights.chars() {
-            if c == '-' {
-                continue;
-            }
-
-            board.state.castling_rights.set(Castling::from(c) as u8);
-        }
+        board.parse_castling(castling_rights);
 
         if let Some(enpassant) = fen.next()
             && let Ok(square) = Square::try_from(enpassant)
@@ -119,6 +113,24 @@ impl Board {
             Ok(m.mv)
         } else {
             Err("Invalid move string")
+        }
+    }
+
+    fn parse_castling(&mut self, castling_rights: &str) {
+        for (i, c) in castling_rights.chars().enumerate() {
+            if matches!(c.to_ascii_uppercase(), 'A'..='H') {
+                let file = File::from(c.to_ascii_uppercase() as u8 - b'A');
+                self.castling_rooks[c.is_ascii_lowercase() as usize][i % 2] = (file.to_bb()
+                    & HOME_RANK[c.is_ascii_lowercase() as usize].to_bb())
+                .least_sig_bit()
+                .unwrap();
+                let mask = Castling::KINDS[c.is_ascii_lowercase() as usize][i % 2] as u8;
+                self.state.castling_rights.set(mask);
+            } else if matches!(c.to_ascii_uppercase(), 'K' | 'Q') {
+                self.state.castling_rights.set(Castling::from(c) as u8);
+            } else {
+                continue;
+            }
         }
     }
 
@@ -223,5 +235,12 @@ mod tests {
 
         let board = Board::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ").unwrap();
         assert_eq!("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", board.to_fen());
+    }
+
+    #[test]
+    fn test_frc_fen() {
+        let board =
+            Board::from_fen("qrkbbnnr/pppppppp/8/8/8/8/PPPPPPPP/RKRQNNBB w CAhb - 0 1").unwrap();
+        println!("{:?}", board.castling_rooks);
     }
 }

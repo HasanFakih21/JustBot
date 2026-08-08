@@ -5,7 +5,7 @@ use crate::{
         cache::{AccumulatorCache, CacheData},
         input_bucket, input_context, simd,
     },
-    types::{CASTLING_ROOK_SQAURES, Move, Piece, Side, Square, stackvec::StackVec},
+    types::{Move, Piece, ROOK_TO, Side, Square, stackvec::StackVec},
 };
 
 #[derive(Clone)]
@@ -34,7 +34,14 @@ impl DualAccumulators {
         }
     }
 
-    pub fn update(&mut self, prev: &Self, pov: Side, king_square: Square, parameters: &Parameters) {
+    pub fn update(
+        &mut self,
+        prev: &Self,
+        board: &Board,
+        pov: Side,
+        king_square: Square,
+        parameters: &Parameters,
+    ) {
         let Some(delta) = &self.delta else { return };
 
         let from = delta.m.get_from();
@@ -61,9 +68,8 @@ impl DualAccumulators {
             );
             self.apply_updates(prev, [add1], [sub1, sub2], pov, parameters);
         } else if let Some(castle_kind) = delta.m.castle_kind() {
-            let offset = [1, -1];
-            let rook_square = CASTLING_ROOK_SQAURES[stm][castle_kind];
-            let rook_landing_square = from.shift(offset[castle_kind]).unwrap();
+            let rook_square = board.castling_rooks[stm][castle_kind];
+            let rook_landing_square = ROOK_TO[stm][castle_kind];
             let add2 = feature_index(stm, Piece::Rook, rook_landing_square, king_square, pov);
             let sub2 = feature_index(stm, Piece::Rook, rook_square, king_square, pov);
             self.apply_updates(prev, [add1, add2], [sub1, sub2], pov, parameters);
