@@ -33,9 +33,7 @@ impl Board {
                 && from == self.castling_rooks[side][Castling::KING_SIDE]
             {
                 self.state.castling_rights.clear_king_side(side);
-            }
-
-            if self.state.castling_rights.can_queen_side(side)
+            } else if self.state.castling_rights.can_queen_side(side)
                 && from == self.castling_rooks[side][Castling::QUEEN_SIDE]
             {
                 self.state.castling_rights.clear_queen_side(side);
@@ -63,9 +61,7 @@ impl Board {
             if captured_piece == Piece::Rook {
                 if to == self.castling_rooks[other_side][Castling::KING_SIDE] {
                     self.state.castling_rights.clear_king_side(other_side);
-                }
-
-                if to == self.castling_rooks[other_side][Castling::QUEEN_SIDE] {
+                } else if to == self.castling_rooks[other_side][Castling::QUEEN_SIDE] {
                     self.state.castling_rights.clear_queen_side(other_side);
                 }
             }
