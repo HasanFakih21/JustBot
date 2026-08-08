@@ -154,16 +154,8 @@ impl Rank {
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 #[repr(u8)]
-pub enum File {
-    A,
-    B,
-    C,
-    D,
-    E,
-    F,
-    G,
-    H,
-}
+#[rustfmt::skip]
+pub enum File { A, B, C, D, E, F, G, H, }
 
 impl File {
     pub fn to_bb(&self) -> BitBoard {
