@@ -67,7 +67,7 @@ impl DualAccumulators {
                 pov,
             );
             self.apply_updates(prev, [add1], [sub1, sub2], pov, parameters);
-        } else if let Some(castle_kind) = delta.m.castle_kind() {
+        } else if let Some(castle_kind) = delta.m.castle_direction() {
             let rook_square = board.castling_rooks[stm][castle_kind];
             let rook_landing_square = ROOK_TO[stm][castle_kind];
             let add2 = feature_index(stm, Piece::Rook, rook_landing_square, king_square, pov);

@@ -169,7 +169,7 @@ impl Move {
         self.0 == 0
     }
 
-    pub const fn castle_kind(&self) -> Option<usize> {
+    pub const fn castle_direction(&self) -> Option<usize> {
         match self.get_kind() {
             MoveKind::KingCastle => Some(Castling::KING_SIDE),
             MoveKind::QueenCastle => Some(Castling::QUEEN_SIDE),
@@ -183,7 +183,7 @@ impl Move {
         }
 
         if board.frc
-            && let Some(castle_kind) = self.castle_kind()
+            && let Some(castle_kind) = self.castle_direction()
         {
             let from = self.get_from();
             let to = board.castling_rooks[(from as usize > 7) as usize][castle_kind];

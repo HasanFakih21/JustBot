@@ -47,7 +47,7 @@ impl Board {
                 .toggle_en_passant(Square::from(to as usize ^ 8));
         }
 
-        if let Some(castle_kind) = m.castle_kind() {
+        if let Some(castle_kind) = m.castle_direction() {
             self.remove_piece(side, piece, from);
             self.remove_piece(side, Piece::Rook, self.castling_rooks[side][castle_kind]);
             self.state.castling_rights.clear_king_side(side);
