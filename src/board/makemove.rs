@@ -25,9 +25,6 @@ impl Board {
             self.state.castling_rights.clear_queen_side(side);
         }
 
-        self.state.side_to_move = self.state.side_to_move.other();
-        self.state.keys.toggle_side();
-
         if let Piece::Rook = piece {
             if self.state.castling_rights.can_king_side(side)
                 && from == self.castling_rooks[side][Castling::KING_SIDE]
@@ -86,6 +83,8 @@ impl Board {
             self.state.full_move += 1
         }
 
+        self.state.side_to_move = self.state.side_to_move.other();
+        self.state.keys.toggle_side();
         self.state.keys.toggle_castling(self.state.castling_rights);
         self.update_all_threats();
         self.update_en_passant();
@@ -147,8 +146,6 @@ impl Board {
 
     pub fn make_null_move(&mut self) {
         self.copy_state();
-        self.state.side_to_move = self.state.side_to_move.other();
-        self.state.keys.toggle_side();
         self.state.plies_from_null = 0;
 
         if let Some(square) = self.state.enpassant {
@@ -160,6 +157,8 @@ impl Board {
             self.state.full_move += 1
         }
 
+        self.state.side_to_move = self.state.side_to_move.other();
+        self.state.keys.toggle_side();
         self.game_history.push(self.state.keys.full);
         self.update_all_threats();
     }
