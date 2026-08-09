@@ -673,7 +673,7 @@ pub fn quiesce<Node: NodeType>(
 
         if !mated(best_score) {
             // Late Move Pruning (LMP)
-            if move_count >= 3 {
+            if move_count >= 3 && !data.board.is_direct_check(m) {
                 break;
             }
 
