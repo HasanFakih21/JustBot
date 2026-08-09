@@ -92,21 +92,29 @@ impl TimeManager {
             }
         }
 
+        let soft_time;
+        let hard_time;
+
         if let Some(remaining_time) = remaining_time {
             let soft_scale = 0.06 - 0.05 * (-0.035 * full_moves as f64).exp();
             let hard_scale = 0.75;
 
             let max_time = remaining_time.saturating_sub(MOVE_OVERHEAD);
-            self.limits.soft_time = Some(Duration::from_millis(
-                (soft_scale * max_time as f64 + increment as f64 * 0.75) as u64,
-            ));
-            self.limits.hard_time = Some(Duration::from_millis(
-                (hard_scale * max_time as f64 + increment as f64 * 0.75) as u64,
-            ));
+            let s = (soft_scale * max_time as f64 + increment as f64 * 0.75) as u64;
+            let h = (hard_scale * max_time as f64 + increment as f64 * 0.75) as u64;
+
+            soft_time = Some(s.min(max_time));
+            hard_time = Some(h.min(max_time));
         } else if let Some(movetime) = self.settings.movetime {
-            self.limits.hard_time = Some(Duration::from_millis(movetime));
-            self.limits.soft_time = Some(Duration::from_millis(movetime));
+            soft_time = Some(movetime.saturating_sub(MOVE_OVERHEAD));
+            hard_time = Some(movetime.saturating_sub(MOVE_OVERHEAD));
+        } else {
+            soft_time = None;
+            hard_time = None;
         }
+
+        self.limits.soft_time = soft_time.map(Duration::from_millis);
+        self.limits.hard_time = hard_time.map(Duration::from_millis);
     }
 
     pub fn set_depth_limit(&mut self) {
