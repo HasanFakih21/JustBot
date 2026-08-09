@@ -122,9 +122,9 @@ tunable_params!{
     see_max   = 33,  5..=100,   true;
 
     // Base LMR
-    lmr_base      = 784, 500..=1200,   true;
-    lmr_quiet_div = 2469, 2000..=3200, true;
-    lmr_noisy_div = 3000, 2500..=3600, true;
+    lmr_base      = 7844, 500..=1200,   true;
+    lmr_quiet_div = 24696, 2000..=3200, true;
+    lmr_noisy_div = 30000, 2500..=3600, true;
 
     // LMR
     lmr_depth     = 2, 1..=3,       true;
@@ -189,8 +189,8 @@ tunable_params!{
     score_quiet_cont2 = 1040, 800..=1600,  true;
 
     // Max Histories
-    max_quiet_history = 8199, 7500..=15000, true;
-    max_noisy_history = 8113, 7500..=15000, true;
-    max_cont_history  = 7890, 7500..=15000, true;
-    max_corr_history  = 1200, 7500..=15000, true;
+    max_quiet_history = 8199, 7500..=15000,  true;
+    max_noisy_history = 8113, 7500..=15000,  true;
+    max_cont_history  = 7890, 7500..=15000,  true;
+    max_corr_history  = 12000, 7500..=15000, true;
 }

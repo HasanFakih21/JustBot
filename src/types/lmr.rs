@@ -13,9 +13,9 @@ impl LMRTable {
         let mut quiet_table = [[0; 64]; 128];
         let mut noisy_table = [[0; 64]; 128];
 
-        let lmr_base = lmr_base() as f32 / 1000.0;
-        let lmr_quiet_div = lmr_quiet_div() as f32 / 1000.0;
-        let lmr_noisy_div = lmr_noisy_div() as f32 / 1000.0;
+        let lmr_base = lmr_base() as f32 / 10000.0;
+        let lmr_quiet_div = lmr_quiet_div() as f32 / 10000.0;
+        let lmr_noisy_div = lmr_noisy_div() as f32 / 10000.0;
 
         for depth in 0..128 {
             for move_count in 0..64 {
