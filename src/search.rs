@@ -57,22 +57,23 @@ pub fn search_runner(data: &mut SearchData) {
     loop {
         data.ply_table = PlyTable::new();
 
-        if data.time.hard_limit(data.nodes(), data.id)
+        if (data.time.hard_limit(data.nodes(), data.id)
             || data
                 .time
                 .node_limit()
                 .is_some_and(|node_limit| data.nodes() >= node_limit)
-            || depth > data.time.depth_limit()
-            || data.shared.status.get() == Status::STOPPED
+            || depth > data.time.depth_limit())
+            && data.id == 0
         {
-            if data.id == 0 {
-                data.shared.status.stop();
-            }
-
+            data.shared.status.stop();
             break;
         }
 
         let score = search::<Root>(data, depth, alpha, beta, 0, false);
+
+        if data.shared.status.get() == Status::STOPPED {
+            break;
+        }
 
         // Aspiration Window
         if score <= alpha {
@@ -103,11 +104,8 @@ pub fn search_runner(data: &mut SearchData) {
                 .max(0.55)
         };
 
-        if data.time.soft_limit(multiplier) {
-            if data.id == 0 {
-                data.shared.status.stop();
-            }
-
+        if data.time.soft_limit(multiplier) && data.id == 0 {
+            data.shared.status.stop();
             break;
         }
 
@@ -153,7 +151,7 @@ pub fn search<Node: NodeType>(
             return Score::DRAW;
         }
 
-        // Prevent from going to deep
+        // Prevent from going too deep
         if ply >= MAX_PLY as isize - 1 {
             if in_check {
                 return Score::DRAW;
@@ -171,12 +169,12 @@ pub fn search<Node: NodeType>(
     }
 
     // Check for Time Outs
-    if data.time.hard_limit(data.nodes(), data.id)
-        || data.shared.status.get() == Status::STOPPED
+    if (data.time.hard_limit(data.nodes(), data.id)
         || data
             .time
             .node_limit()
-            .is_some_and(|node_limit| data.nodes() >= node_limit)
+            .is_some_and(|node_limit| data.nodes() >= node_limit))
+        && data.id == 0
     {
         data.shared.status.stop();
         return Score::TIMEOUT;
@@ -588,12 +586,12 @@ pub fn quiesce<Node: NodeType>(
         return Score::DRAW;
     }
 
-    if data.time.hard_limit(data.nodes(), data.id)
-        || data.shared.status.get() == Status::STOPPED
+    if (data.time.hard_limit(data.nodes(), data.id)
         || data
             .time
             .node_limit()
-            .is_some_and(|node_limit| data.nodes() >= node_limit)
+            .is_some_and(|node_limit| data.nodes() >= node_limit))
+        && data.id == 0
     {
         data.shared.status.stop();
         return Score::TIMEOUT;
