@@ -5,10 +5,14 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use crate::board::Board;
 use crate::nnue::Network;
 use crate::search::time::{TimeManager, TimeSettings};
+use crate::tools::parameters::{
+    corr_div, corr_hist_base, corr_hist_div, corr_hist_max, corr_hist_min,
+};
 use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
 use crate::types::{
-    ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory, STARTING_FEN, Score,
+    ContinuationHistory, CorrectionHistory, LMRTable, Move, NoisyHistory, PawnHistory, STARTING_FEN, Score,
+   
     Side, is_decisive,
 };
 use crate::types::{QuietHistory, TranspositionTable};
@@ -83,6 +87,7 @@ pub struct SearchData {
     pub report: bool,
     pub ply_table: Box<PlyTable>,
     pub root_moves: Vec<RootMove>,
+    pub lmr_table: LMRTable,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -105,6 +110,7 @@ impl SearchData {
             report: true,
             ply_table: PlyTable::new(),
             root_moves: Vec::new(),
+            lmr_table: LMRTable::default(),
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -168,7 +174,8 @@ impl SearchData {
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
-        let bonus = (148 * depth * diff / 121).clamp(-4612, 2530);
+        let bonus = (corr_hist_base() * depth * diff / corr_hist_div())
+            .clamp(corr_hist_min(), corr_hist_max());
         self.corrhistory
             .pawn
             .update(stm, self.board.state.keys.pawn, bonus);
@@ -191,7 +198,7 @@ impl SearchData {
                 .get(stm, self.board.state.keys.non_pawn[Side::White])
             + self.corrhistory.non_pawn[Side::Black as usize]
                 .get(stm, self.board.state.keys.non_pawn[Side::Black]))
-            / 64
+            / corr_div()
     }
 
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {

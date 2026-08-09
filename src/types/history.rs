@@ -1,4 +1,7 @@
-use crate::types::{BitBoard, Move, Piece, Side, Square, to_piece_index};
+use crate::{
+    tools::parameters::{max_cont_history, max_corr_history, max_noisy_history, max_quiet_history},
+    types::{BitBoard, Move, Piece, Side, Square, to_piece_index},
+};
 
 pub type FromToHistory<T> = [[T; 64]; 64];
 pub type PieceToHistory<T> = [[T; 64]; 13];
@@ -8,10 +11,8 @@ pub type PieceToHistory<T> = [[T; 64]; 13];
 pub struct QuietHistory(Box<[[[FromToHistory<i16>; 2]; 2]; 2]>);
 
 impl QuietHistory {
-    const MAX_HISTORY: i32 = 8128;
-
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        unsafe { Self(allocate_zeroed_box()) }
     }
 
     pub fn update(&mut self, threats: BitBoard, side: Side, m: Move, bonus: i32) {
@@ -23,7 +24,7 @@ impl QuietHistory {
 
         let entry = &mut self.0[side as usize][from_threats as usize][to_threats as usize]
             [from as usize][to as usize];
-        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
+        update_entry(bonus, entry, max_quiet_history());
     }
 
     pub fn get(&self, threats: BitBoard, side: Side, m: Move) -> i32 {
@@ -43,10 +44,8 @@ impl QuietHistory {
 pub struct NoisyHistory(Box<PieceToHistory<[[i16; 2]; 7]>>);
 
 impl NoisyHistory {
-    const MAX_HISTORY: i32 = 8209;
-
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        unsafe { Self(allocate_zeroed_box()) }
     }
 
     pub fn update(
@@ -69,7 +68,7 @@ impl NoisyHistory {
 
         let entry =
             &mut self.0[piece_index][to as usize][captured_index][threats.contains(to) as usize];
-        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
+        update_entry(bonus, entry, max_noisy_history());
     }
 
     pub fn get(
@@ -98,10 +97,8 @@ impl NoisyHistory {
 pub struct ContinuationHistory(Box<PieceToHistory<PieceToHistory<i16>>>);
 
 impl ContinuationHistory {
-    pub const MAX_HISTORY: i32 = 7813;
-
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        unsafe { Self(allocate_zeroed_box()) }
     }
 
     pub fn subtable(
@@ -122,7 +119,7 @@ impl ContinuationHistory {
         bonus: i32,
     ) {
         let entry = &mut unsafe { &mut *subtable }[to_piece_index(piece)][to as usize];
-        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
+        update_entry(bonus, entry, max_cont_history());
     }
 
     /// # Safety
@@ -142,18 +139,16 @@ impl ContinuationHistory {
 pub struct CorrectionHistory(Box<[[i16; Self::SIZE]; 2]>);
 
 impl CorrectionHistory {
-    const MAX_HISTORY: i32 = 11972;
-
     const SIZE: usize = 16384;
     const MASK: usize = Self::SIZE - 1;
 
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        unsafe { Self(allocate_zeroed_box()) }
     }
 
     pub fn update(&mut self, stm: Side, key: u64, bonus: i32) {
         let entry = &mut self.0[stm as usize][key as usize & Self::MASK];
-        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
+        update_entry(bonus, entry, max_corr_history());
     }
 
     pub fn get(&self, stm: Side, key: u64) -> i32 {
@@ -166,18 +161,16 @@ impl CorrectionHistory {
 pub struct PawnHistory(Box<[PieceToHistory<i16>; Self::SIZE]>);
 
 impl PawnHistory {
-    const MAX_HISTORY: i32 = 8000;
-
     const SIZE: usize = 512;
     const MASK: usize = Self::SIZE - 1;
 
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        unsafe { Self(allocate_zeroed_box()) }
     }
 
     pub fn update(&mut self, key: u64, piece: Option<(Side, Piece)>, to: Square, bonus: i32) {
         let entry = &mut self.0[key as usize & Self::MASK][to_piece_index(piece)][to];
-        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
+        update_entry(bonus, entry, 8000);
     }
 
     pub fn get(&self, key: u64, piece: Option<(Side, Piece)>, to: Square) -> i32 {
@@ -185,17 +178,21 @@ impl PawnHistory {
     }
 }
 
-fn allocate_empty_history<T>() -> Box<T> {
+/// # Safety
+/// The type 'T' needs to be able to be zero-initialized
+pub unsafe fn allocate_zeroed_box<T>() -> Box<T> {
     let layout = std::alloc::Layout::new::<T>();
-    unsafe {
-        let p = std::alloc::alloc_zeroed(layout);
-        Box::<T>::from_raw(p.cast())
+    let p = unsafe { std::alloc::alloc_zeroed(layout) };
+    if p.is_null() {
+        std::alloc::handle_alloc_error(layout);
     }
+
+    unsafe { Box::<T>::from_raw(p.cast()) }
 }
 
-fn update_entry<const MAX: i32>(bonus: i32, entry: &mut i16) {
-    let clamped_bonus = bonus.clamp(-MAX, MAX);
-    *entry += (clamped_bonus - (*entry as i32) * clamped_bonus.abs() / MAX) as i16;
+fn update_entry(bonus: i32, entry: &mut i16, max: i32) {
+    let clamped_bonus = bonus.clamp(-max, max);
+    *entry += (clamped_bonus - (*entry as i32) * clamped_bonus.abs() / max) as i16;
 }
 
 impl Default for QuietHistory {

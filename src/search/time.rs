@@ -1,6 +1,9 @@
 use std::time::{Duration, Instant};
 
-use crate::types::{MAX_PLY, MOVE_OVERHEAD, Side};
+use crate::{
+    tools::parameters::{tm_base, tm_fm_mult, tm_mult},
+    types::{MAX_PLY, MOVE_OVERHEAD, Side},
+};
 
 #[derive(Debug, Clone)]
 pub struct TimeManager {
@@ -96,7 +99,11 @@ impl TimeManager {
         let hard_time;
 
         if let Some(remaining_time) = remaining_time {
-            let soft_scale = 0.06 - 0.05 * (-0.035 * full_moves as f64).exp();
+            let tm_base = tm_base() as f64 / 1000.0;
+            let tm_mult = tm_mult() as f64 / 1000.0;
+            let tm_fm_mult = tm_fm_mult() as f64 / 1000.0;
+
+            let soft_scale = tm_base - tm_mult * (-tm_fm_mult * full_moves as f64).exp();
             let hard_scale = 0.75;
 
             let max_time = remaining_time.saturating_sub(MOVE_OVERHEAD);

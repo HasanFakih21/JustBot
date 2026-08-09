@@ -1,6 +1,9 @@
 use crate::{
     board::{movegen::MoveGenKind, see},
     search::data::SearchData,
+    tools::parameters::{
+        mp_see_base, mp_see_div, score_noisy_div, score_quiet_cont1, score_quiet_cont2,
+    },
     types::{Move, MoveEntry, MoveList, stackvec::StackVec},
 };
 
@@ -59,7 +62,7 @@ impl MovePicker {
         if self.status == Stage::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
-                let threshold = -best_entry.score / 4 + 64;
+                let threshold = -best_entry.score / mp_see_div() + mp_see_base();
                 if !data.board.see(best_entry.mv, threshold) {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
@@ -118,7 +121,7 @@ impl MovePicker {
                 score += see::value(p)
             }
 
-            score += data.noisy_history.get(piece, to, captured, threats) / 8;
+            score += data.noisy_history.get(piece, to, captured, threats) / score_noisy_div();
             entry.score = score;
         }
     }
