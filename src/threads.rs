@@ -32,7 +32,7 @@ impl SearchThreads {
         mute: bool,
     ) -> Option<Move> {
         shared.tt.increase_age();
-        time.set_time_limits(board.state.side_to_move);
+        time.set_time_limits(board.state.side_to_move, board.state.full_move);
         shared.reset_all_nodes();
         shared.status.run();
 
