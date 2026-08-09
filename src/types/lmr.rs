@@ -9,10 +9,7 @@ pub struct LMRTable {
 }
 
 impl LMRTable {
-    pub fn init(&mut self) {
-        let mut quiet_table = [[0; 64]; 128];
-        let mut noisy_table = [[0; 64]; 128];
-
+    pub fn init(&mut self) { 
         let lmr_base = lmr_base() as f32 / 10000.0;
         let lmr_quiet_div = lmr_quiet_div() as f32 / 10000.0;
         let lmr_noisy_div = lmr_noisy_div() as f32 / 10000.0;
@@ -21,12 +18,10 @@ impl LMRTable {
             for move_count in 0..64 {
                 let reduction = lmr_base + f32::ln(depth as f32) * f32::ln(move_count as f32);
 
-                quiet_table[depth][move_count] = ((reduction / lmr_quiet_div) * 1024.0) as i32;
-                noisy_table[depth][move_count] = ((reduction / lmr_noisy_div) * 1024.0) as i32;
+                self.base[1][depth][move_count] = ((reduction / lmr_quiet_div) * 1024.0) as i32;
+                self.base[0][depth][move_count] = ((reduction / lmr_noisy_div) * 1024.0) as i32;
             }
         }
-
-        *self.base = [noisy_table, quiet_table];
     }
 }
 
