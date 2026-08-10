@@ -511,6 +511,11 @@ pub fn search<Node: NodeType>(
         let threats = data.board.state.threats;
 
         if is_quiet {
+            let piece = data.board.get_piece_at_square(m.get_from());
+            let to = m.get_to();
+            // Add bonus to pawn history
+            data.pawn_history
+                .update(data.board.state.keys.pawn, piece, to, quiet_bonus);
             // Add quiet bonus to history
             data.quiet_history.update(threats, stm, m, quiet_bonus);
             // Conthistory Bonus

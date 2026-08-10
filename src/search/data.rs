@@ -8,7 +8,8 @@ use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
 use crate::types::{
-    ContinuationHistory, CorrectionHistory, Move, NoisyHistory, STARTING_FEN, Score, Side, is_mate,
+    ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory, STARTING_FEN, Score,
+    Side, is_mate,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -85,6 +86,7 @@ pub struct SearchData {
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
+    pub pawn_history: PawnHistory,
     pub conthistory: ContinuationHistory,
     pub corrhistory: CorrectionHistories,
 
@@ -106,6 +108,7 @@ impl SearchData {
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
+            pawn_history: PawnHistory::new(),
             conthistory: ContinuationHistory::new(),
             corrhistory: CorrectionHistories::default(),
 
