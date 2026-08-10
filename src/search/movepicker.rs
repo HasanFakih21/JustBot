@@ -118,7 +118,7 @@ impl MovePicker {
                 score += see::value(p)
             }
 
-            score += data.noisy_history.get(piece, to, captured, threats) / 8;
+            score += data.noisy_history.get(piece, to, captured, threats) / 7;
             entry.score = score;
         }
     }
@@ -129,8 +129,8 @@ impl MovePicker {
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
-            let conthistory_score = 1588 * data.get_conthistory(mv, ply, 1) / 1024
-                + 1040 * data.get_conthistory(mv, ply, 2) / 1024;
+            let conthistory_score = 1584 * data.get_conthistory(mv, ply, 1) / 1024
+                + 1016 * data.get_conthistory(mv, ply, 2) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score

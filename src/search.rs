@@ -40,8 +40,8 @@ pub fn search_runner(data: &mut SearchData) {
     data.start_time();
     data.network.full_refresh(&data.board);
 
-    let mut alpha_window = 31;
-    let mut beta_window = 20;
+    let mut alpha_window = 30;
+    let mut beta_window = 18;
     let mut alpha = -Score::INFINITY;
     let mut beta = Score::INFINITY;
 
@@ -93,15 +93,15 @@ pub fn search_runner(data: &mut SearchData) {
         data.print_uci_info(score, depth, &data.board);
 
         let multiplier = || {
-            (3.0 - (data
+            (2.988 - (data
                 .root_moves
                 .iter()
                 .find(|rm| rm.m == best_move.unwrap())
                 .unwrap()
                 .nodes as f32
                 / data.nodes() as f32)
-                * 2.5)
-                .max(0.55)
+                * 2.486)
+                .max(0.558)
         };
 
         if data.time.soft_limit(multiplier) && data.id == 0 {
@@ -109,8 +109,8 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
-        alpha_window = 31;
-        beta_window = 20;
+        alpha_window = 29;
+        beta_window = 19;
         alpha = score - alpha_window;
         beta = score + beta_window;
     }
@@ -254,7 +254,7 @@ pub fn search<Node: NodeType>(
     if !Node::PV
         && !in_check
         && tt_bound.is_none_or(|b| b != Bound::Lower)
-        && static_eval < alpha - 250 - 250 * depth * depth
+        && static_eval < alpha - 239 - 250 * depth * depth
         && alpha < 2000
     {
         return quiesce::<Node>(data, alpha, beta, ply);
@@ -264,22 +264,22 @@ pub fn search<Node: NodeType>(
     if !in_check
         && !Node::PV
         && !excluded
-        && static_eval >= beta + 148 * depth - (92 * improving as i32)
+        && static_eval >= beta + 145 * depth - (95 * improving as i32)
     {
-        return ilerp::<1024>(static_eval, beta, 700);
+        return ilerp::<1024>(static_eval, beta, 704);
     }
 
     // Null Move Pruning
     if cutnode
-        && depth >= 3
+        && depth >= 2
         && !excluded
         && !in_check
         && !data.board.only_king_and_pawns()
         && tt_bound.is_none_or(|b| b != Bound::Upper)
-        && static_eval >= beta - 60 * improving as i32
+        && static_eval >= beta - 62 * improving as i32
         && !data.ply_table[ply - 1].m.is_null()
     {
-        let r = 6 + depth * 128 / 640;
+        let r = 5 + depth * 129 / 632;
         data.ply_table[ply].conthistory = data.ply_table.sentinel();
         data.ply_table[ply].m = Move::default();
         data.ply_table[ply].piece = None;
@@ -330,7 +330,7 @@ pub fn search<Node: NodeType>(
         }
 
         if singular_score < singular_beta {
-            let double_margin = 10 + 250 * Node::PV as i32;
+            let double_margin = 11 + 242 * Node::PV as i32;
             extension = 1 + (singular_score < singular_beta - double_margin) as i32;
         }
         // Negative Extensions
@@ -381,7 +381,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && !mating(beta)
                 && is_quiet
-                && move_count as i32 > (3000 + 1500 * depth * depth) / 1024
+                && move_count as i32 > (2963 + 1544 * depth * depth) / 1024
             {
                 skip_quiets = true;
                 continue;
@@ -392,19 +392,19 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && is_quiet
                 && depth < 7
-                && static_eval + 90 * depth + 146 <= alpha
+                && static_eval + 90 * depth + 145 <= alpha
             {
                 skip_quiets = true;
                 continue;
             }
 
             // History Pruning (HP)
-            if !in_check && is_quiet && depth <= 5 && history < -1482 * depth {
+            if !in_check && is_quiet && depth <= 6 && history < -1471 * depth {
                 continue;
             }
 
             // Static Exchange Evaluation Pruning (SEE Pruning)
-            let threshold = (-123 * depth * depth - 47 * depth + 13).min(-33);
+            let threshold = (-127 * depth * depth - 48 * depth + 14).min(-32);
             if !in_check && !is_quiet && !data.board.see(m, threshold) {
                 continue;
             }
@@ -418,13 +418,13 @@ pub fn search<Node: NodeType>(
         let mut score = -Score::INFINITY;
 
         // Late Move Reductions (LMR)
-        if depth > 2 && move_count > 1 {
+        if depth > 1 && move_count > 1 {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
-            r += 217 * !improving as i32;
-            r -= 200 * tt_pv as i32;
-            r += 450 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
-            r += 300 * (tt_depth.is_some_and(|d| d < depth)) as i32;
-            r -= 450 * history / 4096;
+            r += 211 * !improving as i32;
+            r -= 209 * tt_pv as i32;
+            r += 442 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
+            r += 296 * (tt_depth.is_some_and(|d| d < depth)) as i32;
+            r -= 458 * history / 4096;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
@@ -499,14 +499,14 @@ pub fn search<Node: NodeType>(
     if let Some(m) = best_move {
         let is_quiet = m.get_kind().is_quiet();
 
-        let quiet_bonus = (319 * depth).min(928) - 227;
-        let quiet_malus = (287 * depth).min(955) - 236;
+        let quiet_bonus = (316 * depth).min(943) - 229;
+        let quiet_malus = (288 * depth).min(959) - 232;
 
-        let noisy_bonus = (259 * depth).min(1060) - 198;
-        let noisy_malus = (308 * depth).min(934) - 277;
+        let noisy_bonus = (264 * depth).min(1047) - 207;
+        let noisy_malus = (308 * depth).min(942) - 272;
 
-        let cont_bonus = (308 * depth).min(1060) - 196;
-        let cont_malus = (303 * depth).min(1081) - 270;
+        let cont_bonus = (313 * depth).min(1076) - 192;
+        let cont_malus = (306 * depth).min(1078) - 270;
 
         let threats = data.board.state.threats;
 
@@ -678,7 +678,7 @@ pub fn quiesce<Node: NodeType>(
             }
 
             // Static Exchange Evaluation Pruning (SEE Pruning)
-            if !data.board.see(m, -134) {
+            if !data.board.see(m, -142) {
                 continue;
             }
         }

@@ -96,7 +96,7 @@ impl TimeManager {
         let hard_time;
 
         if let Some(remaining_time) = remaining_time {
-            let soft_scale = 0.06 - 0.05 * (-0.035 * full_moves as f64).exp();
+            let soft_scale = 0.06 - 0.05 * (-0.036 * full_moves as f64).exp();
             let hard_scale = 0.75;
 
             let max_time = remaining_time.saturating_sub(MOVE_OVERHEAD);
