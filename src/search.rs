@@ -513,24 +513,26 @@ pub fn search<Node: NodeType>(
         if is_quiet {
             let piece = data.board.get_piece_at_square(m.get_from());
             let to = m.get_to();
-            // Add bonus to pawn history
-            data.pawn_history
-                .update(data.board.state.keys.pawn, piece, to, quiet_bonus);
-            // Add quiet bonus to history
+            let pawn_key = data.board.state.keys.pawn;
+            // Pawn History Bonus
+            data.pawn_history.update(pawn_key, piece, to, quiet_bonus);
+            // Quiet History Bonus
             data.quiet_history.update(threats, stm, m, quiet_bonus);
             // Conthistory Bonus
             data.update_conthistories(m, ply, cont_bonus);
-            // Add malus to quiet moves
-            for e in quiets_searched.iter() {
-                let quiet_move = e;
+            for quiet_move in quiets_searched.iter() {
+                let piece = data.board.get_piece_at_square(quiet_move.get_from());
+                let to = quiet_move.get_to();
+                // Pawn History Malus
+                data.pawn_history.update(pawn_key, piece, to, -quiet_malus);
+                // Quiet History Malus
                 data.quiet_history
                     .update(threats, stm, *quiet_move, -quiet_malus);
-
-                // Conthistory malus
+                // Conthistory Malus
                 data.update_conthistories(*quiet_move, ply, -cont_malus);
             }
         } else {
-            // Add noisy bonus to history
+            // Noisy History Bonus
             let piece = data.board.get_piece_at_square(m.get_from());
             let to = m.get_to();
             let captured = data
@@ -541,7 +543,7 @@ pub fn search<Node: NodeType>(
                 .update(piece, to, captured, threats, noisy_bonus);
         }
 
-        // Add malus to noisy moves
+        // Noisy History Malus
         for m in noisies_searched.iter() {
             let piece = data.board.get_piece_at_square(m.get_from());
             let to = m.get_to();
