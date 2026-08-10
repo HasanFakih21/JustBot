@@ -91,7 +91,7 @@ tunable_params!{
     // NMP
     nmp_depth     = 3,   2..=4,     false;
     nmp_improving = 60,  30..=150,  true;
-    nmp_base_r    = 6,   3..=9,     true;
+    nmp_base_r    = 6,   3..=9,     false;
     nmp_r_mult    = 128, 100..=300, true;
     nmp_r_div     = 640, 400..=900, true;
 
@@ -100,7 +100,7 @@ tunable_params!{
     se_tt_depth    = 3,   1..=5,     false;
     se_double_base = 10,  5..=50,    true;
     se_double_pv   = 250, 100..=400, true;
-    se_neg_ext     = 2,   1..=4,     true;
+    se_neg_ext     = 2,   1..=4,     false;
 
     // LMP
     lmp_base = 3000, 2000..=5000, true;
@@ -166,7 +166,7 @@ tunable_params!{
     corr_div       = 64, 50..=90,          true;
 
     // Qsearch
-    qsearch_lmp        =  3,    2..=5,     true;
+    qsearch_lmp        =  3,    2..=5,     false;
     qsearch_see        = -134, -400..=150, true;
     qsearch_hist_bonus =  98,   50..=300,  true;
 
@@ -179,10 +179,10 @@ tunable_params!{
 
     // Move Picker
     mp_see_base = 65, 40..=100, true; 
-    mp_see_div  = 4,  3..=6,    true;
+    mp_see_div  = 4,  3..=6,    false;
 
     // Score Noisy
-    score_noisy_div = 8, 5..=10, true;
+    score_noisy_div = 8, 5..=10, false;
 
     // Score Quiet
     score_quiet_cont1 = 1588, 1200..=2000, true;
