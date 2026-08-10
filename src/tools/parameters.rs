@@ -89,15 +89,15 @@ tunable_params!{
     rfp_lerp_t    = 700, 300..=900, true;
 
     // NMP
-    nmp_depth     = 3,   2..=4,     true;
+    nmp_depth     = 3,   2..=4,     false;
     nmp_improving = 60,  30..=150,  true;
     nmp_base_r    = 6,   3..=9,     true;
     nmp_r_mult    = 128, 100..=300, true;
     nmp_r_div     = 640, 400..=900, true;
 
     // SE
-    se_depth       = 6,   4..=8,     true;
-    se_tt_depth    = 3,   1..=5,     true;
+    se_depth       = 6,   4..=8,     false;
+    se_tt_depth    = 3,   1..=5,     false;
     se_double_base = 10,  5..=50,    true;
     se_double_pv   = 250, 100..=400, true;
     se_neg_ext     = 2,   1..=4,     true;
@@ -107,12 +107,12 @@ tunable_params!{
     lmp_mult = 1500, 1000..=3000, true;
 
     // FP
-    fp_depth = 7, 4..=9,       true;
+    fp_depth = 7, 4..=9,       false;
     fp_mult  = 90, 50..=150,   true;
     fp_base  = 146, 100..=200, true;
 
     // HP
-    hp_depth = 5,    3..=8,       true;
+    hp_depth = 5,    3..=8,       false;
     hp_base  = 1482, 1000..=2000, true;
 
     // Main SEE
@@ -127,7 +127,7 @@ tunable_params!{
     lmr_noisy_div = 30000, 25000..=36000, true;
 
     // LMR
-    lmr_depth     = 2, 1..=3,       true;
+    lmr_depth     = 2, 1..=3,       false;
     lmr_improving = 217, 150..=400, true;
     lmr_ttpv      = 200, 100..=500, true;
     lmr_tt_alpha  = 450, 100..=600, true;
