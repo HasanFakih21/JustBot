@@ -104,16 +104,13 @@ pub fn search_runner(data: &mut SearchData) {
                 .max(0.55)
         };
 
-        if data.time.soft_limit(multiplier)
+        if (data.time.soft_limit(multiplier)
             || data
                 .time
                 .node_limit()
-                .is_some_and(|node_limit| data.nodes() >= node_limit)
+                .is_some_and(|node_limit| data.nodes() >= node_limit)) && data.id == 0
         {
-            if data.id == 0 {
-                data.shared.status.stop();
-            }
-
+            data.shared.status.stop();
             break;
         }
 
