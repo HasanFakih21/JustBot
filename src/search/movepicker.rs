@@ -129,8 +129,13 @@ impl MovePicker {
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
-            let conthistory_score = 1588 * data.get_conthistory(mv, ply, 1) / 1024
-                + 1040 * data.get_conthistory(mv, ply, 2) / 1024;
+            let piece = data.board.get_piece_at_square(mv.get_from());
+            let to = mv.get_to();
+
+            let conthistory_score =
+                1000 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
+                    + 1588 * data.get_conthistory(mv, ply, 1) / 1024
+                    + 1040 * data.get_conthistory(mv, ply, 2) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score

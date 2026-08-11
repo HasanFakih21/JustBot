@@ -161,6 +161,30 @@ impl CorrectionHistory {
     }
 }
 
+#[derive(Debug, Clone)]
+// [Pawn Key][Piece][To]
+pub struct PawnHistory(Box<[PieceToHistory<i16>; Self::SIZE]>);
+
+impl PawnHistory {
+    const MAX_HISTORY: i32 = 8000;
+
+    const SIZE: usize = 512;
+    const MASK: usize = Self::SIZE - 1;
+
+    pub fn new() -> Self {
+        Self(allocate_empty_history())
+    }
+
+    pub fn update(&mut self, key: u64, piece: Option<(Side, Piece)>, to: Square, bonus: i32) {
+        let entry = &mut self.0[key as usize & Self::MASK][to_piece_index(piece)][to];
+        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
+    }
+
+    pub fn get(&self, key: u64, piece: Option<(Side, Piece)>, to: Square) -> i32 {
+        self.0[key as usize & Self::MASK][to_piece_index(piece)][to] as i32
+    }
+}
+
 fn allocate_empty_history<T>() -> Box<T> {
     let layout = std::alloc::Layout::new::<T>();
     unsafe {
@@ -195,6 +219,12 @@ impl Default for ContinuationHistory {
 impl Default for CorrectionHistory {
     fn default() -> Self {
         CorrectionHistory::new()
+    }
+}
+
+impl Default for PawnHistory {
+    fn default() -> Self {
+        PawnHistory::new()
     }
 }
 
