@@ -333,6 +333,10 @@ pub fn search<Node: NodeType>(
             let double_margin = 10 + 252 * Node::PV as i32;
             extension = 1 + (singular_score < singular_beta - double_margin) as i32;
         }
+        // Multi-Cut
+        else if singular_score >= beta {
+            return singular_score
+        }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
             extension -= 2;
