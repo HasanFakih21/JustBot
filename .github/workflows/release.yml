@@ -1,3 +1,6 @@
+# Code is a modified version of https://github.com/codedeliveryservice/Reckless/blob/main/.github/workflows/release.yml
+# Check the original repository for license details
+
 name: JustBot Releases
 
 on: [workflow_dispatch]
@@ -136,7 +139,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2.4.1
         with:
-          name: justbot 0.4.0-dev-${{ env.COMMIT_SHA }}
+          name: justbot 0.5.0-dev-${{ env.COMMIT_SHA }}
           draft: true
           prerelease: true
           files: artifacts/**/*
