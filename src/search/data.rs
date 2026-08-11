@@ -168,7 +168,7 @@ impl SearchData {
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
-        let bonus = (150 * depth * diff / 120).clamp(-4500, 2500);
+        let bonus = (148 * depth * diff / 121).clamp(-4612, 2530);
         self.corrhistory
             .pawn
             .update(stm, self.board.state.keys.pawn, bonus);
