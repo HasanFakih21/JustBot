@@ -59,7 +59,7 @@ impl MovePicker {
         if self.status == Stage::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
-                let threshold = -best_entry.score / 4 + 65;
+                let threshold = -best_entry.score / 4 + 64;
                 if !data.board.see(best_entry.mv, threshold) {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
@@ -134,8 +134,8 @@ impl MovePicker {
 
             let conthistory_score =
                 1000 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
-                    + 1588 * data.get_conthistory(mv, ply, 1) / 1024
-                    + 1040 * data.get_conthistory(mv, ply, 2) / 1024;
+                    + 1595 * data.get_conthistory(mv, ply, 1) / 1024
+                    + 1050 * data.get_conthistory(mv, ply, 2) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score
