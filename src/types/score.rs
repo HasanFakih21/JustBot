@@ -10,20 +10,20 @@ impl Score {
     pub const DRAW: i32 = 0;
 }
 
-pub const fn mated(score: i32) -> bool {
+pub const fn is_loss(score: i32) -> bool {
     score <= -Score::MATE_CUTOFF
 }
 
-pub const fn mating(score: i32) -> bool {
+pub const fn is_win(score: i32) -> bool {
     score >= Score::MATE_CUTOFF
 }
 
-pub const fn is_mate(score: i32) -> bool {
+pub const fn is_decisive(score: i32) -> bool {
     score.abs() >= Score::MATE_CUTOFF
 }
 
 pub const fn from_tt(score: i16, ply: isize) -> i16 {
-    if is_mate(score as i32) {
+    if is_decisive(score as i32) {
         score - (score.signum() * ply as i16)
     } else {
         score
