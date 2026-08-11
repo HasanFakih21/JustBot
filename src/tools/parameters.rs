@@ -64,10 +64,10 @@ macro_rules! tunable_params {
 #[rustfmt::skip]
 tunable_params!{
     // Aspiration Windows
-    asp_init_alpha_window = 31, 15..=100, true;
+    asp_init_alpha_window = 33, 15..=100, true;
     asp_init_beta_window  = 20, 15..=100, true;
-    asp_alpha_window      = 31, 15..=100, true;
-    asp_beta_window       = 20, 15..=100, true;
+    asp_alpha_window      = 30, 15..=100, true;
+    asp_beta_window       = 19, 15..=100, true;
 
     // Base Time Scaling
     tm_base    = 60, 50..=75, true;
@@ -75,122 +75,125 @@ tunable_params!{
     tm_fm_mult = 35, 20..=50, true;
 
     // Node Time Scaling
-    node_tm_base = 3000, 2500..=3500, true;
-    node_tm_mult = 2500, 2000..=3000, true;
-    node_tm_min  = 550,  450..=750,   true;
+    node_tm_base = 2977, 2500..=3500, true;
+    node_tm_mult = 2495, 2000..=3000, true;
+    node_tm_min  = 553,  450..=750,   true;
 
     // Razoring
-    razoring_base = 250, 100..=400, true;
-    razoring_mult = 250, 100..=400, true;
+    razoring_base = 246, 100..=400, true;
+    razoring_mult = 253, 100..=400, true;
 
     // RFP
-    rfp_base      = 148, 100..=300, true;
-    rfp_improving = 92,  50..=150,  true;
-    rfp_lerp_t    = 700, 300..=900, true;
+    rfp_base      = 147, 100..=300, true;
+    rfp_improving = 94,  50..=150,  true;
+    rfp_lerp_t    = 690, 300..=900, true;
 
     // NMP
-    nmp_depth     = 3,   2..=4,     false;
-    nmp_improving = 60,  30..=150,  true;
-    nmp_base_r    = 6,   3..=9,     false;
-    nmp_r_mult    = 128, 100..=300, true;
-    nmp_r_div     = 640, 400..=900, true;
+    nmp_depth     = 3,   2..=4,     true;
+    nmp_improving = 63,  30..=150,  true;
+    nmp_base_r    = 6,   3..=9,     true;
+    nmp_r_mult    = 132, 100..=300, true;
+    nmp_r_div     = 637, 400..=900, true;
 
     // SE
-    se_depth       = 6,   4..=8,     false;
-    se_tt_depth    = 3,   1..=5,     false;
+    se_depth       = 5,   4..=8,     true;
+    se_tt_depth    = 3,   1..=5,     true;
     se_double_base = 10,  5..=50,    true;
-    se_double_pv   = 250, 100..=400, true;
-    se_neg_ext     = 2,   1..=4,     false;
+    se_double_pv   = 252, 100..=400, true;
+    se_neg_ext     = 2,   1..=4,     true;
 
     // LMP
-    lmp_base = 3000, 2000..=5000, true;
-    lmp_mult = 1500, 1000..=3000, true;
+    lmp_base = 3011, 2000..=5000, true;
+    lmp_mult = 1493, 1000..=3000, true;
 
     // FP
-    fp_depth = 7, 4..=9,       false;
-    fp_mult  = 90, 50..=150,   true;
+    fp_depth = 8, 4..=9,       true;
+    fp_mult  = 93, 50..=150,   true;
     fp_base  = 146, 100..=200, true;
 
     // HP
-    hp_depth = 5,    3..=8,       false;
-    hp_base  = 1482, 1000..=2000, true;
+    hp_depth = 6,    3..=8,       true;
+    hp_base  = 1485, 1000..=2000, true;
 
     // Main SEE
-    see_mult1 = 123, 100..=250, true;
-    see_mult2 = 47,  20..=150,  true;
-    see_base  = 13,  5..=50,    true;
-    see_max   = 33,  5..=100,   true;
+    see_mult1 = 125, 100..=250, true;
+    see_mult2 = 46,  20..=150,  true;
+    see_base  = 14,  5..=50,    true;
+    see_max   = 34,  5..=100,   true;
 
     // Base LMR
-    lmr_base      = 7844,  5000..=12000,  true;
-    lmr_quiet_div = 24696, 20000..=32000, true;
-    lmr_noisy_div = 30000, 25000..=36000, true;
+    lmr_base      = 7851,  5000..=12000,  true;
+    lmr_quiet_div = 24482, 20000..=32000, true;
+    lmr_noisy_div = 30040, 25000..=36000, true;
 
     // LMR
-    lmr_depth     = 2, 1..=3,       false;
+    lmr_depth     = 2, 1..=3,       true;
     lmr_improving = 217, 150..=400, true;
-    lmr_ttpv      = 200, 100..=500, true;
-    lmr_tt_alpha  = 450, 100..=600, true;
-    lmr_tt_depth  = 300, 150..=600, true;
-    lmr_history   = 450, 150..=800, true;
+    lmr_ttpv      = 197, 100..=500, true;
+    lmr_tt_alpha  = 447, 100..=600, true;
+    lmr_tt_depth  = 296, 150..=600, true;
+    lmr_history   = 449, 150..=800, true;
 
     // Quiet History
-    hist_quiet_bonus_mult = 319, 150..=500,   true;
-    hist_quiet_bonus_max  = 928, 800..=1400,  true;
-    hist_quiet_bonus_base = 227, 150..=400,   true;
-    hist_quiet_malus_mult = 287, 150..=500,   true;
-    hist_quiet_malus_max  = 955, 800..=1400,  true;
-    hist_quiet_malus_base = 236, 150..=400,   true;
+    hist_quiet_bonus_mult = 321, 150..=500,   true;
+    hist_quiet_bonus_max  = 935, 800..=1400,  true;
+    hist_quiet_bonus_base = 228, 150..=400,   true;
+    hist_quiet_malus_mult = 289, 150..=500,   true;
+    hist_quiet_malus_max  = 948, 800..=1400,  true;
+    hist_quiet_malus_base = 232, 150..=400,   true;
 
     // Noisy History
-    hist_noisy_bonus_mult = 259, 150..=500,   true;
-    hist_noisy_bonus_max  = 1060, 800..=1400, true;
-    hist_noisy_bonus_base = 198, 150..=400,   true;
-    hist_noisy_malus_mult = 308, 150..=500,   true;
-    hist_noisy_malus_max  = 934, 800..=1400,  true;
-    hist_noisy_malus_base = 277, 150..=400,   true;
+    hist_noisy_bonus_mult = 257, 150..=500,   true;
+    hist_noisy_bonus_max  = 1058, 800..=1400, true;
+    hist_noisy_bonus_base = 196, 150..=400,   true;
+    hist_noisy_malus_mult = 302, 150..=500,   true;
+    hist_noisy_malus_max  = 937, 800..=1400,  true;
+    hist_noisy_malus_base = 273, 150..=400,   true;
 
     // Continuation History
-    hist_cont_bonus_mult = 308, 150..=500,    true;
-    hist_cont_bonus_max  = 1060, 800..=1400,  true;
-    hist_cont_bonus_base = 196, 150..=400,    true;
+    hist_cont_bonus_mult = 315, 150..=500,    true;
+    hist_cont_bonus_max  = 1044, 800..=1400,  true;
+    hist_cont_bonus_base = 194, 150..=400,    true;
     hist_cont_malus_mult = 303, 150..=500,    true;
-    hist_cont_malus_max  = 1081, 800..=1400,  true;
-    hist_cont_malus_base = 270, 150..=400,    true;
+    hist_cont_malus_max  = 1079, 800..=1400,  true;
+    hist_cont_malus_base = 271, 150..=400,    true;
 
     // Correction History
-    corr_hist_base = 150, 50..=400,        true;
-    corr_hist_div  = 120, 80..=160,        true;
-    corr_hist_min  = -4500, -6000..=-2000, true;
-    corr_hist_max  = 2500, 1000..=5000,    true;
+    corr_hist_base = 148, 50..=400,        true;
+    corr_hist_div  = 121, 80..=160,        true;
+    corr_hist_min  = -4612, -6000..=-2000, true;
+    corr_hist_max  = 2530, 1000..=5000,    true;
     corr_div       = 64, 50..=90,          true;
 
     // Qsearch
-    qsearch_lmp        =  3,    2..=5,     false;
-    qsearch_see        = -134, -400..=150, true;
-    qsearch_hist_bonus =  98,   50..=300,  true;
+    qsearch_lmp        =  3,    2..=5,     true;
+    qsearch_see        = -129, -400..=150, true;
+    qsearch_hist_bonus =  103,   50..=300,  true;
 
     // SEE
-    see_pawn   = 87,   50..=150,    true;
-    see_knight = 429,  350..=450,   true;
-    see_bishop = 456,  400..=550,   true;
-    see_rook   = 661,  600..=800,   true;
-    see_queen  = 1291, 1000..=1500, true;
+    see_pawn   = 88,   50..=150,    true;
+    see_knight = 428,  350..=450,   true;
+    see_bishop = 458,  400..=550,   true;
+    see_rook   = 659,  600..=800,   true;
+    see_queen  = 1289, 1000..=1500, true;
 
     // Move Picker
-    mp_see_base = 65, 40..=100, true; 
-    mp_see_div  = 4,  3..=6,    false;
+    mp_see_base = 64, 40..=100, true; 
+    mp_see_div  = 4,  3..=6,    true;
 
     // Score Noisy
-    score_noisy_div = 8, 5..=10, false;
+    score_noisy_div = 8, 5..=10, true;
 
     // Score Quiet
-    score_quiet_cont1 = 1588, 1200..=2000, true;
-    score_quiet_cont2 = 1040, 800..=1600,  true;
+    score_quiet_pawn   = 1000, 500..=1500,   true;
+    score_quiet_cont1  = 1595, 1200..=2000,  true;
+    score_quiet_cont2  = 1050, 800..=1600,   true;
+    direct_check_bonus = 9808, 9000..=12000, true; 
 
     // Max Histories
-    max_quiet_history = 8199, 7500..=15000,  true;
-    max_noisy_history = 8113, 7500..=15000,  true;
-    max_cont_history  = 7890, 7500..=15000,  true;
-    max_corr_history  = 12000, 7500..=15000, true;
+    max_quiet_history = 8128,  7500..=15000,  true;
+    max_noisy_history = 8209,  7500..=15000,  true;
+    max_cont_history  = 7813,  7500..=15000,  true;
+    max_corr_history  = 11972, 7500..=15000,  true;
+    max_pawn_history  = 8000,  7500..=15000,  true;
 }

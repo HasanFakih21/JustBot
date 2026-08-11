@@ -1,10 +1,7 @@
 use crate::{
-    board::{movegen::MoveGenKind, see},
-    search::data::SearchData,
-    tools::parameters::{
-        mp_see_base, mp_see_div, score_noisy_div, score_quiet_cont1, score_quiet_cont2,
-    },
-    types::{Move, MoveEntry, MoveList, stackvec::StackVec},
+    board::{movegen::MoveGenKind, see}, search::data::SearchData, tools::parameters::{
+        direct_check_bonus, mp_see_base, mp_see_div, score_noisy_div, score_quiet_cont1, score_quiet_cont2, score_quiet_pawn,
+    }, types::{Move, MoveEntry, MoveList, stackvec::StackVec},
 };
 
 #[derive(Debug, PartialEq)]
@@ -136,13 +133,13 @@ impl MovePicker {
             let to = mv.get_to();
 
             let conthistory_score =
-                1000 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
-                    + 1595 * data.get_conthistory(mv, ply, 1) / 1024
-                    + 1050 * data.get_conthistory(mv, ply, 2) / 1024;
+                score_quiet_pawn() * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
+                    + score_quiet_cont1() * data.get_conthistory(mv, ply, 1) / 1024
+                    + score_quiet_cont2() * data.get_conthistory(mv, ply, 2) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score
-                + (9808 * data.board.is_direct_check(mv) as i32);
+                + (direct_check_bonus() * data.board.is_direct_check(mv) as i32);
         }
     }
 
