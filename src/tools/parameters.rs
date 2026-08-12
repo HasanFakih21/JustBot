@@ -107,9 +107,10 @@ tunable_params!{
     lmp_mult = 1493, 1000..=3000, true;
 
     // FP
-    fp_depth = 8, 4..=9,       true;
-    fp_mult  = 93, 50..=150,   true;
-    fp_base  = 146, 100..=200, true;
+    fp_depth    = 8, 4..=9,       true;
+    fp_mult     = 93, 50..=150,   true;
+    fp_base     = 146, 100..=200, true;
+    fp_history  = 50, 5..=200,    true;
 
     // HP
     hp_depth = 6,    3..=8,       true;
@@ -196,4 +197,19 @@ tunable_params!{
     max_cont_history  = 7813,  7500..=15000,  true;
     max_corr_history  = 11972, 7500..=15000,  true;
     max_pawn_history  = 8000,  7500..=15000,  true;
+
+    // Material Scaling
+    mat_scale_pawn   = 50,    50..=150,       true;
+    mat_scale_knight = 420,   350..=450,      true;
+    mat_scale_bishop = 458,   400..=550,      true;
+    mat_scale_rook   = 650,   600..=800,      true;
+    mat_scale_queen  = 1200,  1000..=1500,    true;
+    mat_scale_base   = 26000, 10000..=40000, true;
+
+    // Piece Values
+    value_pawn   = 100,    50..=150,     true;
+    value_knight = 320,   250..=325,     true;
+    value_bishop = 330,   325..=450,     true;
+    value_rook   = 500,   460..=800,     true;
+    value_queen  = 900,   850..=1500,    true;
 }

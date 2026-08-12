@@ -1,17 +1,7 @@
 use crate::search::data::{SearchData, Status};
 use crate::search::movepicker::MovePicker;
 use crate::tools::parameters::{
-    asp_alpha_window, asp_beta_window, asp_init_alpha_window, asp_init_beta_window, fp_base,
-    fp_depth, fp_mult, hist_cont_bonus_base, hist_cont_bonus_max, hist_cont_bonus_mult,
-    hist_cont_malus_base, hist_cont_malus_max, hist_cont_malus_mult, hist_noisy_bonus_base,
-    hist_noisy_bonus_max, hist_noisy_bonus_mult, hist_noisy_malus_base, hist_noisy_malus_max,
-    hist_noisy_malus_mult, hist_quiet_bonus_base, hist_quiet_bonus_max, hist_quiet_bonus_mult,
-    hist_quiet_malus_base, hist_quiet_malus_max, hist_quiet_malus_mult, hp_base, hp_depth,
-    lmp_base, lmp_mult, lmr_depth, lmr_history, lmr_improving, lmr_tt_alpha, lmr_tt_depth,
-    lmr_ttpv, nmp_base_r, nmp_depth, nmp_improving, nmp_r_div, nmp_r_mult, node_tm_base,
-    node_tm_min, node_tm_mult, qsearch_hist_bonus, qsearch_lmp, qsearch_see, razoring_base,
-    razoring_mult, rfp_base, rfp_improving, rfp_lerp_t, se_depth, se_double_base, se_double_pv,
-    se_neg_ext, se_tt_depth, see_base, see_max, see_mult1, see_mult2,
+    asp_alpha_window, asp_beta_window, asp_init_alpha_window, asp_init_beta_window, fp_base, fp_depth, fp_history, fp_mult, hist_cont_bonus_base, hist_cont_bonus_max, hist_cont_bonus_mult, hist_cont_malus_base, hist_cont_malus_max, hist_cont_malus_mult, hist_noisy_bonus_base, hist_noisy_bonus_max, hist_noisy_bonus_mult, hist_noisy_malus_base, hist_noisy_malus_max, hist_noisy_malus_mult, hist_quiet_bonus_base, hist_quiet_bonus_max, hist_quiet_bonus_mult, hist_quiet_malus_base, hist_quiet_malus_max, hist_quiet_malus_mult, hp_base, hp_depth, lmp_base, lmp_mult, lmr_depth, lmr_history, lmr_improving, lmr_tt_alpha, lmr_tt_depth, lmr_ttpv, nmp_base_r, nmp_depth, nmp_improving, nmp_r_div, nmp_r_mult, node_tm_base, node_tm_min, node_tm_mult, qsearch_hist_bonus, qsearch_lmp, qsearch_see, razoring_base, razoring_mult, rfp_base, rfp_improving, rfp_lerp_t, se_depth, se_double_base, se_double_pv, se_neg_ext, se_tt_depth, see_base, see_max, see_mult1, see_mult2,
 };
 use crate::types::plytable::PlyTable;
 use crate::types::stackvec::StackVec;
@@ -408,8 +398,8 @@ pub fn search<Node: NodeType>(
             if !in_check
                 && !is_direct_check
                 && is_quiet
-                && depth < 8
-                && static_eval + 93 * depth + 146 + 50 * history / 1024 <= alpha
+                && depth < fp_depth()
+                && static_eval + fp_mult() * depth + fp_base() + fp_history() * history / 1024 <= alpha
             {
                 skip_quiets = true;
                 continue;

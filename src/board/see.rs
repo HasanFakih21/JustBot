@@ -90,7 +90,7 @@ impl Board {
         stm != self.state.side_to_move
     }
 
-    pub const fn move_loss(&self, m: Move) -> i32 {
+    pub fn move_loss(&self, m: Move) -> i32 {
         if m.is_promotion() {
             return unsafe { m.get_promoted_piece().unwrap_unchecked().value() };
         }
@@ -102,7 +102,7 @@ impl Board {
         0
     }
 
-    pub const fn move_value(&self, m: Move) -> i32 {
+    pub fn move_value(&self, m: Move) -> i32 {
         if let Some((_, piece)) = self.get_piece_at_square(m.get_capture_square()) {
             let mut value = piece.value();
             if let Some(promotion_piece) = m.get_promoted_piece() {
@@ -115,7 +115,7 @@ impl Board {
         0
     }
 
-    pub const fn capture_move_value(&self, mv: Move) -> i32 {
+    pub fn capture_move_value(&self, mv: Move) -> i32 {
         let attacker = self.get_piece_at_square(mv.get_from()).unwrap().1;
         let victim = self.get_piece_at_square(mv.get_capture_square()).unwrap().1;
 
