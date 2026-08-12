@@ -130,8 +130,9 @@ impl Network {
                 }
             }
         }
-
-        self.output_layer(board)
+ 
+        let eval = self.output_layer(board);
+        board.scale_eval(eval)
     }
 
     #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
