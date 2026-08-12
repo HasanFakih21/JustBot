@@ -42,17 +42,17 @@ impl Board {
             material += self.state.pieces[piece].count_bits() as i32 * piece_scale(piece);
         }
 
-        static_eval * (26000 + material) / 32768 * (200 - self.state.half_move_clock as i32) / 200
+        static_eval * (25405 + material) / 32768 * (200 - self.state.half_move_clock as i32) / 200
     }
 }
 
 pub fn piece_scale(piece: Piece) -> i32 {
     match piece {
         Piece::Pawn => 50,
-        Piece::Knight => 420,
-        Piece::Bishop => 458,
-        Piece::Rook => 650,
-        Piece::Queen => 1200,
+        Piece::Knight => 421,
+        Piece::Bishop => 460,
+        Piece::Rook => 647,
+        Piece::Queen => 1204,
         Piece::King => 0,
     }
 }

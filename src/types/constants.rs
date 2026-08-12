@@ -77,10 +77,10 @@ pub static LMR_TABLE: LazyLock<Box<[[[i32; 64]; 128]; 2]>> = {
 
         for depth in 0..128 {
             for move_count in 0..64 {
-                let reduction = 0.7851 + f32::ln(depth as f32) * f32::ln(move_count as f32);
+                let reduction = 0.7934 + f32::ln(depth as f32) * f32::ln(move_count as f32);
 
-                quiet_table[depth][move_count] = ((reduction / 2.4482) * 1024.0) as i32;
-                noisy_table[depth][move_count] = ((reduction / 3.004) * 1024.0) as i32;
+                quiet_table[depth][move_count] = ((reduction / 2.4398) * 1024.0) as i32;
+                noisy_table[depth][move_count] = ((reduction / 3.0101) * 1024.0) as i32;
             }
         }
 

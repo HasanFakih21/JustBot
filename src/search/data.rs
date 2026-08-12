@@ -168,7 +168,7 @@ impl SearchData {
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
-        let bonus = (148 * depth * diff / 121).clamp(-4612, 2530);
+        let bonus = (153 * depth * diff / 121).clamp(-4602, 2545);
         self.corrhistory
             .pawn
             .update(stm, self.board.state.keys.pawn, bonus);
@@ -191,7 +191,7 @@ impl SearchData {
                 .get(stm, self.board.state.keys.non_pawn[Side::White])
             + self.corrhistory.non_pawn[Side::Black as usize]
                 .get(stm, self.board.state.keys.non_pawn[Side::Black]))
-            / 64
+            / 63
     }
 
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
