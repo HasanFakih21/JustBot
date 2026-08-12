@@ -93,14 +93,15 @@ pub fn search_runner(data: &mut SearchData) {
         data.print_uci_info(score, depth, &data.board);
 
         let multiplier = || {
-            (2.977 - (data
-                .root_moves
-                .iter()
-                .find(|rm| rm.m == best_move.unwrap())
-                .unwrap()
-                .nodes as f32
-                / data.nodes() as f32)
-                * 2.495)
+            (2.977
+                - (data
+                    .root_moves
+                    .iter()
+                    .find(|rm| rm.m == best_move.unwrap())
+                    .unwrap()
+                    .nodes as f32
+                    / data.nodes() as f32)
+                    * 2.495)
                 .max(0.553)
         };
 
@@ -306,7 +307,7 @@ pub fn search<Node: NodeType>(
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
         && tt_score != -Score::INFINITY
-        && !is_mate(tt_score)
+        && !is_decisive(tt_score)
         && tt_bound != Bound::Upper
     {
         let singular_depth = (depth - 1) / 2;
@@ -375,11 +376,11 @@ pub fn search<Node: NodeType>(
             )
         };
 
-        if !Node::ROOT && !mated(best_score) {
+        if !Node::ROOT && !is_loss(best_score) {
             // Late Move Pruning (LMP)
             if !in_check
                 && !is_direct_check
-                && !mating(beta)
+                && !is_win(beta)
                 && is_quiet
                 && move_count as i32 > (3011 + 1493 * depth * depth) / 1024
             {
@@ -392,7 +393,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && is_quiet
                 && depth < 8
-                && static_eval + 93 * depth + 146 <= alpha
+                && static_eval + 93 * depth + 146 + 50 * history / 1024 <= alpha
             {
                 skip_quiets = true;
                 continue;
@@ -678,7 +679,7 @@ pub fn quiesce<Node: NodeType>(
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
         move_count += 1;
 
-        if !mated(best_score) {
+        if !is_loss(best_score) {
             // Late Move Pruning (LMP)
             if move_count >= 3 && !data.board.is_direct_check(m) {
                 break;

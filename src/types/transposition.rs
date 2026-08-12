@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicPtr, AtomicU8, AtomicUsize, Ordering};
 
-use crate::types::{Score, from_tt, is_mate, moves::Move};
+use crate::types::{Score, from_tt, is_decisive, moves::Move};
 
 const TT_DEFAULT_SIZE: usize = 16;
 const MEGABYTE: usize = 1024 * 1024;
@@ -199,7 +199,7 @@ impl TranspositionTable {
         }
 
         // Adjust mate scores
-        if is_mate(score) {
+        if is_decisive(score) {
             score += score.signum() * ply as i32;
         }
 

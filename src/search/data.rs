@@ -9,7 +9,7 @@ use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
 use crate::types::{
     ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory, STARTING_FEN, Score,
-    Side, is_mate,
+    Side, is_decisive,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -208,7 +208,7 @@ impl SearchData {
         // All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
         if self.report {
             // Report mate score
-            let score_print = if is_mate(score) {
+            let score_print = if is_decisive(score) {
                 let num_plies = Score::MATE - score.abs();
                 let mate_in = score.signum() * ((num_plies + 1) / 2);
                 format!("mate {}", mate_in)
