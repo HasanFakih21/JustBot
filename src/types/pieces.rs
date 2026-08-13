@@ -131,7 +131,7 @@ impl SidedPiece {
     }
 
     pub const fn kind(&self) -> Piece {
-        unsafe { std::mem::transmute(*self as u8 % 5) }
+        unsafe { std::mem::transmute(*self as u8 % 6) }
     }
 
     pub const fn side(&self) -> Side {
