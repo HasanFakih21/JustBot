@@ -136,7 +136,8 @@ impl MovePicker {
                 1000 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
                     + 1595 * data.get_conthistory(mv, ply, 1) / 1024
                     + 1050 * data.get_conthistory(mv, ply, 2) / 1024
-                    + 1000 * data.get_conthistory(mv, ply, 4) / 1024;
+                    + 1000 * data.get_conthistory(mv, ply, 4) / 1024
+                    + 1000 * data.get_conthistory(mv, ply, 6) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score
