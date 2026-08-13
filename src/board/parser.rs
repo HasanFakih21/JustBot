@@ -1,6 +1,6 @@
 use crate::board::Board;
 use crate::board::movegen::MoveGenKind;
-use crate::types::{Castling, File, HOME_RANK, Move, Piece, Side, Square, pieces};
+use crate::types::{Castling, File, HOME_RANK, Move, OptionPiece, Piece, Side, Square, pieces};
 
 #[derive(Debug)]
 pub struct FenParseError;
@@ -153,12 +153,12 @@ impl Board {
             let mut empty = 0;
             for file in 0..8 {
                 let p = self.get_piece_at_square(Square::from_rank_and_file(rank, file));
-                if let Some((side, piece)) = p {
+                if let OptionPiece::Some(piece) = p {
                     if empty > 0 {
                         fen.push_str(&empty.to_string());
                     }
                     empty = 0;
-                    fen.push(piece.to_char(side));
+                    fen.push(piece.to_char());
                 } else {
                     empty += 1;
                 }

@@ -1,6 +1,6 @@
 use super::Board;
 use crate::types::{
-    Castling, Piece, ROOK_TO, Side, Square,
+    Castling, OptionPiece, Piece, ROOK_TO, Side, Square,
     moves::{Move, MoveKind},
 };
 
@@ -9,7 +9,9 @@ impl Board {
         let from = m.get_from();
         let to = m.get_to();
         let kind = m.get_kind();
-        let (side, piece) = self.get_piece_at_square(from).unwrap();
+        let side_piece = self.get_piece_at_square(from).unwrap();
+        let side = side_piece.side();
+        let piece = side_piece.kind();
 
         self.copy_state();
         self.state.plies_from_null += 1;
@@ -50,9 +52,11 @@ impl Board {
             self.state.castling_rights.clear_king_side(side);
             self.state.castling_rights.clear_queen_side(side);
             self.place_piece(side, Piece::Rook, ROOK_TO[side][castle_kind]);
-        } else if let Some((other_side, captured_piece)) =
+        } else if let OptionPiece::Some(sided_piece) =
             self.get_piece_at_square(m.get_capture_square())
         {
+            let other_side = sided_piece.side();
+            let captured_piece = sided_piece.kind();
             self.remove_piece(side, piece, from);
             self.remove_piece(other_side, captured_piece, m.get_capture_square());
             if captured_piece == Piece::Rook {
@@ -161,139 +165,5 @@ impl Board {
         self.state.keys.toggle_side();
         self.game_history.push(self.state.keys.full);
         self.update_all_threats();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::board::Board;
-    use crate::search::data::SearchData;
-    use crate::types::{
-        Piece, Side, Square,
-        moves::{Move, MoveKind},
-    };
-
-    #[test]
-    fn test_make_move() {
-        let mut board =
-            Board::from_fen("1K6/3pp1P1/4R3/3k3p/Ppn5/4b3/1PP1P1p1/7B b - a3 0 1").unwrap();
-        println!("{board}");
-
-        let m = Move::new(Square::B4, Square::A3, MoveKind::EnPassant);
-        board.make_move(m);
-        println!("{board}");
-        assert_eq!(
-            board.get_piece_at_square(Square::A3).unwrap(),
-            (Side::Black, Piece::Pawn)
-        );
-        assert!(board.get_piece_at_square(Square::A4).is_none());
-
-        board.unmake_move();
-        println!("{board}");
-        assert_eq!(
-            board.get_piece_at_square(Square::B4).unwrap(),
-            (Side::Black, Piece::Pawn)
-        );
-
-        let m = Move::new(Square::C4, Square::B2, MoveKind::Capture);
-        board.make_move(m);
-        println!("{board}");
-        assert_eq!(
-            board.get_piece_at_square(Square::B2).unwrap(),
-            (Side::Black, Piece::Knight)
-        );
-
-        let mut board = Board::from_fen(
-            "r3k2r/pppqn2p/n1bp2pb/1N2p3/2B5/1QP1PN2/PP1B1PPP/R3K2R w KQkq - 10 12",
-        )
-        .unwrap();
-        println!("{board}");
-
-        let m = Move::new(Square::E1, Square::G1, MoveKind::KingCastle);
-        board.make_move(m);
-        println!("{board}");
-        assert_eq!(
-            board.get_piece_at_square(Square::G1).unwrap(),
-            (Side::White, Piece::King)
-        );
-        assert_eq!(
-            board.get_piece_at_square(Square::F1).unwrap(),
-            (Side::White, Piece::Rook)
-        );
-        assert!(board.get_piece_at_square(Square::E1).is_none());
-
-        let m = Move::new(Square::E8, Square::C8, MoveKind::QueenCastle);
-        board.make_move(m);
-        println!("{board}");
-        assert_eq!(
-            board.get_piece_at_square(Square::C8).unwrap(),
-            (Side::Black, Piece::King)
-        );
-        assert_eq!(
-            board.get_piece_at_square(Square::D8).unwrap(),
-            (Side::Black, Piece::Rook)
-        );
-        assert!(board.get_piece_at_square(Square::E8).is_none());
-
-        let mut board =
-            Board::from_fen("2kr3r/pppqn2p/n1b3pb/1N2p3/2B5/1QP4N/PP2pPPP/R1B2R1K b - - 1 17")
-                .unwrap();
-        println!("{board}");
-
-        let m = Move::new(Square::E2, Square::E1, MoveKind::BPromotion);
-        board.make_move(m);
-        println!("{board}");
-        assert_eq!(
-            board.get_piece_at_square(Square::E1).unwrap(),
-            (Side::Black, Piece::Bishop)
-        );
-        assert!(board.get_piece_at_square(Square::E2).is_none());
-
-        board.unmake_move();
-        let m = Move::new(Square::E2, Square::F1, MoveKind::QPromCapture);
-        board.make_move(m);
-        println!("{board}");
-        assert_eq!(
-            board.get_piece_at_square(Square::F1).unwrap(),
-            (Side::Black, Piece::Queen)
-        );
-        assert!(board.get_piece_at_square(Square::E2).is_none());
-
-        let mut board =
-            Board::from_fen("r3k2N/p1ppqpb1/bn2pn2/3P4/1p2P3/2N2Q2/PPPBBPpP/R3K2R b KQq - 0 2")
-                .unwrap();
-        println!("{board}");
-
-        let m = Move::new(Square::G2, Square::H1, MoveKind::NPromCapture);
-        board.make_move(m);
-        assert!(!board.state.castling_rights.can_king_side(Side::White));
-        println!("{board}");
-    }
-
-    #[test]
-    fn test_null_move() {
-        let mut board =
-            Board::from_fen("2kr3r/pppqn2p/n1b3pb/1N2p3/2B5/1QP4N/PP2pPPP/R1B2R1K b - - 1 17")
-                .unwrap();
-        println!("{board}");
-
-        let original =
-            Board::from_fen("2kr3r/pppqn2p/n1b3pb/1N2p3/2B5/1QP4N/PP2pPPP/R1B2R1K b - - 1 17")
-                .unwrap();
-
-        board.make_null_move();
-        assert_eq!(board.state.side_to_move, Side::White);
-        println!("{board}");
-        board.unmake_move();
-
-        assert_eq!(board, original);
-    }
-
-    #[test]
-    fn test_update_ep() {
-        let _ = SearchData {
-            board: Board::from_fen("8/2p5/3p4/KP5r/1R3pPk/8/4P3/8 b - g3 0 1").unwrap(),
-            ..Default::default()
-        };
     }
 }

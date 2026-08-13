@@ -1,7 +1,7 @@
 use crate::{
     attacks::RAYS,
     board::Board,
-    types::{BitBoard, Move, Piece, Side, Square},
+    types::{BitBoard, Move, OptionPiece, Piece, Side, Square},
 };
 
 impl Board {
@@ -94,16 +94,16 @@ impl Board {
             return unsafe { m.get_promoted_piece().unwrap_unchecked().value() };
         }
 
-        if let Some((_, piece)) = self.get_piece_at_square(m.get_from()) {
-            return piece.value();
+        if let OptionPiece::Some(piece) = self.get_piece_at_square(m.get_from()) {
+            return piece.kind().value();
         }
 
         0
     }
 
     pub const fn move_value(&self, m: Move) -> i32 {
-        if let Some((_, piece)) = self.get_piece_at_square(m.get_capture_square()) {
-            let mut value = piece.value();
+        if let OptionPiece::Some(piece) = self.get_piece_at_square(m.get_capture_square()) {
+            let mut value = piece.kind().value();
             if let Some(promotion_piece) = m.get_promoted_piece() {
                 value += promotion_piece.value() - Piece::Pawn.value();
             }
@@ -112,13 +112,6 @@ impl Board {
         }
 
         0
-    }
-
-    pub const fn capture_move_value(&self, mv: Move) -> i32 {
-        let attacker = self.get_piece_at_square(mv.get_from()).unwrap().1;
-        let victim = self.get_piece_at_square(mv.get_capture_square()).unwrap().1;
-
-        victim.value() - attacker.value()
     }
 
     pub fn least_valuable_attacker(&self, attackers: BitBoard) -> Piece {

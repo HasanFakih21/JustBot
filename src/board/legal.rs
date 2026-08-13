@@ -2,8 +2,8 @@ use crate::{
     attacks::{BETWEEN, RAYS},
     board::Board,
     types::{
-        BitBoard, Castling, KING_TO, Move, MoveKind, NORTH, Piece, RANK_1, RANK_8, ROOK_TO, SOUTH,
-        Side,
+        BitBoard, Castling, KING_TO, Move, MoveKind, NORTH, OptionPiece, Piece, RANK_1, RANK_8,
+        ROOK_TO, SOUTH, Side,
     },
 };
 
@@ -14,14 +14,15 @@ impl Board {
         let to = m.get_to();
         let king_square = self.get_king_square(stm);
 
-        let Some((moving_piece_side, moving_piece)) = self.get_piece_at_square(from) else {
+        let OptionPiece::Some(piece) = self.get_piece_at_square(from) else {
             return false;
         };
 
-        if moving_piece_side != stm {
+        if piece.side() != stm {
             return false;
         }
 
+        let moving_piece = piece.kind();
         // Verify King Moves
         if moving_piece == Piece::King {
             if let Some(dir) = m.castle_direction() {

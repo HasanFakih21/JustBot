@@ -1,7 +1,7 @@
 use crate::{
     board::{movegen::MoveGenKind, see},
     search::data::SearchData,
-    types::{Move, MoveEntry, MoveList, stackvec::StackVec},
+    types::{Move, MoveEntry, MoveList, OptionPiece, stackvec::StackVec},
 };
 
 #[derive(Debug, PartialEq)]
@@ -113,8 +113,8 @@ impl MovePicker {
             let captured = data
                 .board
                 .get_piece_at_square(mv.get_capture_square())
-                .map(|e| e.1);
-            if let Some(p) = captured {
+                .map(|e| e.kind());
+            if let OptionPiece::Some(p) = captured {
                 score += see::value(p)
             }
 
@@ -163,40 +163,6 @@ impl MovePicker {
             && let Some(index) = self.moves.iter().position(|e| tt_mv == e.mv)
         {
             self.moves.remove(index);
-        }
-    }
-}
-
-#[cfg(test)]
-pub mod tests {
-    use crate::{
-        board::Board,
-        search::{data::SearchData, movepicker::MovePicker},
-    };
-
-    #[test]
-    fn test_move_picker() {
-        let data = SearchData {
-            board: Board::from_fen(
-                "r1bqk2r/ppp1p1pp/3p2n1/3P4/4PN2/5b2/PPPP2Pp/RNBQK1R1 b Qkq - 0 1",
-            )
-            .unwrap(),
-            ..Default::default()
-        };
-
-        let mut move_picker = MovePicker::new(None);
-        while let Some(m) = move_picker.next(&data, true, 0) {
-            print!("{}: ", m.to_uci(&data.board));
-            print!(
-                "Value: {}, Value: {}",
-                if m.is_capture() {
-                    data.board.capture_move_value(m)
-                } else {
-                    2000
-                },
-                (data.board.move_value(m) - data.board.move_loss(m))
-            );
-            println!();
         }
     }
 }

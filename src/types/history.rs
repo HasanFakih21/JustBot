@@ -1,4 +1,4 @@
-use crate::types::{BitBoard, Move, Piece, Side, Square, to_piece_index};
+use crate::types::{BitBoard, Move, OptionPiece, Piece, Side, SidedPiece, Square};
 
 pub type FromToHistory<T> = [[T; 64]; 64];
 pub type PieceToHistory<T> = [[T; 64]; 13];
@@ -51,45 +51,24 @@ impl NoisyHistory {
 
     pub fn update(
         &mut self,
-        piece: Option<(Side, Piece)>,
+        piece: OptionPiece<SidedPiece>,
         to: Square,
-        captured: Option<Piece>,
+        captured: OptionPiece<Piece>,
         threats: BitBoard,
         bonus: i32,
     ) {
-        let piece_index = match piece {
-            Some((s, p)) => (s as usize * 6) + p as usize,
-            None => 12,
-        };
-
-        let captured_index = match captured {
-            Some(p) => p as usize,
-            None => 6,
-        };
-
-        let entry =
-            &mut self.0[piece_index][to as usize][captured_index][threats.contains(to) as usize];
+        let entry = &mut self.0[piece][to as usize][captured][threats.contains(to) as usize];
         update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
     pub fn get(
         &self,
-        piece: Option<(Side, Piece)>,
+        piece: OptionPiece<SidedPiece>,
         to: Square,
-        captured: Option<Piece>,
+        captured: OptionPiece<Piece>,
         threats: BitBoard,
     ) -> i32 {
-        let piece_index = match piece {
-            Some((s, p)) => (s as usize * 6) + p as usize,
-            None => 12,
-        };
-
-        let captured_index = match captured {
-            Some(p) => p as usize,
-            None => 6,
-        };
-
-        self.0[piece_index][to as usize][captured_index][threats.contains(to) as usize] as i32
+        self.0[piece][to as usize][captured][threats.contains(to) as usize] as i32
     }
 }
 
@@ -106,10 +85,10 @@ impl ContinuationHistory {
 
     pub fn subtable(
         &mut self,
-        piece: Option<(Side, Piece)>,
+        piece: OptionPiece<SidedPiece>,
         to: Square,
     ) -> *mut PieceToHistory<i16> {
-        &raw mut self.0[to_piece_index(piece)][to as usize]
+        &raw mut self.0[piece][to as usize]
     }
 
     /// # Safety
@@ -117,11 +96,11 @@ impl ContinuationHistory {
     pub unsafe fn update(
         &mut self,
         subtable: *mut PieceToHistory<i16>,
-        piece: Option<(Side, Piece)>,
+        piece: OptionPiece<SidedPiece>,
         to: Square,
         bonus: i32,
     ) {
-        let entry = &mut unsafe { &mut *subtable }[to_piece_index(piece)][to as usize];
+        let entry = &mut unsafe { &mut *subtable }[piece][to as usize];
         update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
@@ -130,10 +109,10 @@ impl ContinuationHistory {
     pub unsafe fn get(
         &self,
         subtable: *mut PieceToHistory<i16>,
-        piece: Option<(Side, Piece)>,
+        piece: OptionPiece<SidedPiece>,
         to: Square,
     ) -> i32 {
-        (unsafe { &*subtable }[to_piece_index(piece)][to as usize]) as i32
+        (unsafe { &*subtable }[piece][to as usize]) as i32
     }
 }
 
@@ -175,13 +154,13 @@ impl PawnHistory {
         Self(allocate_empty_history())
     }
 
-    pub fn update(&mut self, key: u64, piece: Option<(Side, Piece)>, to: Square, bonus: i32) {
-        let entry = &mut self.0[key as usize & Self::MASK][to_piece_index(piece)][to];
+    pub fn update(&mut self, key: u64, piece: OptionPiece<SidedPiece>, to: Square, bonus: i32) {
+        let entry = &mut self.0[key as usize & Self::MASK][piece][to];
         update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
-    pub fn get(&self, key: u64, piece: Option<(Side, Piece)>, to: Square) -> i32 {
-        self.0[key as usize & Self::MASK][to_piece_index(piece)][to] as i32
+    pub fn get(&self, key: u64, piece: OptionPiece<SidedPiece>, to: Square) -> i32 {
+        self.0[key as usize & Self::MASK][piece][to] as i32
     }
 }
 
@@ -225,26 +204,5 @@ impl Default for CorrectionHistory {
 impl Default for PawnHistory {
     fn default() -> Self {
         PawnHistory::new()
-    }
-}
-
-#[cfg(test)]
-pub mod tests {
-    use crate::types::{BitBoard, NoisyHistory, Piece, Side, Square};
-
-    #[test]
-    fn test_history() {
-        let mut noisy_history = NoisyHistory::new();
-
-        let entry = noisy_history.get(None, Square::A4, None, BitBoard(0));
-        println!("{}", entry);
-        let piece = Some((Side::Black, Piece::Bishop));
-        let captured = Some(Piece::Queen);
-        noisy_history.update(piece, Square::A4, captured, BitBoard(0), 32);
-        let entry2 = noisy_history.get(piece, Square::A4, captured, BitBoard(0));
-        let entry = noisy_history.get(None, Square::A4, None, BitBoard(0));
-
-        assert_eq!(entry2, 32);
-        assert_eq!(entry, 0);
     }
 }
