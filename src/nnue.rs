@@ -130,7 +130,7 @@ impl Network {
                 }
             }
         }
- 
+
         let eval = self.output_layer(board);
         board.scale_eval(eval)
     }

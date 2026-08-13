@@ -248,7 +248,10 @@ pub fn search<Node: NodeType>(
         .filter(|m| !m.is_null());
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry.as_ref().map(|e| e.get_score());
-    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_pv = tt_entry
+        .as_ref()
+        .map(|e| e.is_pv() || Node::PV)
+        .unwrap_or(Node::PV);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // Razoring
