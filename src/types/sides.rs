@@ -4,6 +4,7 @@ use std::{
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(u8)]
 pub enum Side {
     White,
     Black,
