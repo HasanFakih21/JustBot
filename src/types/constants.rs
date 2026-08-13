@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use crate::types::{BitBoard, Piece, Rank, Side, Square};
+use crate::types::{BitBoard, Rank, Square};
 
 pub const A_FILE: u64 = 0x0101010101010101;
 pub const B_FILE: u64 = 0x0202020202020202;
@@ -60,13 +60,6 @@ pub const MOVE_OVERHEAD: u64 = 50;
 pub const fn to_file_bb(square: Square) -> BitBoard {
     let file = square.to_file();
     BitBoard(A_FILE).shift(EAST * file as i8)
-}
-
-pub const fn to_piece_index(piece: Option<(Side, Piece)>) -> usize {
-    match piece {
-        Some((s, p)) => (s as usize * 6) + p as usize,
-        None => 12,
-    }
 }
 
 /// `[Is Quiet][Depth][Move Count]`

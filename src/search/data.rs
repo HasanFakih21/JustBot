@@ -238,12 +238,11 @@ impl SearchData {
 
         let from = m.get_from();
         let to = m.get_to();
-        let stm = self.board.state.side_to_move;
-        let moving_piece = self.board.get_piece_at_square(from).unwrap().1;
+        let piece = self.board.get_piece_at_square(from);
 
         self.ply_table[ply].m = m;
-        self.ply_table[ply].piece = Some((stm, moving_piece));
-        self.ply_table[ply].conthistory = self.conthistory.subtable(Some((stm, moving_piece)), to);
+        self.ply_table[ply].piece = piece;
+        self.ply_table[ply].conthistory = self.conthistory.subtable(piece, to);
 
         self.board.make_move(m);
     }

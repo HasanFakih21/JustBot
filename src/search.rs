@@ -283,7 +283,7 @@ pub fn search<Node: NodeType>(
         let r = 6 + depth * 132 / 637;
         data.ply_table[ply].conthistory = data.ply_table.sentinel();
         data.ply_table[ply].m = Move::default();
-        data.ply_table[ply].piece = None;
+        data.ply_table[ply].piece = OptionPiece::None;
 
         data.board.make_null_move();
         let null_move_score = -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1, false);
@@ -367,7 +367,7 @@ pub fn search<Node: NodeType>(
             let captured = data
                 .board
                 .get_piece_at_square(m.get_capture_square())
-                .map(|(_, p)| p);
+                .map(|p| p.kind());
             data.noisy_history.get(
                 data.board.get_piece_at_square(m.get_from()),
                 m.get_to(),
@@ -539,7 +539,7 @@ pub fn search<Node: NodeType>(
             let captured = data
                 .board
                 .get_piece_at_square(m.get_capture_square())
-                .map(|e| e.1);
+                .map(|e| e.kind());
             data.noisy_history
                 .update(piece, to, captured, threats, noisy_bonus);
         }
@@ -551,7 +551,7 @@ pub fn search<Node: NodeType>(
             let captured = data
                 .board
                 .get_piece_at_square(m.get_capture_square())
-                .map(|e| e.1);
+                .map(|e| e.kind());
             data.noisy_history
                 .update(piece, to, captured, threats, -noisy_malus);
         }
@@ -730,7 +730,7 @@ pub fn quiesce<Node: NodeType>(
         let captured = data
             .board
             .get_piece_at_square(m.get_capture_square())
-            .map(|e| e.1);
+            .map(|e| e.kind());
         data.noisy_history
             .update(piece, to, captured, data.board.state.threats, 103);
     }

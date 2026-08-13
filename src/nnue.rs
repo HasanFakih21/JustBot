@@ -93,9 +93,14 @@ impl Network {
         self.stack[self.index].delta = Some(Delta {
             m,
             stm: board.state.side_to_move,
-            piece: board.get_piece_at_square(m.get_from()).unwrap().1,
+            piece: board.get_piece_at_square(m.get_from()).unwrap().kind(),
             captured: if m.is_capture() {
-                Some(board.get_piece_at_square(m.get_capture_square()).unwrap().1)
+                Some(
+                    board
+                        .get_piece_at_square(m.get_capture_square())
+                        .unwrap()
+                        .kind(),
+                )
             } else {
                 None
             },
@@ -130,7 +135,7 @@ impl Network {
                 }
             }
         }
- 
+
         let eval = self.output_layer(board);
         board.scale_eval(eval)
     }

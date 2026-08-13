@@ -107,3 +107,136 @@ impl<T> IndexMut<Piece> for [T] {
         &mut self[index as usize]
     }
 }
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(u8)]
+pub enum SidedPiece {
+    WhitePawn,
+    WhiteKnight,
+    WhiteBishop,
+    WhiteRook,
+    WhiteQueen,
+    WhiteKing,
+    BlackPawn,
+    BlackKnight,
+    BlackBishop,
+    BlackRook,
+    BlackQueen,
+    BlackKing,
+}
+
+impl SidedPiece {
+    pub const fn from(side: Side, piece: Piece) -> Self {
+        unsafe { std::mem::transmute(piece as u8 + (6 * side as u8)) }
+    }
+
+    pub const fn kind(&self) -> Piece {
+        unsafe { std::mem::transmute(*self as u8 % 5) }
+    }
+
+    pub const fn side(&self) -> Side {
+        unsafe { std::mem::transmute(*self as u8 > 5) }
+    }
+
+    pub const fn to_char(self) -> char {
+        match self {
+            SidedPiece::WhitePawn => 'P',
+            SidedPiece::WhiteKnight => 'N',
+            SidedPiece::WhiteBishop => 'B',
+            SidedPiece::WhiteRook => 'R',
+            SidedPiece::WhiteQueen => 'Q',
+            SidedPiece::WhiteKing => 'K',
+            SidedPiece::BlackPawn => 'p',
+            SidedPiece::BlackKnight => 'n',
+            SidedPiece::BlackBishop => 'b',
+            SidedPiece::BlackRook => 'r',
+            SidedPiece::BlackQueen => 'q',
+            SidedPiece::BlackKing => 'k',
+        }
+    }
+}
+
+impl Display for SidedPiece {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_char())
+    }
+}
+
+pub trait PieceRepresentation {
+    const NONE_INDEX: usize;
+
+    fn as_usize(&self) -> usize;
+}
+
+impl PieceRepresentation for SidedPiece {
+    const NONE_INDEX: usize = 12;
+
+    fn as_usize(&self) -> usize {
+        *self as usize
+    }
+}
+
+impl PieceRepresentation for Piece {
+    const NONE_INDEX: usize = 6;
+
+    fn as_usize(&self) -> usize {
+        *self as usize
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Copy)]
+pub enum OptionPiece<T: PieceRepresentation> {
+    #[default]
+    None,
+    Some(T),
+}
+
+impl<T: PieceRepresentation> OptionPiece<T> {
+    pub fn unwrap(self) -> T {
+        match self {
+            OptionPiece::Some(piece) => piece,
+            OptionPiece::None => panic!("Can't unwrap 'None' piece!"),
+        }
+    }
+
+    pub fn map<U, F>(self, f: F) -> OptionPiece<U>
+    where
+        F: FnOnce(T) -> U,
+        U: PieceRepresentation,
+    {
+        match self {
+            OptionPiece::Some(x) => OptionPiece::Some(f(x)),
+            OptionPiece::None => OptionPiece::None,
+        }
+    }
+}
+
+impl<T, P> Index<OptionPiece<P>> for [T]
+where
+    P: PieceRepresentation,
+{
+    type Output = T;
+
+    fn index(&self, index: OptionPiece<P>) -> &Self::Output {
+        &self[{
+            match index {
+                OptionPiece::Some(piece) => piece.as_usize(),
+                OptionPiece::None => P::NONE_INDEX,
+            }
+        }]
+    }
+}
+
+impl<T, P> IndexMut<OptionPiece<P>> for [T]
+where
+    P: PieceRepresentation,
+{
+    fn index_mut(&mut self, index: OptionPiece<P>) -> &mut Self::Output {
+        &mut self[{
+            match index {
+                OptionPiece::Some(piece) => piece.as_usize(),
+                OptionPiece::None => P::NONE_INDEX,
+            }
+        }]
+    }
+}

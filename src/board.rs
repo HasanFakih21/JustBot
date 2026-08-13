@@ -14,7 +14,7 @@ pub mod see;
 pub struct BoardState {
     pub pieces: [BitBoard; 6],
     pub occupancies: [BitBoard; 2],
-    pub mailbox: [Option<(Side, Piece)>; 64],
+    pub mailbox: [OptionPiece<SidedPiece>; 64],
     pub side_to_move: Side,
     pub enpassant: Option<Square>,
     pub castling_rights: CastlingRights,
@@ -35,7 +35,7 @@ impl BoardState {
         BoardState {
             pieces: [BitBoard(0); 6],
             occupancies: [BitBoard(0); 2],
-            mailbox: [None; 64],
+            mailbox: [OptionPiece::None; 64],
             side_to_move: Side::White,
             enpassant: None,
             castling_rights: CastlingRights::new(),
@@ -99,7 +99,7 @@ impl Board {
     }
 
     pub fn is_direct_check(&self, m: Move) -> bool {
-        let (_, piece) = self.get_piece_at_square(m.get_from()).unwrap();
+        let piece = self.get_piece_at_square(m.get_from()).unwrap().kind();
         self.state.checking_squares[piece as usize].contains(m.get_to())
     }
 
@@ -165,7 +165,7 @@ impl Board {
         BitBoard(self.state.pieces[piece as usize].0 & self.state.occupancies[side as usize].0)
     }
 
-    pub const fn get_piece_at_square(&self, square: Square) -> Option<(Side, Piece)> {
+    pub const fn get_piece_at_square(&self, square: Square) -> OptionPiece<SidedPiece> {
         self.state.mailbox[square as usize]
     }
 
@@ -174,7 +174,7 @@ impl Board {
         self.state.pieces[piece as usize].set_bit(square);
         self.state.occupancies[side as usize].set_bit(square);
         // Mailbox
-        self.state.mailbox[square as usize] = Some((side, piece));
+        self.state.mailbox[square as usize] = OptionPiece::Some(SidedPiece::from(side, piece));
         // Zobrist Hash
         self.state.keys.toggle(side, piece, square);
     }
@@ -184,7 +184,7 @@ impl Board {
         self.state.pieces[piece as usize].clear_bit(square);
         self.state.occupancies[side as usize].clear_bit(square);
         // Mailbox
-        self.state.mailbox[square as usize] = None;
+        self.state.mailbox[square as usize] = OptionPiece::None;
         // Zobrist Hash
         self.state.keys.toggle(side, piece, square);
     }
@@ -315,14 +315,9 @@ impl Display for Board {
             output.push_str(&format!("{}   ", 1 + rank));
             for file in 0..8 {
                 let square = Square::from_rank_and_file(rank, file);
-                let piece: Option<(Side, Piece)> = self.get_piece_at_square(square);
-
-                if let Some(p) = piece {
-                    let mut s = format!(" {} ", p.1);
-                    if let Side::Black = p.0 {
-                        s = s.to_lowercase();
-                    }
-                    output.push_str(&s);
+                let piece: OptionPiece<SidedPiece> = self.get_piece_at_square(square);
+                if let OptionPiece::Some(p) = piece {
+                    output.push_str(&format!(" {} ", p));
                 } else {
                     output.push_str(" . ");
                 }
