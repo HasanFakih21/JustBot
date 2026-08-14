@@ -262,6 +262,17 @@ pub fn search<Node: NodeType>(
         return quiesce::<Node>(data, alpha, beta, ply);
     }
 
+    // Hindsight Extension
+    if !Node::ROOT
+        && !in_check
+        && !excluded
+        && data.stack[ply - 1].eval != -Score::INFINITY
+        && data.stack[ply - 1].reduction >= 3072
+        && static_eval + data.stack[ply - 1].eval <= 0
+    {
+        depth += 1;
+    }
+
     // Hindsight Reduction
     if !Node::ROOT
         && !in_check
