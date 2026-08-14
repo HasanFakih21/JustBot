@@ -5,8 +5,8 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use crate::board::Board;
 use crate::nnue::Network;
 use crate::search::time::{TimeManager, TimeSettings};
-use crate::types::plytable::PlyTable;
 use crate::types::pv::PVTable;
+use crate::types::stack::Stack;
 use crate::types::{
     ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory, STARTING_FEN, Score,
     Side, is_decisive,
@@ -81,7 +81,7 @@ pub struct SearchData {
     pub board: Board,
     pub time: TimeManager,
     pub report: bool,
-    pub ply_table: Box<PlyTable>,
+    pub stack: Box<Stack>,
     pub root_moves: Vec<RootMove>,
 
     pub quiet_history: QuietHistory,
@@ -103,7 +103,7 @@ impl SearchData {
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
             report: true,
-            ply_table: PlyTable::new(),
+            stack: Stack::new(),
             root_moves: Vec::new(),
 
             quiet_history: QuietHistory::new(),
@@ -152,7 +152,7 @@ impl SearchData {
         unsafe {
             for i in [1, 2, 4] {
                 self.conthistory.update(
-                    self.ply_table[ply - i].conthistory,
+                    self.stack[ply - i].conthistory,
                     self.board.get_piece_at_square(m.get_from()),
                     m.get_to(),
                     bonus,
@@ -192,7 +192,7 @@ impl SearchData {
     pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
         unsafe {
             self.conthistory.get(
-                self.ply_table[ply - index].conthistory,
+                self.stack[ply - index].conthistory,
                 self.board.get_piece_at_square(m.get_from()),
                 m.get_to(),
             )
@@ -240,9 +240,9 @@ impl SearchData {
         let to = m.get_to();
         let piece = self.board.get_piece_at_square(from);
 
-        self.ply_table[ply].m = m;
-        self.ply_table[ply].piece = piece;
-        self.ply_table[ply].conthistory = self.conthistory.subtable(piece, to);
+        self.stack[ply].m = m;
+        self.stack[ply].piece = piece;
+        self.stack[ply].conthistory = self.conthistory.subtable(piece, to);
 
         self.board.make_move(m);
     }

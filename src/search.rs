@@ -1,6 +1,6 @@
 use crate::search::data::{SearchData, Status};
 use crate::search::movepicker::MovePicker;
-use crate::types::plytable::PlyTable;
+use crate::types::stack::Stack;
 use crate::types::stackvec::StackVec;
 use crate::types::*;
 
@@ -55,7 +55,7 @@ pub fn search_runner(data: &mut SearchData) {
 
     // Iterative Deepening
     loop {
-        data.ply_table = PlyTable::new();
+        data.stack = Stack::new();
 
         if (data.time.hard_limit(data.nodes(), data.id)
             || data
@@ -144,7 +144,7 @@ pub fn search<Node: NodeType>(
 
     let stm = data.board.state.side_to_move;
     let in_check = data.board.king_in_check();
-    let excluded = !data.ply_table[ply].excluded.is_null();
+    let excluded = !data.stack[ply].excluded.is_null();
 
     if !Node::ROOT {
         // Check for draws
@@ -181,6 +181,7 @@ pub fn search<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
+    let mut depth = depth.min(MAX_PLY as i32 - 1);
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
 
     // TT Cutoffs
@@ -217,7 +218,7 @@ pub fn search<Node: NodeType>(
         static_eval = -Score::INFINITY;
     } else if excluded {
         raw_eval = -Score::INFINITY;
-        static_eval = data.ply_table[ply].eval
+        static_eval = data.stack[ply].eval
     } else if let Some(e) = &tt_entry
         && e.get_eval() != -Score::INFINITY
     {
@@ -228,14 +229,14 @@ pub fn search<Node: NodeType>(
         static_eval = raw_eval + correction;
     };
 
-    data.ply_table[ply].eval = static_eval;
+    data.stack[ply].eval = static_eval;
 
     let improvement = if in_check {
         0
-    } else if data.ply_table[ply - 2].eval != -Score::INFINITY {
-        static_eval - data.ply_table[ply - 2].eval
-    } else if data.ply_table[ply - 4].eval != -Score::INFINITY {
-        static_eval - data.ply_table[ply - 4].eval
+    } else if data.stack[ply - 2].eval != -Score::INFINITY {
+        static_eval - data.stack[ply - 2].eval
+    } else if data.stack[ply - 4].eval != -Score::INFINITY {
+        static_eval - data.stack[ply - 4].eval
     } else {
         0
     };
@@ -261,6 +262,18 @@ pub fn search<Node: NodeType>(
         return quiesce::<Node>(data, alpha, beta, ply);
     }
 
+    // Hindsight Reduction
+    if !Node::ROOT
+        && !in_check
+        && !excluded
+        && depth >= 2
+        && data.stack[ply - 1].eval != -Score::INFINITY
+        && data.stack[ply - 1].reduction >= 2048
+        && static_eval + data.stack[ply - 1].eval >= 200
+    {
+        depth -= 1;
+    }
+
     // Reverse Futillity Pruning (RFP)
     if !in_check
         && !Node::PV
@@ -278,12 +291,12 @@ pub fn search<Node: NodeType>(
         && !data.board.only_king_and_pawns()
         && tt_bound.is_none_or(|b| b != Bound::Upper)
         && static_eval >= beta - 63 * improving as i32
-        && !data.ply_table[ply - 1].m.is_null()
+        && !data.stack[ply - 1].m.is_null()
     {
         let r = 6 + depth * 132 / 637;
-        data.ply_table[ply].conthistory = data.ply_table.sentinel();
-        data.ply_table[ply].m = Move::default();
-        data.ply_table[ply].piece = OptionPiece::None;
+        data.stack[ply].conthistory = data.stack.sentinel();
+        data.stack[ply].m = Move::default();
+        data.stack[ply].piece = OptionPiece::None;
 
         data.board.make_null_move();
         let null_move_score = -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1, false);
@@ -313,8 +326,8 @@ pub fn search<Node: NodeType>(
         let singular_depth = (depth - 1) / 2;
         let singular_beta = tt_score - (depth + depth);
 
-        data.ply_table[ply].excluded = tt_move;
-        data.ply_table[ply].m = Move::default();
+        data.stack[ply].excluded = tt_move;
+        data.stack[ply].m = Move::default();
         // Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
         let singular_score = search::<NonPV>(
             data,
@@ -324,7 +337,7 @@ pub fn search<Node: NodeType>(
             ply,
             cutnode,
         );
-        data.ply_table[ply].excluded = Move::default();
+        data.stack[ply].excluded = Move::default();
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;
@@ -352,7 +365,7 @@ pub fn search<Node: NodeType>(
     let mut skip_quiets = false;
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
-        if m == data.ply_table[ply].excluded {
+        if m == data.stack[ply].excluded {
             continue;
         }
 
@@ -430,7 +443,10 @@ pub fn search<Node: NodeType>(
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
 
+            data.stack[ply].reduction = r;
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, true);
+            data.stack[ply].reduction = 0;
+
             if score > alpha && reduced_depth < new_depth {
                 score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
             }
