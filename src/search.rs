@@ -279,6 +279,8 @@ pub fn search<Node: NodeType>(
         && !Node::PV
         && !excluded
         && static_eval >= beta + 147 * depth - (94 * improving as i32)
+        && !is_decisive(beta)
+        && !is_decisive(static_eval)
     {
         return ilerp::<1024>(static_eval, beta, 690);
     }
