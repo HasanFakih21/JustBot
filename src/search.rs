@@ -78,12 +78,12 @@ pub fn search_runner(data: &mut SearchData) {
         if score <= alpha {
             // Failed Low
             alpha = (score - delta).max(-Score::INFINITY);
-            delta = 25 * delta / 128;
+            delta += 25 * delta / 128;
             continue;
         } else if score >= beta {
             // Failed High
             beta = (score + delta).min(Score::INFINITY);
-            delta = 25 * delta / 128;
+            delta += 25 * delta / 128;
             continue;
         }
 
@@ -110,6 +110,8 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         delta = 25;
+        alpha = (score - delta).max(-Score::INFINITY);
+        beta = (score + delta).min(Score::INFINITY);
     }
 
     data.best_move = best_move;
