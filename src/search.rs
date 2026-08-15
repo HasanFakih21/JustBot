@@ -259,11 +259,10 @@ pub fn search<Node: NodeType>(
         && data.stack[ply - 1].m.get_kind().is_quiet()
         && data.stack[ply - 1].eval != -Score::INFINITY
     {
-        let diff = i32::clamp(-(data.stack[ply - 1].eval + static_eval), -150, 300);
-        let bonus = 1024 * diff / 256;
+        let diff = i32::clamp(-(data.stack[ply - 1].eval + static_eval), -150, 150);
         let prev_threats = data.board.state_stack[data.board.state_stack.len() - 1].threats;
         data.quiet_history
-            .update(prev_threats, stm.other(), data.stack[ply - 1].m, bonus);
+            .update(prev_threats, stm.other(), data.stack[ply - 1].m, diff);
     }
 
     // Razoring
