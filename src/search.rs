@@ -256,6 +256,7 @@ pub fn search<Node: NodeType>(
     if !Node::ROOT
         && !in_check
         && !excluded
+        && tt_entry.is_none()
         && data.stack[ply - 1].m.get_kind().is_quiet()
         && data.stack[ply - 1].eval != -Score::INFINITY
     {
