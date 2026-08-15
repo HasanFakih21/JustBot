@@ -40,8 +40,7 @@ pub fn search_runner(data: &mut SearchData) {
     data.start_time();
     data.network.full_refresh(&data.board);
 
-    let mut alpha_window = 33;
-    let mut beta_window = 20;
+    let mut delta = 25;
     let mut alpha = -Score::INFINITY;
     let mut beta = Score::INFINITY;
 
@@ -78,13 +77,13 @@ pub fn search_runner(data: &mut SearchData) {
         // Aspiration Window
         if score <= alpha {
             // Failed Low
-            alpha_window *= 2;
-            alpha -= alpha_window;
+            alpha = (score - delta).max(-Score::INFINITY);
+            delta = 25 * delta / 128;
             continue;
         } else if score >= beta {
             // Failed High
-            beta_window *= 2;
-            beta += beta_window;
+            beta = (score + delta).min(Score::INFINITY);
+            delta = 25 * delta / 128;
             continue;
         }
 
@@ -110,10 +109,7 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
-        alpha_window = 30;
-        beta_window = 19;
-        alpha = score - alpha_window;
-        beta = score + beta_window;
+        delta = 25;
     }
 
     data.best_move = best_move;
