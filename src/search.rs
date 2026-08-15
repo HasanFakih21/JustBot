@@ -252,6 +252,20 @@ pub fn search<Node: NodeType>(
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
+    // Quiet Move Ordering using Static Evaluation Difference
+    if !Node::ROOT
+        && !in_check
+        && !excluded
+        && data.stack[ply - 1].m.get_kind().is_quiet()
+        && data.stack[ply - 1].eval != -Score::INFINITY
+    {
+        let diff = i32::clamp(-(data.stack[ply - 1].eval + static_eval), -150, 300);
+        let bonus = 1024 * diff / 256;
+        let prev_threats = data.board.state_stack[data.board.state_stack.len() - 1].threats;
+        data.quiet_history
+            .update(prev_threats, stm.other(), data.stack[ply - 1].m, bonus);
+    }
+
     // Razoring
     if !Node::PV
         && !in_check
