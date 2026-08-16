@@ -189,6 +189,15 @@ impl SearchData {
                     bonus,
                 );
             }
+
+            if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 4].m.is_null() {
+                self.contcorrhistory.update(
+                    self.stack[ply - 4].contcorrhistory,
+                    self.stack[ply - 1].piece,
+                    self.stack[ply - 1].m.get_to(),
+                    bonus,
+                );
+            }
         }
     }
 
@@ -203,6 +212,17 @@ impl SearchData {
                 if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
                     self.contcorrhistory.get(
                         self.stack[ply - 2].contcorrhistory,
+                        self.stack[ply - 1].piece,
+                        self.stack[ply - 1].m.get_to(),
+                    )
+                } else {
+                    0
+                }
+            }
+            + unsafe {
+                if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 4].m.is_null() {
+                    self.contcorrhistory.get(
+                        self.stack[ply - 4].contcorrhistory,
                         self.stack[ply - 1].piece,
                         self.stack[ply - 1].m.get_to(),
                     )
