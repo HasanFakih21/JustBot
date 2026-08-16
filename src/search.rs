@@ -295,6 +295,7 @@ pub fn search<Node: NodeType>(
     {
         let r = 6 + depth * 132 / 637;
         data.stack[ply].conthistory = data.stack.sentinel();
+        data.stack[ply].contcorrhistory = data.stack.sentinel();
         data.stack[ply].m = Move::default();
         data.stack[ply].piece = OptionPiece::None;
 

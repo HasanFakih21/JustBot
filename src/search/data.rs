@@ -181,12 +181,14 @@ impl SearchData {
         );
 
         unsafe {
-            self.contcorrhistory.update(
-                self.stack[ply - 2].contcorrhistory,
-                self.stack[ply - 1].piece,
-                self.stack[ply - 1].m.get_to(),
-                bonus,
-            );
+            if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
+                self.contcorrhistory.update(
+                    self.stack[ply - 2].contcorrhistory,
+                    self.stack[ply - 1].piece,
+                    self.stack[ply - 1].m.get_to(),
+                    bonus,
+                );
+            }
         }
     }
 
@@ -198,11 +200,15 @@ impl SearchData {
             + self.corrhistory.non_pawn[Side::Black as usize]
                 .get(stm, self.board.state.keys.non_pawn[Side::Black])
             + unsafe {
-                self.contcorrhistory.get(
-                    self.stack[ply - 2].contcorrhistory,
-                    self.stack[ply - 1].piece,
-                    self.stack[ply - 1].m.get_to(),
-                )
+                if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
+                    self.contcorrhistory.get(
+                        self.stack[ply - 2].contcorrhistory,
+                        self.stack[ply - 1].piece,
+                        self.stack[ply - 1].m.get_to(),
+                    )
+                } else {
+                    0
+                }
             })
             / 64
     }
