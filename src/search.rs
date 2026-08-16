@@ -277,9 +277,10 @@ pub fn search<Node: NodeType>(
         && !Node::PV
         && !excluded
         && static_eval
-            >= (beta + 85 * depth + 5 * depth * depth - 75 * improving as i32
-                + correction.abs() * 60 / 262144)
-                .max(0)
+            >= beta
+                + (85 * depth + 5 * depth * depth - 75 * improving as i32
+                    + correction.abs() * 250 / 1024)
+                    .max(0)
         && !is_decisive(beta)
         && !is_decisive(static_eval)
     {
