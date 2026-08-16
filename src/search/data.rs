@@ -8,8 +8,8 @@ use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory, STARTING_FEN, Score,
-    Side, is_decisive,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory,
+    PawnHistory, STARTING_FEN, Score, Side, is_decisive,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -89,6 +89,7 @@ pub struct SearchData {
     pub pawn_history: PawnHistory,
     pub conthistory: ContinuationHistory,
     pub corrhistory: CorrectionHistories,
+    pub contcorrhistory: ContinuationCorrectionHistory,
 
     pub network: Network,
 }
@@ -111,6 +112,7 @@ impl SearchData {
             pawn_history: PawnHistory::new(),
             conthistory: ContinuationHistory::new(),
             corrhistory: CorrectionHistories::default(),
+            contcorrhistory: ContinuationCorrectionHistory::new(),
 
             network: Network::new(),
         }
@@ -161,7 +163,7 @@ impl SearchData {
         }
     }
 
-    pub fn update_correction_histories(&mut self, diff: i32, depth: i32) {
+    pub fn update_correction_histories(&mut self, diff: i32, depth: i32, ply: isize) {
         let stm = self.board.state.side_to_move;
         let bonus = (148 * depth * diff / 121).clamp(-4612, 2530);
         self.corrhistory
@@ -177,15 +179,37 @@ impl SearchData {
             self.board.state.keys.non_pawn[Side::Black],
             bonus,
         );
+
+        unsafe {
+            if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
+                self.contcorrhistory.update(
+                    self.stack[ply - 2].contcorrhistory,
+                    self.stack[ply - 1].piece,
+                    self.stack[ply - 1].m.get_to(),
+                    bonus,
+                );
+            }
+        }
     }
 
-    pub fn correction(&self) -> i32 {
+    pub fn correction(&self, ply: isize) -> i32 {
         let stm = self.board.state.side_to_move;
         (self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
             + self.corrhistory.non_pawn[Side::White as usize]
                 .get(stm, self.board.state.keys.non_pawn[Side::White])
             + self.corrhistory.non_pawn[Side::Black as usize]
-                .get(stm, self.board.state.keys.non_pawn[Side::Black]))
+                .get(stm, self.board.state.keys.non_pawn[Side::Black])
+            + unsafe {
+                if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
+                    self.contcorrhistory.get(
+                        self.stack[ply - 2].contcorrhistory,
+                        self.stack[ply - 1].piece,
+                        self.stack[ply - 1].m.get_to(),
+                    )
+                } else {
+                    0
+                }
+            })
             / 64
     }
 
@@ -243,6 +267,7 @@ impl SearchData {
         self.stack[ply].m = m;
         self.stack[ply].piece = piece;
         self.stack[ply].conthistory = self.conthistory.subtable(piece, to);
+        self.stack[ply].contcorrhistory = self.contcorrhistory.subtable(piece, to);
 
         self.board.make_move(m);
     }
