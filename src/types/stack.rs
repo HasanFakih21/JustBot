@@ -44,6 +44,7 @@ pub struct PlyData {
     pub eval: i32,
     pub excluded: Move,
     pub reduction: i32,
+    pub complexity: i32,
 }
 
 impl Default for PlyData {
@@ -56,6 +57,7 @@ impl Default for PlyData {
             eval: -Score::INFINITY,
             excluded: Move::default(),
             reduction: 0,
+            complexity: 0,
         }
     }
 }

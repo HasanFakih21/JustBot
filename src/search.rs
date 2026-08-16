@@ -228,6 +228,7 @@ pub fn search<Node: NodeType>(
     };
 
     data.stack[ply].eval = static_eval;
+    data.stack[ply].complexity = correction.abs();
 
     let improvement = if in_check {
         0
@@ -426,6 +427,11 @@ pub fn search<Node: NodeType>(
         }
 
         let initial_nodes = data.nodes();
+        let more_complicated = if !data.stack[ply - 1].m.is_null() {
+            data.stack[ply - 1].complexity < correction.abs()
+        } else {
+            false
+        };
 
         // Make Move
         data.make_move(m, ply);
@@ -440,6 +446,7 @@ pub fn search<Node: NodeType>(
             r += 447 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 296 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 449 * history / 4096;
+            r -= 1024 * more_complicated as i32;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
