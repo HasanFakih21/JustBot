@@ -13,7 +13,9 @@ impl Stack {
         let mut table = Box::new(Stack::default());
         let sentinel_ptr = &raw mut table.sentinel;
         for data in table.data.iter_mut() {
-            data.conthistory = sentinel_ptr; // Gets rid of the null pointers so they instead point to an "empty" table
+            // Gets rid of the null pointers so they instead point to an "empty" table
+            data.conthistory = sentinel_ptr;
+            data.contcorrhistory = sentinel_ptr;
         }
 
         table
@@ -38,6 +40,7 @@ pub struct PlyData {
     pub m: Move,
     pub piece: OptionPiece<SidedPiece>,
     pub conthistory: *mut PieceToHistory<i16>,
+    pub contcorrhistory: *mut PieceToHistory<i16>,
     pub eval: i32,
     pub excluded: Move,
     pub reduction: i32,
@@ -49,6 +52,7 @@ impl Default for PlyData {
             m: Move::default(),
             piece: OptionPiece::None,
             conthistory: std::ptr::null_mut(),
+            contcorrhistory: std::ptr::null_mut(),
             eval: -Score::INFINITY,
             excluded: Move::default(),
             reduction: 0,

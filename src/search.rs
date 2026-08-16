@@ -209,7 +209,7 @@ pub fn search<Node: NodeType>(
     // Evaluation
     let raw_eval;
     let static_eval;
-    let correction = data.correction();
+    let correction = data.correction(ply);
 
     if in_check {
         raw_eval = -Score::INFINITY;
@@ -593,7 +593,7 @@ pub fn search<Node: NodeType>(
             || (bound == Bound::Upper && best_score <= static_eval)
             || bound == Bound::Exact)
     {
-        data.update_correction_histories(best_score - static_eval, depth);
+        data.update_correction_histories(best_score - static_eval, depth, ply);
     }
 
     best_score
@@ -667,11 +667,11 @@ pub fn quiesce<Node: NodeType>(
         && e.get_eval() != -Score::INFINITY
     {
         raw_eval = e.get_eval();
-        static_eval = raw_eval + data.correction();
+        static_eval = raw_eval + data.correction(ply);
         best_score = static_eval;
     } else {
         raw_eval = data.network.evaluate(&data.board);
-        static_eval = raw_eval + data.correction();
+        static_eval = raw_eval + data.correction(ply);
         best_score = static_eval
     };
 

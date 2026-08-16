@@ -117,6 +117,50 @@ impl ContinuationHistory {
 }
 
 #[derive(Debug, Clone)]
+// [Piece][To][Piece][To]
+pub struct ContinuationCorrectionHistory(Box<PieceToHistory<PieceToHistory<i16>>>);
+
+impl ContinuationCorrectionHistory {
+    pub const MAX_HISTORY: i32 = 12000;
+
+    pub fn new() -> Self {
+        Self(allocate_empty_history())
+    }
+
+    pub fn subtable(
+        &mut self,
+        piece: OptionPiece<SidedPiece>,
+        to: Square,
+    ) -> *mut PieceToHistory<i16> {
+        &raw mut self.0[piece][to as usize]
+    }
+
+    /// # Safety
+    /// 'subtable' needs to point to a valid subtable owned by the history
+    pub unsafe fn update(
+        &mut self,
+        subtable: *mut PieceToHistory<i16>,
+        piece: OptionPiece<SidedPiece>,
+        to: Square,
+        bonus: i32,
+    ) {
+        let entry = &mut unsafe { &mut *subtable }[piece][to as usize];
+        update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
+    }
+
+    /// # Safety
+    /// 'subtable' needs to point to a valid subtable owned by the history
+    pub unsafe fn get(
+        &self,
+        subtable: *mut PieceToHistory<i16>,
+        piece: OptionPiece<SidedPiece>,
+        to: Square,
+    ) -> i32 {
+        (unsafe { &*subtable }[piece][to as usize]) as i32
+    }
+}
+
+#[derive(Debug, Clone)]
 // [Side to Move][Key]
 pub struct CorrectionHistory(Box<[[i16; Self::SIZE]; 2]>);
 
@@ -192,6 +236,12 @@ impl Default for NoisyHistory {
 impl Default for ContinuationHistory {
     fn default() -> Self {
         ContinuationHistory::new()
+    }
+}
+
+impl Default for ContinuationCorrectionHistory {
+    fn default() -> Self {
+        ContinuationCorrectionHistory::new()
     }
 }
 
