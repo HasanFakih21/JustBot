@@ -677,6 +677,10 @@ pub fn quiesce<Node: NodeType>(
 
     // Stand Pat
     if best_score >= beta {
+        if !is_decisive(best_score) && !is_decisive(beta) {
+            best_score = ilerp::<1024>(best_score, beta, 600);
+        }
+
         return best_score;
     }
 
