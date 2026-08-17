@@ -45,7 +45,8 @@ pub fn search_runner(data: &mut SearchData) {
     let mut beta = Score::INFINITY;
 
     let mut depth = 1;
-    let mut best_move = None;
+    let mut prev_move = None;
+    let mut prev_score: i32 = 0;
 
     if data.root_moves.is_empty() {
         data.best_move = None;
@@ -53,7 +54,7 @@ pub fn search_runner(data: &mut SearchData) {
     }
 
     // For Time Management
-    let mut move_stability = 0;
+    let mut score_stability = 0;
 
     // Iterative Deepening
     loop {
@@ -95,13 +96,14 @@ pub fn search_runner(data: &mut SearchData) {
         data.root_moves
             .sort_by_key(|rm| std::cmp::Reverse(rm.score));
 
-        if best_move.is_some_and(|m| m == data.root_moves[0].m) {
-            move_stability += 1;
+        if score - prev_score.abs() < 12 {
+            score_stability += 1;
         } else {
-            move_stability = 0;
+            score_stability = 0;
         }
 
-        best_move = Some(data.root_moves[0].m);
+        prev_move = Some(data.root_moves[0].m);
+        prev_score = score;
 
         data.print_uci_info(score, depth, &data.board);
 
@@ -109,8 +111,9 @@ pub fn search_runner(data: &mut SearchData) {
             let node_scale = (2.977
                 - (data.root_moves[0].nodes as f32 / data.nodes() as f32) * 2.495)
                 .max(0.553);
-            let m_stability_scale = (1.800 - 0.010 * move_stability as f32).max(0.900);
-            node_scale * m_stability_scale
+            let score_stability_scale = (1.2 - 0.04 * score_stability as f32).max(0.85);
+
+            node_scale * score_stability_scale
         };
 
         if data.time.soft_limit(multiplier) && data.id == 0 {
@@ -123,7 +126,7 @@ pub fn search_runner(data: &mut SearchData) {
         beta = (score + delta).min(Score::INFINITY);
     }
 
-    data.best_move = best_move;
+    data.best_move = prev_move;
 }
 
 pub fn search<Node: NodeType>(
