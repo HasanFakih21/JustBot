@@ -325,7 +325,8 @@ pub fn search<Node: NodeType>(
         && tt_bound != Bound::Upper
     {
         let singular_depth = (depth - 1) / 2;
-        let singular_beta = tt_score - (depth + depth);
+        let singular_margin = 140 + 120 * (tt_pv && !Node::PV) as i32;
+        let singular_beta = tt_score - depth * singular_margin / 128;
 
         data.stack[ply].excluded = tt_move;
         data.stack[ply].m = Move::default();
