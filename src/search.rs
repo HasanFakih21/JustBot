@@ -353,7 +353,7 @@ pub fn search<Node: NodeType>(
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
-            extension -= 2;
+            extension -= 3;
         }
     }
 
