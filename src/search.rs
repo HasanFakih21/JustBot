@@ -52,6 +52,9 @@ pub fn search_runner(data: &mut SearchData) {
         return;
     }
 
+    // For Time Management
+    let mut move_stability = 0;
+
     // Iterative Deepening
     loop {
         data.stack = Stack::new();
@@ -88,20 +91,26 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         depth += 1;
-        best_move = data.pv.line().first().copied();
+
+        data.root_moves
+            .sort_by_key(|rm| std::cmp::Reverse(rm.score));
+
+        if best_move.is_some_and(|m| m == data.root_moves[0].m) {
+            move_stability += 1;
+        } else {
+            move_stability = 0;
+        }
+
+        best_move = Some(data.root_moves[0].m);
+
         data.print_uci_info(score, depth, &data.board);
 
         let multiplier = || {
-            (2.977
-                - (data
-                    .root_moves
-                    .iter()
-                    .find(|rm| rm.m == best_move.unwrap())
-                    .unwrap()
-                    .nodes as f32
-                    / data.nodes() as f32)
-                    * 2.495)
-                .max(0.553)
+            let node_scale = (2.977
+                - (data.root_moves[0].nodes as f32 / data.nodes() as f32) * 2.495)
+                .max(0.553);
+            let m_stability_scale = (1.2 - 0.04 * move_stability as f32).max(0.7);
+            node_scale * m_stability_scale
         };
 
         if data.time.soft_limit(multiplier) && data.id == 0 {
@@ -474,6 +483,12 @@ pub fn search<Node: NodeType>(
             let nodes = data.nodes();
             if let Some(root_move) = data.root_moves.iter_mut().find(|rm| rm.m == m) {
                 root_move.nodes += nodes - initial_nodes;
+
+                if move_count == 1 || score > alpha {
+                    root_move.score = score;
+                } else {
+                    root_move.score = -Score::INFINITY;
+                }
             };
         }
 
