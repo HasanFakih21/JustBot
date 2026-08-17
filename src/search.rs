@@ -352,7 +352,7 @@ pub fn search<Node: NodeType>(
                 + (singular_score < singular_beta - triple_margin) as i32;
         }
         // Multi-Cut
-        else if singular_score >= beta && !is_decisive(singular_score) {
+        else if !Node::PV && singular_score >= beta && !is_decisive(singular_score) {
             return singular_score;
         }
         // Negative Extensions
