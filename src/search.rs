@@ -356,6 +356,10 @@ pub fn search<Node: NodeType>(
             extension -= 3;
         }
     }
+    // Low Depth Singular Extensions (LDSE)
+    else if depth <= 7 && !in_check && cutnode && static_eval <= alpha - 25 {
+        extension += 1;
+    }
 
     let mut move_count = 0;
     let mut best_score = -Score::INFINITY;
