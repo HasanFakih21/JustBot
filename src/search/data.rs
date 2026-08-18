@@ -83,6 +83,7 @@ pub struct SearchData {
     pub report: bool,
     pub stack: Box<Stack>,
     pub root_moves: Vec<RootMove>,
+    pub best_move_changes: usize,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -106,6 +107,7 @@ impl SearchData {
             report: true,
             stack: Stack::new(),
             root_moves: Vec::new(),
+            best_move_changes: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
