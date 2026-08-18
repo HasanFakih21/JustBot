@@ -46,11 +46,15 @@ pub fn search_runner(data: &mut SearchData) {
 
     let mut depth = 1;
     let mut best_move = None;
+    let mut prev_score: i32 = 0;
 
     if data.root_moves.is_empty() {
         data.best_move = None;
         return;
     }
+
+    // For Time Management
+    let mut score_stability = 0;
 
     // Iterative Deepening
     loop {
@@ -87,21 +91,29 @@ pub fn search_runner(data: &mut SearchData) {
             continue;
         }
 
+        if score - prev_score.abs() < 12 {
+            score_stability += 1;
+        } else {
+            score_stability = 0;
+        }
+
         depth += 1;
         best_move = data.pv.line().first().copied();
+        prev_score = score;
         data.print_uci_info(score, depth, &data.board);
 
         let multiplier = || {
-            (2.977
-                - (data
-                    .root_moves
-                    .iter()
-                    .find(|rm| rm.m == best_move.unwrap())
-                    .unwrap()
-                    .nodes as f32
-                    / data.nodes() as f32)
-                    * 2.495)
-                .max(0.553)
+            let best_root_move = data
+                .root_moves
+                .iter()
+                .find(|rm| rm.m == best_move.unwrap())
+                .unwrap();
+
+            let node_scale =
+                (2.977 - (best_root_move.nodes as f32 / data.nodes() as f32) * 2.495).max(0.553);
+            let score_stability_scale = (1.2 - 0.04 * score_stability as f32).max(0.85);
+
+            node_scale * score_stability_scale
         };
 
         if data.time.soft_limit(multiplier) && data.id == 0 {
