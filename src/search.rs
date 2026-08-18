@@ -109,7 +109,7 @@ pub fn search_runner(data: &mut SearchData) {
             let node_scale = (2.977
                 - (data.root_moves[0].nodes as f32 / data.nodes() as f32) * 2.495)
                 .max(0.553);
-            let m_stability_scale = (1.800 - 0.010 * move_stability as f32).max(0.900);
+            let m_stability_scale = (1.050 - 0.025 * move_stability as f32).max(0.750);
             node_scale * m_stability_scale
         };
 
