@@ -106,10 +106,9 @@ pub fn search_runner(data: &mut SearchData) {
         data.print_uci_info(score, depth, &data.board);
 
         let multiplier = || {
-            let node_scale = (2.977
-                - (data.root_moves[0].nodes as f32 / data.nodes() as f32) * 2.495)
-                .max(0.553);
-            let m_stability_scale = (1.350 - 0.025 * move_stability as f32).max(0.650);
+            let node_ratio = data.root_moves[0].nodes as f32 / data.nodes() as f32;
+            let node_scale = (2.977 - 2.495 * node_ratio).max(0.553);
+            let m_stability_scale = (1.550 - 0.070 * move_stability as f32).max(0.700);
             node_scale * m_stability_scale
         };
 
