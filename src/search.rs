@@ -78,10 +78,12 @@ pub fn search_runner(data: &mut SearchData) {
         if score <= alpha {
             // Failed Low
             alpha = (score - delta).max(-Score::INFINITY);
+            beta = (alpha + delta).min(beta);
             delta += 25 * delta / 128;
             continue;
         } else if score >= beta {
             // Failed High
+            alpha = (beta - delta).max(alpha);
             beta = (score + delta).min(Score::INFINITY);
             delta += 25 * delta / 128;
             continue;
