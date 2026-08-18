@@ -289,7 +289,7 @@ pub fn search<Node: NodeType>(
         && !excluded
         && !in_check
         && !data.board.only_king_and_pawns()
-        && tt_bound.is_none_or(|b| b != Bound::Upper)
+        && tt_entry.is_none_or(|tt| !(tt.get_bound() == Bound::Upper && tt.get_score() < beta))
         && static_eval >= beta - 63 * improving as i32
         && !data.stack[ply - 1].m.is_null()
     {
