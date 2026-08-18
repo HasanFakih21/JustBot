@@ -108,7 +108,7 @@ pub fn search_runner(data: &mut SearchData) {
         let multiplier = || {
             let node_ratio = data.root_moves[0].nodes as f32 / data.nodes() as f32;
             let node_scale = (2.977 - 2.495 * node_ratio).max(0.553);
-            let m_stability_scale = (1.05 - 0.015 * move_stability as f32).max(0.750);
+            let m_stability_scale = (1.15 - 0.035 * move_stability as f32).max(0.750);
             node_scale * m_stability_scale
         };
 
