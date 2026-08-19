@@ -94,17 +94,17 @@ impl Display for Piece {
     }
 }
 
-impl<T> Index<Piece> for [T] {
+impl<T> Index<Piece> for [T; Piece::NUM] {
     type Output = T;
 
     fn index(&self, index: Piece) -> &Self::Output {
-        &self[index as usize]
+        unsafe { self.get_unchecked(index as usize) }
     }
 }
 
-impl<T> IndexMut<Piece> for [T] {
+impl<T> IndexMut<Piece> for [T; Piece::NUM] {
     fn index_mut(&mut self, index: Piece) -> &mut Self::Output {
-        &mut self[index as usize]
+        unsafe { self.get_unchecked_mut(index as usize) }
     }
 }
 

@@ -155,7 +155,7 @@ impl MovePicker {
             }
         }
 
-        self.moves.remove(best_index).unwrap()
+        self.moves.remove(best_index)
     }
 
     fn remove_tt_move(&mut self) {

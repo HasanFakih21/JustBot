@@ -65,46 +65,22 @@ impl Board {
 
             // Single Push
             for to in single_pushes & target {
-                move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
-                    to,
-                    MoveKind::QuietMove,
-                ));
+                move_list.push(Move::new(to.shift(-offset), to, MoveKind::QuietMove));
             }
 
             // Double Push
             for to in double_pushes & target {
-                move_list.push(Move::new(
-                    to.shift(-offset * 2).unwrap(),
-                    to,
-                    MoveKind::DoublePawn,
-                ));
+                move_list.push(Move::new(to.shift(-offset * 2), to, MoveKind::DoublePawn));
             }
         }
 
         if kind.is_noisy() {
             // Normal Promotions
             for to in promotions {
-                move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
-                    to,
-                    MoveKind::QPromotion,
-                ));
-                move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
-                    to,
-                    MoveKind::RPromotion,
-                ));
-                move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
-                    to,
-                    MoveKind::BPromotion,
-                ));
-                move_list.push(Move::new(
-                    to.shift(-offset).unwrap(),
-                    to,
-                    MoveKind::NPromotion,
-                ));
+                move_list.push(Move::new(to.shift(-offset), to, MoveKind::QPromotion));
+                move_list.push(Move::new(to.shift(-offset), to, MoveKind::RPromotion));
+                move_list.push(Move::new(to.shift(-offset), to, MoveKind::BPromotion));
+                move_list.push(Move::new(to.shift(-offset), to, MoveKind::NPromotion));
             }
 
             // Captures
@@ -135,13 +111,13 @@ impl Board {
                 MoveKind::Capture,
             );
             if let Some(en_passant) = self.state.enpassant {
-                if left_pawns.contains(en_passant.shift(-left).unwrap()) {
-                    let from = en_passant.shift(-left).unwrap();
+                if left_pawns.contains(en_passant.shift(-left)) {
+                    let from = en_passant.shift(-left);
                     move_list.push(Move::new(from, en_passant, MoveKind::EnPassant));
                 }
 
-                if right_pawns.contains(en_passant.shift(-right).unwrap()) {
-                    let from = en_passant.shift(-right).unwrap();
+                if right_pawns.contains(en_passant.shift(-right)) {
+                    let from = en_passant.shift(-right);
                     move_list.push(Move::new(from, en_passant, MoveKind::EnPassant));
                 }
             }

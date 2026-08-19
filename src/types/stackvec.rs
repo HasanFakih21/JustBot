@@ -19,43 +19,29 @@ impl<T: Copy, const SIZE: usize> StackVec<T, SIZE> {
         self.len += 1;
     }
 
-    pub fn replace(&mut self, e: T, index: usize) -> T {
-        if index < self.len {
-            let old_element = self.get(index);
-            self.inner[index].write(e);
-            old_element
-        } else {
-            panic!("Not a valid index!");
-        }
-    }
+    // Instead of shifting the entire list, move the last element to the removed index
+    pub fn remove(&mut self, index: usize) -> T {
+        debug_assert!(index < self.len);
+        unsafe {
+            let removed = self.inner.get_unchecked(index).assume_init();
+            self.len -= 1;
+            std::ptr::copy(
+                self.inner.get_unchecked(self.len).as_ptr(),
+                self.inner.get_unchecked_mut(index).as_mut_ptr(),
+                1,
+            );
 
-    // Instead of shifting entire list, pop the last element and place it at the removed spot
-    pub fn remove(&mut self, index: usize) -> Option<T> {
-        if index == self.len - 1 {
-            return self.pop();
+            removed
         }
-
-        let last = self.pop().unwrap();
-        Some(self.replace(last, index))
     }
 
     pub fn get(&self, index: usize) -> T {
         debug_assert!(index < self.len);
-        unsafe { self.inner[index].assume_init() }
+        unsafe { self.inner.get_unchecked(index).assume_init() }
     }
 
     pub fn clear(&mut self) {
         self.len = 0;
-    }
-
-    pub fn pop(&mut self) -> Option<T> {
-        if self.len == 0 {
-            None
-        } else {
-            let e = unsafe { Some(self.inner[self.len - 1].assume_init()) };
-            self.len -= 1;
-            e
-        }
     }
 
     pub fn len(&self) -> usize {
@@ -67,11 +53,13 @@ impl<T: Copy, const SIZE: usize> StackVec<T, SIZE> {
     }
 
     pub fn iter(&self) -> std::slice::Iter<'_, T> {
-        unsafe { self.inner[..self.len].assume_init_ref().iter() }
+        unsafe { std::slice::from_raw_parts(self.inner.as_ptr().cast(), self.len).iter() }
     }
 
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
-        unsafe { self.inner[..self.len].assume_init_mut().iter_mut() }
+        unsafe {
+            std::slice::from_raw_parts_mut(self.inner.as_mut_ptr().cast(), self.len).iter_mut()
+        }
     }
 }
 

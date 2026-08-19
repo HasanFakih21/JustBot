@@ -72,6 +72,8 @@ impl Display for Square {
 }
 
 impl Square {
+    pub const NUM: usize = 64;
+
     pub const fn from(value: usize) -> Self {
         debug_assert!(value < 64);
         unsafe { std::mem::transmute(value as u8) }
@@ -93,8 +95,10 @@ impl Square {
         Square::from((rank * 8) + file)
     }
 
-    pub fn shift(&self, offset: i8) -> Option<Square> {
-        Square::try_from((*self as i8) + offset).ok()
+    pub fn shift(self, offset: i8) -> Square {
+        let square = self as i8 + offset;
+        debug_assert!(square >= 0 && square < Square::NUM as i8);
+        Square::from(square as usize)
     }
 
     pub fn to_bb(&self) -> BitBoard {
@@ -118,17 +122,17 @@ impl BitXor<u8> for Square {
     }
 }
 
-impl<T> Index<Square> for [T] {
+impl<T> Index<Square> for [T; Square::NUM] {
     type Output = T;
 
     fn index(&self, index: Square) -> &Self::Output {
-        &self[index as usize]
+        unsafe { self.get_unchecked(index as usize) }
     }
 }
 
-impl<T> IndexMut<Square> for [T] {
+impl<T> IndexMut<Square> for [T; Square::NUM] {
     fn index_mut(&mut self, index: Square) -> &mut Self::Output {
-        &mut self[index as usize]
+        unsafe { self.get_unchecked_mut(index as usize) }
     }
 }
 

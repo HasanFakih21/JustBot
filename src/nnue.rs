@@ -4,7 +4,7 @@ use crate::{
         accumulator::{Accumulator, Delta, DualAccumulators},
         cache::AccumulatorCache,
     },
-    types::{MAX_PLY, Move, Piece, Side, Square},
+    types::{MAX_PLY, Move, OptionPiece, Piece, Side, Square},
 };
 
 mod accumulator;
@@ -89,6 +89,7 @@ impl Network {
     }
 
     pub fn push(&mut self, board: &Board, m: Move) {
+        debug_assert!(board.get_piece_at_square(m.get_from()) != OptionPiece::None);
         self.index += 1;
         self.stack[self.index].delta = Some(Delta {
             m,
