@@ -290,7 +290,7 @@ pub fn search<Node: NodeType>(
         && !in_check
         && !data.board.only_king_and_pawns()
         && tt_bound.is_none_or(|b| b != Bound::Upper)
-        && static_eval >= beta - 63 * improving as i32
+        && static_eval >= beta + (200 - 1250 * depth / 128 - 63 * improving as i32).max(0)
         && !data.stack[ply - 1].m.is_null()
     {
         let r = 6 + depth * 132 / 637;
@@ -300,7 +300,7 @@ pub fn search<Node: NodeType>(
         data.stack[ply].piece = OptionPiece::None;
 
         data.board.make_null_move();
-        let null_move_score = -search::<NonPV>(data, depth - r, -beta, -(beta - 1), ply + 1, false);
+        let null_move_score = -search::<NonPV>(data, depth - r, -beta, -beta + 1, ply + 1, false);
         data.board.unmake_move();
         if null_move_score >= beta {
             return null_move_score;
