@@ -93,6 +93,7 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         depth += 1;
+        asp_reduction = 0;
         best_move = data.pv.line().first().copied();
         data.print_uci_info(score, depth, &data.board);
 
