@@ -182,6 +182,8 @@ pub fn search<Node: NodeType>(
     }
 
     let mut depth = depth.min(MAX_PLY as i32 - 1);
+
+    // Transposition Table Entries
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
     let tt_move = tt_entry
         .as_ref()
@@ -237,7 +239,7 @@ pub fn search<Node: NodeType>(
             raw_eval,
             Bound::None,
             data.board.state.keys.full,
-            depth,
+            0,
             ply,
             Node::PV,
         );
@@ -254,15 +256,6 @@ pub fn search<Node: NodeType>(
     };
 
     let improving = improvement > 0;
-
-    let tt_move = tt_entry
-        .as_ref()
-        .map(|e| e.get_best_move())
-        .filter(|m| !m.is_null());
-    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
-    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
-    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
-    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // Razoring
     if !Node::PV
@@ -686,6 +679,19 @@ pub fn quiesce<Node: NodeType>(
         static_eval = raw_eval + data.correction(ply);
         best_score = static_eval
     };
+
+    if tt_entry.is_none() {
+        data.shared.tt.add_entry(
+            Move::default(),
+            -Score::INFINITY,
+            raw_eval,
+            Bound::None,
+            data.board.state.keys.full,
+            0,
+            ply,
+            Node::PV,
+        );
+    }
 
     // Stand Pat
     if best_score >= beta {
