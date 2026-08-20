@@ -193,7 +193,7 @@ pub fn search<Node: NodeType>(
     let tt_score = tt_entry
         .as_ref()
         .map(|e| e.get_score())
-        .filter(|s| *s != -Score::INFINITY);
+        .filter(|s| *s != Score::NONE);
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
@@ -219,13 +219,13 @@ pub fn search<Node: NodeType>(
     let correction = data.correction(ply);
 
     if in_check {
-        raw_eval = -Score::INFINITY;
-        static_eval = -Score::INFINITY;
+        raw_eval = Score::NONE;
+        static_eval = Score::NONE;
     } else if excluded {
-        raw_eval = -Score::INFINITY;
+        raw_eval = Score::NONE;
         static_eval = data.stack[ply].eval
     } else if let Some(e) = &tt_entry
-        && e.get_eval() != -Score::INFINITY
+        && e.get_eval() != Score::NONE
     {
         raw_eval = e.get_eval();
         static_eval = raw_eval + correction;
@@ -238,7 +238,7 @@ pub fn search<Node: NodeType>(
     if !excluded && tt_entry.is_none() {
         data.shared.tt.add_entry(
             Move::default(),
-            -Score::INFINITY,
+            Score::NONE,
             raw_eval,
             Bound::None,
             data.board.state.keys.full,
@@ -250,9 +250,9 @@ pub fn search<Node: NodeType>(
 
     let improvement = if in_check {
         0
-    } else if data.stack[ply - 2].eval != -Score::INFINITY {
+    } else if data.stack[ply - 2].eval != Score::NONE {
         static_eval - data.stack[ply - 2].eval
-    } else if data.stack[ply - 4].eval != -Score::INFINITY {
+    } else if data.stack[ply - 4].eval != Score::NONE {
         static_eval - data.stack[ply - 4].eval
     } else {
         0
@@ -275,7 +275,7 @@ pub fn search<Node: NodeType>(
         && !in_check
         && !excluded
         && depth >= 2
-        && data.stack[ply - 1].eval != -Score::INFINITY
+        && data.stack[ply - 1].eval != Score::NONE
         && data.stack[ply - 1].reduction >= 2048
         && static_eval + data.stack[ply - 1].eval >= 200
     {
@@ -639,7 +639,7 @@ pub fn quiesce<Node: NodeType>(
     let tt_score = tt_entry
         .as_ref()
         .map(|e| e.get_score())
-        .filter(|s| *s != -Score::INFINITY);
+        .filter(|s| *s != Score::NONE);
 
     // TT Cutoffs
     if !Node::PV
@@ -670,11 +670,11 @@ pub fn quiesce<Node: NodeType>(
     let mut best_score;
 
     if in_check {
-        raw_eval = -Score::INFINITY;
+        raw_eval = Score::NONE;
         static_eval = -Score::INFINITY;
         best_score = static_eval;
     } else if let Some(e) = &tt_entry
-        && e.get_eval() != -Score::INFINITY
+        && e.get_eval() != Score::NONE
     {
         raw_eval = e.get_eval();
         static_eval = raw_eval + data.correction(ply);
@@ -688,7 +688,7 @@ pub fn quiesce<Node: NodeType>(
     if tt_entry.is_none() {
         data.shared.tt.add_entry(
             Move::default(),
-            -Score::INFINITY,
+            Score::NONE,
             raw_eval,
             Bound::None,
             data.board.state.keys.full,

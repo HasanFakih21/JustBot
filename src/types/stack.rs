@@ -53,7 +53,7 @@ impl Default for PlyData {
             piece: OptionPiece::None,
             conthistory: std::ptr::null_mut(),
             contcorrhistory: std::ptr::null_mut(),
-            eval: -Score::INFINITY,
+            eval: Score::NONE,
             excluded: Move::default(),
             reduction: 0,
         }

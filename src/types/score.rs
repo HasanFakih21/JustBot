@@ -3,6 +3,7 @@ use crate::types::MAX_PLY;
 pub struct Score;
 
 impl Score {
+    pub const NONE: i32 = 32001;
     pub const INFINITY: i32 = 32000;
     pub const MATE: i32 = 30000;
     pub const MATE_CUTOFF: i32 = Score::MATE - MAX_PLY as i32;

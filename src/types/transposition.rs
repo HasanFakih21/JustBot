@@ -197,7 +197,7 @@ impl TranspositionTable {
         }
 
         // Adjust mate scores
-        if is_decisive(score) {
+        if is_decisive(score) && score != Score::NONE {
             score += score.signum() * ply as i32;
         }
 
