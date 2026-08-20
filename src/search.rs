@@ -182,30 +182,35 @@ pub fn search<Node: NodeType>(
     }
 
     let mut depth = depth.min(MAX_PLY as i32 - 1);
+
+    // Transposition Table Entries
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_move = tt_entry
+        .as_ref()
+        .map(|e| e.get_best_move())
+        .filter(|m| !m.is_null());
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry
+        .as_ref()
+        .map(|e| e.get_score())
+        .filter(|s| *s != Score::NONE);
+    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // TT Cutoffs
-    if let Some(e) = &tt_entry
-        && !Node::PV
-        && e.get_depth() >= depth
-        && (e.get_score() <= alpha || cutnode)
+    if !Node::PV
+        && let Some(tt_score) = tt_score
+        && tt_depth.is_some_and(|d| d >= depth)
+        && (tt_score <= alpha || cutnode)
         && !excluded
+        && tt_bound.is_some_and(|b| match b {
+            Bound::Lower => tt_score >= beta,
+            Bound::Upper => tt_score < alpha,
+            Bound::Exact => true,
+            Bound::None => false,
+        })
     {
-        let tt_score = e.get_score();
-        match e.get_bound() {
-            Bound::Exact => return tt_score,
-            Bound::Lower => {
-                if tt_score >= beta {
-                    return tt_score;
-                }
-            }
-            Bound::Upper => {
-                if tt_score < alpha {
-                    return tt_score;
-                }
-            }
-            _ => unreachable!(),
-        }
+        return tt_score;
     }
 
     // Evaluation
@@ -214,13 +219,13 @@ pub fn search<Node: NodeType>(
     let correction = data.correction(ply);
 
     if in_check {
-        raw_eval = -Score::INFINITY;
-        static_eval = -Score::INFINITY;
+        raw_eval = Score::NONE;
+        static_eval = Score::NONE;
     } else if excluded {
-        raw_eval = -Score::INFINITY;
+        raw_eval = Score::NONE;
         static_eval = data.stack[ply].eval
     } else if let Some(e) = &tt_entry
-        && e.get_eval() != -Score::INFINITY
+        && e.get_eval() != Score::NONE
     {
         raw_eval = e.get_eval();
         static_eval = raw_eval + correction;
@@ -230,27 +235,30 @@ pub fn search<Node: NodeType>(
     };
 
     data.stack[ply].eval = static_eval;
+    if !excluded && tt_entry.is_none() {
+        data.shared.tt.add_entry(
+            Move::default(),
+            Score::NONE,
+            raw_eval,
+            Bound::None,
+            data.board.state.keys.full,
+            0,
+            ply,
+            Node::PV,
+        );
+    }
 
     let improvement = if in_check {
         0
-    } else if data.stack[ply - 2].eval != -Score::INFINITY {
+    } else if data.stack[ply - 2].eval != Score::NONE {
         static_eval - data.stack[ply - 2].eval
-    } else if data.stack[ply - 4].eval != -Score::INFINITY {
+    } else if data.stack[ply - 4].eval != Score::NONE {
         static_eval - data.stack[ply - 4].eval
     } else {
         0
     };
 
     let improving = improvement > 0;
-
-    let tt_move = tt_entry
-        .as_ref()
-        .map(|e| e.get_best_move())
-        .filter(|m| !m.is_null());
-    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
-    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
-    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
-    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // Razoring
     if !Node::PV
@@ -267,7 +275,7 @@ pub fn search<Node: NodeType>(
         && !in_check
         && !excluded
         && depth >= 2
-        && data.stack[ply - 1].eval != -Score::INFINITY
+        && data.stack[ply - 1].eval != Score::NONE
         && data.stack[ply - 1].reduction >= 2048
         && static_eval + data.stack[ply - 1].eval >= 200
     {
@@ -322,7 +330,6 @@ pub fn search<Node: NodeType>(
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
-        && tt_score != -Score::INFINITY
         && !is_decisive(tt_score)
         && tt_bound != Bound::Upper
     {
@@ -509,7 +516,7 @@ pub fn search<Node: NodeType>(
 
     if move_count == 0 {
         if excluded {
-            return -Score::INFINITY + 1;
+            return -Score::INFINITY;
         }
 
         if in_check {
@@ -628,26 +635,23 @@ pub fn quiesce<Node: NodeType>(
     }
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_score = tt_entry
+        .as_ref()
+        .map(|e| e.get_score())
+        .filter(|s| *s != Score::NONE);
 
     // TT Cutoffs
-    if let Some(e) = &tt_entry
-        && !Node::PV
+    if !Node::PV
+        && let Some(tt_score) = tt_score
+        && tt_bound.is_some_and(|b| match b {
+            Bound::Lower => tt_score >= beta,
+            Bound::Upper => tt_score < alpha,
+            Bound::Exact => true,
+            Bound::None => false,
+        })
     {
-        let tt_score = e.get_score();
-        match e.get_bound() {
-            Bound::Exact => return tt_score,
-            Bound::Lower => {
-                if tt_score >= beta {
-                    return tt_score;
-                }
-            }
-            Bound::Upper => {
-                if tt_score < alpha {
-                    return tt_score;
-                }
-            }
-            _ => unreachable!(),
-        }
+        return tt_score;
     }
 
     let in_check = data.board.king_in_check();
@@ -666,11 +670,11 @@ pub fn quiesce<Node: NodeType>(
     let mut best_score;
 
     if in_check {
-        raw_eval = -Score::INFINITY;
+        raw_eval = Score::NONE;
         static_eval = -Score::INFINITY;
         best_score = static_eval;
     } else if let Some(e) = &tt_entry
-        && e.get_eval() != -Score::INFINITY
+        && e.get_eval() != Score::NONE
     {
         raw_eval = e.get_eval();
         static_eval = raw_eval + data.correction(ply);
@@ -680,6 +684,19 @@ pub fn quiesce<Node: NodeType>(
         static_eval = raw_eval + data.correction(ply);
         best_score = static_eval
     };
+
+    if tt_entry.is_none() {
+        data.shared.tt.add_entry(
+            Move::default(),
+            Score::NONE,
+            raw_eval,
+            Bound::None,
+            data.board.state.keys.full,
+            0,
+            ply,
+            Node::PV,
+        );
+    }
 
     // Stand Pat
     if best_score >= beta {

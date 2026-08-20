@@ -109,9 +109,9 @@ pub struct Cluster {
 
 impl Cluster {
     pub fn lookup_key(&self, key: u16) -> Option<&Entry> {
-        self.entries
-            .iter()
-            .find(|e| e.get_key() == key && e.get_bound() != Bound::None)
+        self.entries.iter().find(|e| {
+            e.get_key() == key && (e.get_bound() != Bound::None || e.get_score() == Score::NONE)
+        })
     }
 }
 
@@ -199,7 +199,7 @@ impl TranspositionTable {
         }
 
         // Adjust mate scores
-        if is_decisive(score) {
+        if is_decisive(score) && score != Score::NONE {
             score += score.signum() * ply as i32;
         }
 
