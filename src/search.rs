@@ -673,8 +673,10 @@ pub fn quiesce<Node: NodeType>(
         raw_eval = -Score::INFINITY;
         static_eval = -Score::INFINITY;
         best_score = static_eval;
-    } else if let Some(tt_score) = &tt_score {
-        raw_eval = *tt_score;
+    } else if let Some(e) = &tt_entry
+        && e.get_eval() != -Score::INFINITY
+    {
+        raw_eval = e.get_eval();
         static_eval = raw_eval + data.correction(ply);
         best_score = static_eval;
     } else {
