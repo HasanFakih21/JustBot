@@ -24,7 +24,7 @@ pub const fn is_decisive(score: i32) -> bool {
 }
 
 pub const fn from_tt(score: i16, ply: isize) -> i16 {
-    if is_decisive(score as i32) {
+    if is_decisive(score as i32) && score as i32 != Score::NONE {
         score - (score.signum() * ply as i16)
     } else {
         score
