@@ -190,7 +190,10 @@ pub fn search<Node: NodeType>(
         .map(|e| e.get_best_move())
         .filter(|m| !m.is_null());
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
-    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+    let tt_score = tt_entry
+        .as_ref()
+        .map(|e| e.get_score())
+        .filter(|s| *s != -Score::INFINITY);
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
@@ -327,7 +330,6 @@ pub fn search<Node: NodeType>(
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
-        && tt_score != -Score::INFINITY
         && !is_decisive(tt_score)
         && tt_bound != Bound::Upper
     {
@@ -514,7 +516,7 @@ pub fn search<Node: NodeType>(
 
     if move_count == 0 {
         if excluded {
-            return -Score::INFINITY + 1;
+            return -Score::INFINITY;
         }
 
         if in_check {
@@ -634,7 +636,10 @@ pub fn quiesce<Node: NodeType>(
 
     let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
-    let tt_score = tt_entry.as_ref().map(|e| e.get_score());
+    let tt_score = tt_entry
+        .as_ref()
+        .map(|e| e.get_score())
+        .filter(|s| *s != -Score::INFINITY);
 
     // TT Cutoffs
     if !Node::PV
@@ -668,10 +673,8 @@ pub fn quiesce<Node: NodeType>(
         raw_eval = -Score::INFINITY;
         static_eval = -Score::INFINITY;
         best_score = static_eval;
-    } else if let Some(e) = &tt_entry
-        && e.get_eval() != -Score::INFINITY
-    {
-        raw_eval = e.get_eval();
+    } else if let Some(tt_score) = &tt_score {
+        raw_eval = *tt_score;
         static_eval = raw_eval + data.correction(ply);
         best_score = static_eval;
     } else {
