@@ -194,7 +194,11 @@ pub fn search<Node: NodeType>(
         .as_ref()
         .map(|e| e.get_score())
         .filter(|s| *s != Score::NONE);
-    let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_was_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
+    let tt_pv = tt_entry
+        .as_ref()
+        .map(|e| e.is_pv() | Node::PV)
+        .unwrap_or(Node::PV);
     let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
 
     // TT Cutoffs
@@ -327,7 +331,7 @@ pub fn search<Node: NodeType>(
     let mut extension = 0;
     if !Node::ROOT
         && !excluded
-        && depth >= 5
+        && depth >= 5 + tt_pv as i32
         && tt_depth.is_some_and(|d| d >= depth - 3)
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
@@ -356,8 +360,8 @@ pub fn search<Node: NodeType>(
         }
 
         if singular_score < singular_beta {
-            let double_margin = 10 + 150 * Node::PV as i32 + 50 * (Node::PV && !tt_pv) as i32;
-            let triple_margin = 100 + 350 * Node::PV as i32 + 50 * (Node::PV && !tt_pv) as i32;
+            let double_margin = 10 + 150 * Node::PV as i32 + 50 * (Node::PV && !tt_was_pv) as i32;
+            let triple_margin = 100 + 350 * Node::PV as i32 + 50 * (Node::PV && !tt_was_pv) as i32;
             extension = 1
                 + (singular_score < singular_beta - double_margin) as i32
                 + (singular_score < singular_beta - triple_margin) as i32;
