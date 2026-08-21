@@ -42,7 +42,7 @@ impl Board {
             Side::Black => BitBoard(RANK_5).shift(NORTH),
         };
 
-        let pinned = self.state.pinned[stm as usize];
+        let pinned = self.state.pinned[stm];
         let king_square = self.get_king_square(stm);
         let pawns = self.get_piece_bb(stm, Piece::Pawn);
         let occupied = self.get_all_occupancy();
@@ -51,7 +51,7 @@ impl Board {
             debug_assert!(self.state.checkers.count_bits() == 1);
             // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
+            BETWEEN[king_square][checking_piece_square] | self.state.checkers
         } else {
             !BitBoard(0)
         };
@@ -84,14 +84,14 @@ impl Board {
             }
 
             // Captures
-            let target = target & self.state.occupancies[stm.other() as usize];
+            let target = target & self.state.occupancies[stm.other()];
 
-            let left_pawns = (pawns & (!pinned | DIAGONALS[1][king_square as usize]))
+            let left_pawns = (pawns & (!pinned | DIAGONALS[1][king_square]))
                 & match stm {
                     Side::White => !A,
                     Side::Black => !H,
                 };
-            let right_pawns = (pawns & (!pinned | DIAGONALS[0][king_square as usize]))
+            let right_pawns = (pawns & (!pinned | DIAGONALS[0][king_square]))
                 & match stm {
                     Side::White => !H,
                     Side::Black => !A,
@@ -161,20 +161,20 @@ impl Board {
         let stm = self.state.side_to_move;
         let king_square = self.get_king_square(stm);
         let occupied = self.get_all_occupancy();
-        let pinned = self.state.pinned[stm as usize];
+        let pinned = self.state.pinned[stm];
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
+            BETWEEN[king_square][checking_piece_square] | self.state.checkers
         } else {
             !BitBoard(0)
         };
 
         let knights = self.get_piece_bb(stm, Piece::Knight);
         if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other() as usize];
+            let target = target & self.state.occupancies[stm.other()];
             for from in knights & !pinned {
                 move_list.push_setwise(
                     from,
@@ -211,11 +211,7 @@ impl Board {
 
         let king_square = self.get_king_square(self.state.side_to_move);
         for from in pieces & pinned {
-            move_list.push_setwise(
-                from,
-                attacks(from) & target & RAYS[from as usize][king_square as usize],
-                kind,
-            );
+            move_list.push_setwise(from, attacks(from) & target & RAYS[from][king_square], kind);
         }
     }
 
@@ -223,13 +219,13 @@ impl Board {
         let stm = self.state.side_to_move;
         let king_square = self.get_king_square(stm);
         let occupied = self.get_all_occupancy();
-        let pinned = self.state.pinned[stm as usize];
+        let pinned = self.state.pinned[stm];
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
+            BETWEEN[king_square][checking_piece_square] | self.state.checkers
         } else {
             !BitBoard(0)
         };
@@ -238,7 +234,7 @@ impl Board {
         let attacks = |square| self.get_bishop_attacks(square, occupied);
 
         if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other() as usize];
+            let target = target & self.state.occupancies[stm.other()];
             self.gen_sliding_moves(
                 move_list,
                 MoveKind::Capture,
@@ -266,13 +262,13 @@ impl Board {
         let stm = self.state.side_to_move;
         let king_square = self.get_king_square(stm);
         let occupied = self.get_all_occupancy();
-        let pinned = self.state.pinned[stm as usize];
+        let pinned = self.state.pinned[stm];
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
+            BETWEEN[king_square][checking_piece_square] | self.state.checkers
         } else {
             !BitBoard(0)
         };
@@ -281,7 +277,7 @@ impl Board {
         let attacks = |square| self.get_rook_attacks(square, occupied);
 
         if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other() as usize];
+            let target = target & self.state.occupancies[stm.other()];
             self.gen_sliding_moves(move_list, MoveKind::Capture, rooks, attacks, target, pinned);
         }
 
@@ -302,13 +298,13 @@ impl Board {
         let stm = self.state.side_to_move;
         let king_square = self.get_king_square(stm);
         let occupied = self.get_all_occupancy();
-        let pinned = self.state.pinned[stm as usize];
+        let pinned = self.state.pinned[stm];
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square as usize][checking_piece_square as usize] | self.state.checkers
+            BETWEEN[king_square][checking_piece_square] | self.state.checkers
         } else {
             !BitBoard(0)
         };
@@ -317,7 +313,7 @@ impl Board {
         let attacks = |square| self.get_queen_attacks(square, occupied);
 
         if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other() as usize];
+            let target = target & self.state.occupancies[stm.other()];
             self.gen_sliding_moves(
                 move_list,
                 MoveKind::Capture,
@@ -358,7 +354,7 @@ impl Board {
         }
 
         if kind.is_noisy() {
-            targets |= self.state.occupancies[stm.other() as usize] & attacks & !self.state.threats;
+            targets |= self.state.occupancies[stm.other()] & attacks & !self.state.threats;
             for target in targets {
                 move_list.push(Move::new(king_square, target, MoveKind::Capture));
             }
@@ -460,7 +456,7 @@ mod tests {
         data.board.state.threats.print_board();
         let mut move_list = MoveList::new();
         data.board.append_moves(MoveGenKind::All, &mut move_list);
-        RAYS[Square::D2 as usize][Square::E1 as usize].print_board();
+        RAYS[Square::D2][Square::E1].print_board();
     }
 
     #[test]
