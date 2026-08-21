@@ -6,6 +6,7 @@ pub struct Zobrist {
     side: u64,
     castling: [u64; 16],
     enpassant: [u64; 8],
+    hm: [u64; 16],
 }
 
 impl Zobrist {
@@ -23,6 +24,10 @@ impl Zobrist {
 
     pub fn get_enpassant_num(&self, square: Square) -> u64 {
         self.enpassant[square as usize % 8]
+    }
+
+    pub fn get_halfmove_num(&self, bucket: usize) -> u64 {
+        self.hm[bucket]
     }
 }
 
@@ -68,11 +73,19 @@ pub const ZOBRIST: Zobrist = {
         x += 1;
     }
 
+    let mut hm = [0; 16];
+    let mut x = 0;
+    while x < 16 {
+        hm[x] = pseudo_rand(&mut state);
+        x += 1;
+    }
+
     Zobrist {
         pieces,    // Number for each piece on each square 12 pieces 64 squares
         side,      // Number to indicate the side to move is black
         castling,  // Castling rights 2^4 aka all possible castling combinations.
         enpassant, // File of valid en-passant square
+        hm,        // Half-move bucket
     }
 };
 
