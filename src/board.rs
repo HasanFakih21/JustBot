@@ -87,11 +87,7 @@ impl Board {
     }
 
     pub fn halfmove_bucket(&self) -> usize {
-        if self.state.half_move_clock < 50 {
-            0
-        } else {
-            (self.state.half_move_clock.saturating_sub(8) as usize / 8).min(15)
-        }
+        (self.state.half_move_clock.saturating_sub(8) as usize / 8).min(15)
     }
 
     pub fn hash(&self) -> u64 {
