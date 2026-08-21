@@ -260,16 +260,6 @@ pub fn search<Node: NodeType>(
 
     let improving = improvement > 0;
 
-    // Razoring
-    if !Node::PV
-        && !in_check
-        && tt_bound.is_none_or(|b| b != Bound::Lower)
-        && static_eval < alpha - 246 - 253 * depth * depth
-        && alpha < 2000
-    {
-        return quiesce::<Node>(data, alpha, beta, ply);
-    }
-
     // Hindsight Reduction
     if !Node::ROOT
         && !in_check
@@ -280,6 +270,16 @@ pub fn search<Node: NodeType>(
         && static_eval + data.stack[ply - 1].eval >= 200
     {
         depth -= 1;
+    }
+
+    // Razoring
+    if !Node::PV
+        && !in_check
+        && tt_bound.is_none_or(|b| b != Bound::Lower)
+        && static_eval < alpha - 246 - 253 * depth * depth
+        && alpha < 2000
+    {
+        return quiesce::<Node>(data, alpha, beta, ply);
     }
 
     // Reverse Futillity Pruning (RFP)
