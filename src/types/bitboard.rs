@@ -1,18 +1,14 @@
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
-use super::Square;
+use crate::types::Square;
 
-pub struct BitBoardIter {
-    bit_board: BitBoard,
-}
-
-impl Iterator for BitBoardIter {
+impl Iterator for BitBoard {
     type Item = Square;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = self.bit_board.least_sig_bit();
-        if let Some(square) = next {
-            self.bit_board.clear_bit(square);
+        let next = self.least_sig_bit();
+        if next.is_some() {
+            self.0 &= self.0 - 1;
         }
 
         next
@@ -39,10 +35,6 @@ impl BitBoard {
         }
         println!("\n    A  B  C  D  E  F  G  H");
         println!("\nBitboard: {:x}", self.0);
-    }
-
-    pub const fn iter(&self) -> BitBoardIter {
-        BitBoardIter { bit_board: *self }
     }
 
     pub const fn set_bit(&mut self, square: Square) {
@@ -178,7 +170,7 @@ mod tests {
         bb.set_bit(Square::H8);
         bb.set_bit(Square::C2);
 
-        for square in bb.iter() {
+        for square in bb {
             println!("{:?}", square);
         }
     }

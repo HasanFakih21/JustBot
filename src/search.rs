@@ -184,7 +184,7 @@ pub fn search<Node: NodeType>(
     let mut depth = depth.min(MAX_PLY as i32 - 1);
 
     // Transposition Table Entries
-    let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_entry = data.shared.tt.get_entry(data.board.hash(), ply);
     let tt_move = tt_entry
         .as_ref()
         .map(|e| e.get_best_move())
@@ -241,7 +241,7 @@ pub fn search<Node: NodeType>(
             Score::NONE,
             raw_eval,
             Bound::None,
-            data.board.state.keys.full,
+            data.board.hash(),
             0,
             ply,
             Node::PV,
@@ -260,16 +260,6 @@ pub fn search<Node: NodeType>(
 
     let improving = improvement > 0;
 
-    // Razoring
-    if !Node::PV
-        && !in_check
-        && tt_bound.is_none_or(|b| b != Bound::Lower)
-        && static_eval < alpha - 246 - 253 * depth * depth
-        && alpha < 2000
-    {
-        return quiesce::<Node>(data, alpha, beta, ply);
-    }
-
     // Hindsight Reduction
     if !Node::ROOT
         && !in_check
@@ -280,6 +270,16 @@ pub fn search<Node: NodeType>(
         && static_eval + data.stack[ply - 1].eval >= 200
     {
         depth -= 1;
+    }
+
+    // Razoring
+    if !Node::PV
+        && !in_check
+        && tt_bound.is_none_or(|b| b != Bound::Lower)
+        && static_eval < alpha - 246 - 253 * depth * depth
+        && alpha < 2000
+    {
+        return quiesce::<Node>(data, alpha, beta, ply);
     }
 
     // Reverse Futillity Pruning (RFP)
@@ -310,6 +310,8 @@ pub fn search<Node: NodeType>(
         data.stack[ply].piece = OptionPiece::None;
 
         data.board.make_null_move();
+        data.shared.tt.prefetch(data.board.hash());
+
         let null_move_score = -search::<NonPV>(data, depth - r, -beta, -beta + 1, ply + 1, false);
         data.board.unmake_move();
         if null_move_score >= beta {
@@ -592,7 +594,7 @@ pub fn search<Node: NodeType>(
             best_score,
             raw_eval,
             bound,
-            data.board.state.keys.full,
+            data.board.hash(),
             depth,
             ply,
             Node::PV,
@@ -634,7 +636,7 @@ pub fn quiesce<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
-    let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_entry = data.shared.tt.get_entry(data.board.hash(), ply);
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry
         .as_ref()
@@ -691,7 +693,7 @@ pub fn quiesce<Node: NodeType>(
             Score::NONE,
             raw_eval,
             Bound::None,
-            data.board.state.keys.full,
+            data.board.hash(),
             0,
             ply,
             Node::PV,
@@ -779,7 +781,7 @@ pub fn quiesce<Node: NodeType>(
         best_score,
         raw_eval,
         bound,
-        data.board.state.keys.full,
+        data.board.hash(),
         0,
         ply,
         Node::PV,

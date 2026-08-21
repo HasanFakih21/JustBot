@@ -31,16 +31,16 @@ impl Display for Side {
     }
 }
 
-impl<T> Index<Side> for [T] {
+impl<T> Index<Side> for [T; Side::NUM] {
     type Output = T;
 
     fn index(&self, index: Side) -> &Self::Output {
-        &self[index as usize]
+        unsafe { self.get_unchecked(index as usize) }
     }
 }
 
-impl<T> IndexMut<Side> for [T] {
+impl<T> IndexMut<Side> for [T; Side::NUM] {
     fn index_mut(&mut self, index: Side) -> &mut Self::Output {
-        &mut self[index as usize]
+        unsafe { self.get_unchecked_mut(index as usize) }
     }
 }

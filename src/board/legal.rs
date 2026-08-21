@@ -104,10 +104,6 @@ impl Board {
                 Side::Black => SOUTH,
             };
 
-            let Some(next_square) = from.shift(offset) else {
-                return false;
-            };
-
             if m.get_kind() == MoveKind::DoublePawn {
                 let home_rank = match stm {
                     Side::White => 1,
@@ -115,12 +111,14 @@ impl Board {
                 };
 
                 return from.to_rank() == home_rank
-                    && from.shift(2 * offset) == Some(to)
-                    && !self.get_all_occupancy().contains(next_square)
+                    && from.shift(2 * offset) == to
+                    && !self.get_all_occupancy().contains(from.shift(offset))
                     && !self.get_all_occupancy().contains(to);
             }
 
-            return !m.is_castling() && next_square == to && !self.get_all_occupancy().contains(to);
+            return !m.is_castling()
+                && from.shift(offset) == to
+                && !self.get_all_occupancy().contains(to);
         }
 
         matches!(m.get_kind(), MoveKind::Capture | MoveKind::QuietMove)

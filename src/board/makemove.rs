@@ -92,7 +92,7 @@ impl Board {
         self.state.keys.toggle_castling(self.state.castling_rights);
         self.update_all_threats();
         self.update_en_passant();
-        self.game_history.push(self.state.keys.full);
+        self.game_history.push(self.hash());
     }
 
     pub fn update_en_passant(&mut self) {
@@ -108,7 +108,7 @@ impl Board {
 
             debug_assert!(possible_takers.count_bits() <= 2);
 
-            for taker in possible_takers.iter() {
+            for taker in possible_takers {
                 let new_occ = occupancies ^ taker.to_bb();
                 let bishop_queens = self.get_piece_bb(stm.other(), Piece::Bishop)
                     | self.get_piece_bb(stm.other(), Piece::Queen);
@@ -163,7 +163,7 @@ impl Board {
 
         self.state.side_to_move = self.state.side_to_move.other();
         self.state.keys.toggle_side();
-        self.game_history.push(self.state.keys.full);
+        self.game_history.push(self.hash());
         self.update_all_threats();
     }
 }

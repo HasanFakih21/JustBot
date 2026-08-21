@@ -25,7 +25,7 @@ impl Board {
             .take(half_moves + 1)
             .skip(2)
             .step_by(2)
-            .any(|e| *e == self.state.keys.full)
+            .any(|e| *e == self.hash())
     }
 
     pub fn draw_by_fifty_moves(&self) -> bool {

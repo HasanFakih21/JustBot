@@ -32,7 +32,7 @@ impl MoveList {
         self.inner.push(e);
     }
 
-    pub fn remove(&mut self, index: usize) -> Option<MoveEntry> {
+    pub fn remove(&mut self, index: usize) -> MoveEntry {
         self.inner.remove(index)
     }
 
@@ -48,23 +48,19 @@ impl MoveList {
     }
 
     pub fn push_pawn_moves_setwise(&mut self, offset: i8, targets: BitBoard, kind: MoveKind) {
-        for target in targets.iter() {
-            self.push(Move::new(target.shift(-offset).unwrap(), target, kind));
+        for target in targets {
+            self.push(Move::new(target.shift(-offset), target, kind));
         }
     }
 
     pub fn push_setwise(&mut self, from: Square, to_bb: BitBoard, kind: MoveKind) {
-        for to in to_bb.iter() {
+        for to in to_bb {
             self.push(Move::new(from, to, kind));
         }
     }
 
     pub fn clear(&mut self) {
         self.inner.clear();
-    }
-
-    pub fn pop(&mut self) -> Option<MoveEntry> {
-        self.inner.pop()
     }
 
     pub fn len(&self) -> usize {
