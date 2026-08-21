@@ -48,13 +48,13 @@ impl MoveList {
     }
 
     pub fn push_pawn_moves_setwise(&mut self, offset: i8, targets: BitBoard, kind: MoveKind) {
-        for target in targets.iter() {
+        for target in targets {
             self.push(Move::new(target.shift(-offset).unwrap(), target, kind));
         }
     }
 
     pub fn push_setwise(&mut self, from: Square, to_bb: BitBoard, kind: MoveKind) {
-        for to in to_bb.iter() {
+        for to in to_bb {
             self.push(Move::new(from, to, kind));
         }
     }

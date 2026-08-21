@@ -146,7 +146,7 @@ impl Board {
                 | self.get_piece_bb(side.other(), Piece::Queen))
                 & self.get_rook_attacks(king_square, opp_occ);
 
-            for square in (diagonal | orthogonal).iter() {
+            for square in diagonal | orthogonal {
                 let blockers = BETWEEN[square as usize][king_square as usize]
                     & self.state.occupancies[side as usize];
 
@@ -256,7 +256,7 @@ impl Board {
     pub fn bishop_attacks_setwise(&self, side: Side, occ_bb: BitBoard) -> BitBoard {
         let bishops = self.get_piece_bb(side, Piece::Bishop);
         let mut attacks = BitBoard(0);
-        for square in bishops.iter() {
+        for square in bishops {
             attacks |= self.get_bishop_attacks(square, occ_bb);
         }
 
@@ -279,7 +279,7 @@ impl Board {
     pub fn rook_attacks_setwise(&self, side: Side, occ_bb: BitBoard) -> BitBoard {
         let rooks = self.get_piece_bb(side, Piece::Rook);
         let mut attacks = BitBoard(0);
-        for square in rooks.iter() {
+        for square in rooks {
             attacks |= self.get_rook_attacks(square, occ_bb);
         }
 
@@ -295,7 +295,7 @@ impl Board {
         let queens = self.get_piece_bb(side, Piece::Queen);
 
         let mut attacks = BitBoard(0);
-        for square in queens.iter() {
+        for square in queens {
             attacks |=
                 self.get_rook_attacks(square, occ_bb) | self.get_bishop_attacks(square, occ_bb);
         }

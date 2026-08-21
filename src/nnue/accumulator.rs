@@ -141,11 +141,11 @@ impl DualAccumulators {
                 let to_add = piece_bb & !(cache_data.pieces[piece] & cache_data.occupancies[side]);
                 let to_sub = !piece_bb & (cache_data.pieces[piece] & cache_data.occupancies[side]);
 
-                for square in to_add.iter() {
+                for square in to_add {
                     adds.push(feature_index(side, piece, square, king_square, pov));
                 }
 
-                for square in to_sub.iter() {
+                for square in to_sub {
                     subs.push(feature_index(side, piece, square, king_square, pov));
                 }
             }

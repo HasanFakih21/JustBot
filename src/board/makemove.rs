@@ -108,7 +108,7 @@ impl Board {
 
             debug_assert!(possible_takers.count_bits() <= 2);
 
-            for taker in possible_takers.iter() {
+            for taker in possible_takers {
                 let new_occ = occupancies ^ taker.to_bb();
                 let bishop_queens = self.get_piece_bb(stm.other(), Piece::Bishop)
                     | self.get_piece_bb(stm.other(), Piece::Queen);

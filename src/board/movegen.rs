@@ -64,7 +64,7 @@ impl Board {
             let double_pushes = (single_pushes & third_rank).shift(offset) & !occupied;
 
             // Single Push
-            for to in (single_pushes & target).iter() {
+            for to in single_pushes & target {
                 move_list.push(Move::new(
                     to.shift(-offset).unwrap(),
                     to,
@@ -73,7 +73,7 @@ impl Board {
             }
 
             // Double Push
-            for to in (double_pushes & target).iter() {
+            for to in double_pushes & target {
                 move_list.push(Move::new(
                     to.shift(-offset * 2).unwrap(),
                     to,
@@ -84,7 +84,7 @@ impl Board {
 
         if kind.is_noisy() {
             // Normal Promotions
-            for to in promotions.iter() {
+            for to in promotions {
                 move_list.push(Move::new(
                     to.shift(-offset).unwrap(),
                     to,
@@ -199,7 +199,7 @@ impl Board {
         let knights = self.get_piece_bb(stm, Piece::Knight);
         if kind.is_noisy() {
             let target = target & self.state.occupancies[stm.other() as usize];
-            for from in (knights & !pinned).iter() {
+            for from in knights & !pinned {
                 move_list.push_setwise(
                     from,
                     self.get_knight_attacks(from) & target,
@@ -210,7 +210,7 @@ impl Board {
 
         if kind.is_quiet() {
             let target = target & !occupied;
-            for from in (knights & !pinned).iter() {
+            for from in knights & !pinned {
                 move_list.push_setwise(
                     from,
                     self.get_knight_attacks(from) & target,
@@ -229,12 +229,12 @@ impl Board {
         target: BitBoard,
         pinned: BitBoard,
     ) {
-        for from in (pieces & !pinned).iter() {
+        for from in pieces & !pinned {
             move_list.push_setwise(from, attacks(from) & target, kind);
         }
 
         let king_square = self.get_king_square(self.state.side_to_move);
-        for from in (pieces & pinned).iter() {
+        for from in pieces & pinned {
             move_list.push_setwise(
                 from,
                 attacks(from) & target & RAYS[from as usize][king_square as usize],
@@ -374,7 +374,7 @@ impl Board {
         let mut targets = BitBoard(0);
         if kind.is_quiet() {
             targets |= !occupancies & attacks & !self.state.threats;
-            for target in targets.iter() {
+            for target in targets {
                 move_list.push(Move::new(king_square, target, MoveKind::QuietMove));
             }
 
@@ -383,7 +383,7 @@ impl Board {
 
         if kind.is_noisy() {
             targets |= self.state.occupancies[stm.other() as usize] & attacks & !self.state.threats;
-            for target in targets.iter() {
+            for target in targets {
                 move_list.push(Move::new(king_square, target, MoveKind::Capture));
             }
         }
