@@ -310,6 +310,8 @@ pub fn search<Node: NodeType>(
         data.stack[ply].piece = OptionPiece::None;
 
         data.board.make_null_move();
+        data.shared.tt.prefetch(data.board.hash());
+
         let null_move_score = -search::<NonPV>(data, depth - r, -beta, -beta + 1, ply + 1, false);
         data.board.unmake_move();
         if null_move_score >= beta {

@@ -290,6 +290,7 @@ impl SearchData {
         self.stack[ply].contcorrhistory = self.contcorrhistory.subtable(piece, to);
 
         self.board.make_move(m);
+        self.shared.tt.prefetch(self.board.hash());
     }
 
     pub fn unmake_move(&mut self) {

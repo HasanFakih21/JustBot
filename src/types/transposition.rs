@@ -261,6 +261,19 @@ impl TranspositionTable {
     pub fn len(&self) -> usize {
         self.len.load(Ordering::Relaxed)
     }
+
+    pub fn prefetch(&self, hash: u64) {
+        #[cfg(target_arch = "x86_64")]
+        unsafe {
+            use std::arch::x86_64::{_MM_HINT_T0, _mm_prefetch};
+            let index = index(hash, self.len());
+            let ptr = self.ptr().add(index);
+            _mm_prefetch::<_MM_HINT_T0>(ptr.cast());
+        }
+
+        #[cfg(not(target_arch = "x86_64"))]
+        let _ = hash;
+    }
 }
 
 // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
