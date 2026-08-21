@@ -92,7 +92,7 @@ impl Board {
         self.state.keys.toggle_castling(self.state.castling_rights);
         self.update_all_threats();
         self.update_en_passant();
-        self.game_history.push(self.state.keys.full);
+        self.game_history.push(self.hash());
     }
 
     pub fn update_en_passant(&mut self) {
@@ -163,7 +163,7 @@ impl Board {
 
         self.state.side_to_move = self.state.side_to_move.other();
         self.state.keys.toggle_side();
-        self.game_history.push(self.state.keys.full);
+        self.game_history.push(self.hash());
         self.update_all_threats();
     }
 }

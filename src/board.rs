@@ -86,6 +86,10 @@ impl Board {
         }
     }
 
+    pub fn hash(&self) -> u64 {
+        self.state.keys.full
+    }
+
     pub fn is_attacked(&self, square: Square) -> bool {
         let threats = self.state.threats;
         threats.contains(square)

@@ -184,7 +184,7 @@ pub fn search<Node: NodeType>(
     let mut depth = depth.min(MAX_PLY as i32 - 1);
 
     // Transposition Table Entries
-    let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_entry = data.shared.tt.get_entry(data.board.hash(), ply);
     let tt_move = tt_entry
         .as_ref()
         .map(|e| e.get_best_move())
@@ -241,7 +241,7 @@ pub fn search<Node: NodeType>(
             Score::NONE,
             raw_eval,
             Bound::None,
-            data.board.state.keys.full,
+            data.board.hash(),
             0,
             ply,
             Node::PV,
@@ -592,7 +592,7 @@ pub fn search<Node: NodeType>(
             best_score,
             raw_eval,
             bound,
-            data.board.state.keys.full,
+            data.board.hash(),
             depth,
             ply,
             Node::PV,
@@ -634,7 +634,7 @@ pub fn quiesce<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
-    let tt_entry = data.shared.tt.get_entry(data.board.state.keys.full, ply);
+    let tt_entry = data.shared.tt.get_entry(data.board.hash(), ply);
     let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
     let tt_score = tt_entry
         .as_ref()
@@ -691,7 +691,7 @@ pub fn quiesce<Node: NodeType>(
             Score::NONE,
             raw_eval,
             Bound::None,
-            data.board.state.keys.full,
+            data.board.hash(),
             0,
             ply,
             Node::PV,
@@ -779,7 +779,7 @@ pub fn quiesce<Node: NodeType>(
         best_score,
         raw_eval,
         bound,
-        data.board.state.keys.full,
+        data.board.hash(),
         0,
         ply,
         Node::PV,
