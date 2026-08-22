@@ -10,13 +10,13 @@ use crate::{
     types::{BitBoard, Piece, Side, Square},
 };
 
-pub fn attacks(side: Side, square: Square, piece: Piece, occunpancies: BitBoard) -> BitBoard {
+pub fn attacks(side: Side, square: Square, piece: Piece, occupancies: BitBoard) -> BitBoard {
     match piece {
         Piece::Pawn => pawn_attacks(square, side),
         Piece::Knight => knight_attacks(square),
-        Piece::Bishop => bishop_attacks(square, occunpancies),
-        Piece::Rook => rook_attacks(square, occunpancies),
-        Piece::Queen => queen_attacks(square, occunpancies),
+        Piece::Bishop => bishop_attacks(square, occupancies),
+        Piece::Rook => rook_attacks(square, occupancies),
+        Piece::Queen => queen_attacks(square, occupancies),
         Piece::King => king_attacks(square),
     }
 }
