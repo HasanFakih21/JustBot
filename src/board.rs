@@ -86,8 +86,12 @@ impl Board {
         }
     }
 
+    pub fn halfmove_bucket(&self) -> usize {
+        (self.state.half_move_clock.saturating_sub(8) as usize / 8).min(15)
+    }
+
     pub fn hash(&self) -> u64 {
-        self.state.keys.full
+        self.state.keys.full ^ ZOBRIST.get_halfmove_num(self.halfmove_bucket())
     }
 
     pub fn is_attacked(&self, square: Square) -> bool {

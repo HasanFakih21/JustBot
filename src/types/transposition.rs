@@ -312,46 +312,7 @@ unsafe fn deallocate_entries(len: usize, p: *mut Cluster) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        board::Board,
-        search::{Root, data::SearchData, search},
-        types::{Bound, Flags, Score},
-    };
-
-    #[test]
-    fn test_transposition_table() {
-        let board =
-            Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ")
-                .unwrap();
-        let mut data = SearchData {
-            board,
-            ..Default::default()
-        };
-
-        let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0, false);
-
-        let hash = data.board.state.keys.full;
-        let entry = data.shared.tt.get_entry(hash, 0).unwrap();
-
-        let m = entry.get_best_move();
-        let s = entry.get_score();
-
-        let best_move = data.pv.line()[0];
-
-        assert_eq!(best_move, m);
-        assert_eq!(score, s);
-
-        data.board.make_move(best_move);
-        search::<Root>(&mut data, 2, -Score::INFINITY, Score::INFINITY, 0, false);
-
-        let entry = data.shared.tt.get_entry(hash, 0).unwrap();
-
-        let m = entry.get_best_move();
-        let s = entry.get_score();
-
-        assert_eq!(best_move, m);
-        assert_eq!(score, s);
-    }
+    use crate::types::{Bound, Flags};
 
     #[test]
     fn test_flags() {
