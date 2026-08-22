@@ -133,7 +133,9 @@ impl Network {
         }
 
         let eval = self.output_layer(board);
-        board.scale_eval(eval)
+        #[cfg(not(feature = "datagen"))]
+        let eval = board.scale_eval(eval);
+        eval
     }
 
     #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
