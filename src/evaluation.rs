@@ -7,10 +7,10 @@ impl Board {
     // Only checks for the current side to move
     pub fn only_king_and_pawns(&self) -> bool {
         let side = self.state.side_to_move;
-        self.get_piece_bb(side, Piece::Bishop)
-            | self.get_piece_bb(side, Piece::Knight)
-            | self.get_piece_bb(side, Piece::Queen)
-            | self.get_piece_bb(side, Piece::Rook)
+        self.piece_bb(side, Piece::Bishop)
+            | self.piece_bb(side, Piece::Knight)
+            | self.piece_bb(side, Piece::Queen)
+            | self.piece_bb(side, Piece::Rook)
             == BitBoard(0)
     }
 

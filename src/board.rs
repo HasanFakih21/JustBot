@@ -1,5 +1,5 @@
 use crate::attacks::*;
-use crate::tools::magics::*;
+use crate::lookup::{bishop_attacks, king_attacks, knight_attacks, pawn_attacks, rook_attacks};
 use crate::types::keys::Keys;
 use crate::types::*;
 use std::fmt::Display;
@@ -99,60 +99,57 @@ impl Board {
         threats.contains(square)
     }
 
-    pub fn get_king_square(&self, side: Side) -> Square {
-        debug_assert!(self.get_piece_bb(side, Piece::King).0 != 0, "{}", self);
-        self.get_piece_bb(side, Piece::King)
-            .least_sig_bit()
-            .unwrap()
+    pub fn king_square(&self, side: Side) -> Square {
+        debug_assert!(self.piece_bb(side, Piece::King).0 != 0, "{}", self);
+        self.piece_bb(side, Piece::King).least_sig_bit().unwrap()
     }
 
     pub fn is_direct_check(&self, m: Move) -> bool {
-        let piece = self.get_piece_at_square(m.get_from()).unwrap().kind();
-        self.state.checking_squares[piece as usize].contains(m.get_to())
+        let piece = self.piece_at_square(m.from()).unwrap().kind();
+        self.state.checking_squares[piece as usize].contains(m.to())
     }
 
     pub fn update_all_threats(&mut self) {
         let stm = self.state.side_to_move;
-        let occ_bb = self.get_all_occupancy() ^ self.get_piece_bb(stm, Piece::King);
+        let occ_bb = self.all_occupancy() ^ self.piece_bb(stm, Piece::King);
 
         self.state.threats = self.pawn_attacks_setwise(stm.other())
             | self.knight_attacks_setwise(stm.other())
             | self.bishop_attacks_setwise(stm.other(), occ_bb)
             | self.rook_attacks_setwise(stm.other(), occ_bb)
             | self.queen_attacks_setwise(stm.other(), occ_bb)
-            | self.get_king_attacks(self.get_king_square(stm.other()));
+            | king_attacks(self.king_square(stm.other()));
 
         self.state.pinned = [BitBoard(0); 2];
         self.state.pinners = [BitBoard(0); 2];
 
         for side in [Side::White, Side::Black] {
-            let king_square = self.get_king_square(side);
+            let king_square = self.king_square(side);
             if side == stm {
-                let pawn_attackers = self.get_piece_bb(stm.other(), Piece::Pawn);
-                let knight_attackers = self.get_piece_bb(stm.other(), Piece::Knight);
-                self.state.checkers = (self.get_pawn_attacks(king_square, stm) & pawn_attackers)
-                    | (self.get_knight_attacks(king_square) & knight_attackers);
+                let pawn_attackers = self.piece_bb(stm.other(), Piece::Pawn);
+                let knight_attackers = self.piece_bb(stm.other(), Piece::Knight);
+                self.state.checkers = (pawn_attacks(king_square, stm) & pawn_attackers)
+                    | (knight_attacks(king_square) & knight_attackers);
             } else {
                 self.state.checking_squares[Piece::Pawn as usize] =
-                    self.get_pawn_attacks(king_square, stm.other());
-                self.state.checking_squares[Piece::Knight as usize] =
-                    self.get_knight_attacks(king_square);
+                    pawn_attacks(king_square, stm.other());
+                self.state.checking_squares[Piece::Knight as usize] = knight_attacks(king_square);
                 self.state.checking_squares[Piece::Bishop as usize] =
-                    self.get_bishop_attacks(king_square, self.get_all_occupancy());
+                    bishop_attacks(king_square, self.all_occupancy());
                 self.state.checking_squares[Piece::Rook as usize] =
-                    self.get_rook_attacks(king_square, self.get_all_occupancy());
+                    rook_attacks(king_square, self.all_occupancy());
                 self.state.checking_squares[Piece::Queen as usize] = self.state.checking_squares
                     [Piece::Rook as usize]
                     | self.state.checking_squares[Piece::Bishop as usize];
             }
 
             let opp_occ = self.state.occupancies[side.other() as usize];
-            let diagonal = (self.get_piece_bb(side.other(), Piece::Bishop)
-                | self.get_piece_bb(side.other(), Piece::Queen))
-                & self.get_bishop_attacks(king_square, opp_occ);
-            let orthogonal = (self.get_piece_bb(side.other(), Piece::Rook)
-                | self.get_piece_bb(side.other(), Piece::Queen))
-                & self.get_rook_attacks(king_square, opp_occ);
+            let diagonal = (self.piece_bb(side.other(), Piece::Bishop)
+                | self.piece_bb(side.other(), Piece::Queen))
+                & bishop_attacks(king_square, opp_occ);
+            let orthogonal = (self.piece_bb(side.other(), Piece::Rook)
+                | self.piece_bb(side.other(), Piece::Queen))
+                & rook_attacks(king_square, opp_occ);
 
             for square in diagonal | orthogonal {
                 let blockers = BETWEEN[square as usize][king_square as usize]
@@ -169,11 +166,11 @@ impl Board {
         }
     }
 
-    pub const fn get_piece_bb(&self, side: Side, piece: Piece) -> BitBoard {
+    pub const fn piece_bb(&self, side: Side, piece: Piece) -> BitBoard {
         BitBoard(self.state.pieces[piece as usize].0 & self.state.occupancies[side as usize].0)
     }
 
-    pub const fn get_piece_at_square(&self, square: Square) -> OptionPiece<SidedPiece> {
+    pub const fn piece_at_square(&self, square: Square) -> OptionPiece<SidedPiece> {
         self.state.mailbox[square as usize]
     }
 
@@ -197,23 +194,8 @@ impl Board {
         self.state.keys.toggle(side, piece, square);
     }
 
-    pub fn get_piece_attack(&self, side: Side, square: Square, piece: Piece) -> BitBoard {
-        match piece {
-            Piece::Pawn => self.get_pawn_attacks(square, side),
-            Piece::Knight => self.get_knight_attacks(square),
-            Piece::Bishop => self.get_bishop_attacks(square, self.get_all_occupancy()),
-            Piece::Rook => self.get_rook_attacks(square, self.get_all_occupancy()),
-            Piece::Queen => self.get_queen_attacks(square, self.get_all_occupancy()),
-            Piece::King => self.get_king_attacks(square),
-        }
-    }
-
-    pub const fn get_pawn_attacks(&self, square: Square, side: Side) -> BitBoard {
-        PAWN_ATTACKS[side as usize][square as usize]
-    }
-
     pub fn pawn_attacks_setwise(&self, side: Side) -> BitBoard {
-        let pawns = self.get_piece_bb(side, Piece::Pawn);
+        let pawns = self.piece_bb(side, Piece::Pawn);
         let (top_left, top_right) = match side {
             Side::White => (7, 9),
             Side::Black => (-9, -7),
@@ -222,12 +204,8 @@ impl Board {
         (!A & pawns).shift(top_left) | (!H & pawns).shift(top_right)
     }
 
-    pub const fn get_knight_attacks(&self, square: Square) -> BitBoard {
-        KNIGHT_ATTACKS[square as usize]
-    }
-
     pub fn knight_attacks_setwise(&self, side: Side) -> BitBoard {
-        let knights = self.get_piece_bb(side, Piece::Knight);
+        let knights = self.piece_bb(side, Piece::Knight);
 
         let not_a = knights & !A;
         let not_ab = knights & !AB;
@@ -244,74 +222,38 @@ impl Board {
             | not_hg.shift(-6)
     }
 
-    pub const fn get_king_attacks(&self, square: Square) -> BitBoard {
-        KING_ATTACKS[square as usize]
-    }
-
-    pub fn get_bishop_attacks(&self, square: Square, board_occupancy: BitBoard) -> BitBoard {
-        let occupancy = board_occupancy & BISHOP_MASKS[square as usize];
-        let magic_index = get_magic_index(
-            occupancy,
-            BISHOP_OCCUPANCY_BIT_COUNTS[square as usize],
-            BISHOP_MAGIC_NUMBERS[square as usize],
-        );
-
-        let offset = (square as usize * 512) + magic_index;
-
-        BISHOP_ATTACKS[offset]
-    }
-
     pub fn bishop_attacks_setwise(&self, side: Side, occ_bb: BitBoard) -> BitBoard {
-        let bishops = self.get_piece_bb(side, Piece::Bishop);
+        let bishops = self.piece_bb(side, Piece::Bishop);
         let mut attacks = BitBoard(0);
         for square in bishops {
-            attacks |= self.get_bishop_attacks(square, occ_bb);
+            attacks |= bishop_attacks(square, occ_bb);
         }
 
         attacks
-    }
-
-    pub fn get_rook_attacks(&self, square: Square, board_occupancy: BitBoard) -> BitBoard {
-        let occupancy = board_occupancy & ROOK_MASKS[square as usize];
-        let magic_index = get_magic_index(
-            occupancy,
-            ROOK_OCCUPANCY_BIT_COUNTS[square as usize],
-            ROOK_MAGIC_NUMBERS[square as usize],
-        );
-
-        let offset = (square as usize * 4096) + magic_index;
-
-        ROOK_ATTACKS[offset]
     }
 
     pub fn rook_attacks_setwise(&self, side: Side, occ_bb: BitBoard) -> BitBoard {
-        let rooks = self.get_piece_bb(side, Piece::Rook);
+        let rooks = self.piece_bb(side, Piece::Rook);
         let mut attacks = BitBoard(0);
         for square in rooks {
-            attacks |= self.get_rook_attacks(square, occ_bb);
+            attacks |= rook_attacks(square, occ_bb);
         }
 
         attacks
-    }
-
-    pub fn get_queen_attacks(&self, square: Square, board_occupancy: BitBoard) -> BitBoard {
-        self.get_bishop_attacks(square, board_occupancy)
-            | self.get_rook_attacks(square, board_occupancy)
     }
 
     pub fn queen_attacks_setwise(&self, side: Side, occ_bb: BitBoard) -> BitBoard {
-        let queens = self.get_piece_bb(side, Piece::Queen);
+        let queens = self.piece_bb(side, Piece::Queen);
 
         let mut attacks = BitBoard(0);
         for square in queens {
-            attacks |=
-                self.get_rook_attacks(square, occ_bb) | self.get_bishop_attacks(square, occ_bb);
+            attacks |= rook_attacks(square, occ_bb) | bishop_attacks(square, occ_bb);
         }
 
         attacks
     }
 
-    pub fn get_all_occupancy(&self) -> BitBoard {
+    pub fn all_occupancy(&self) -> BitBoard {
         self.state.occupancies[Side::White as usize] | self.state.occupancies[Side::Black as usize]
     }
 }
@@ -323,7 +265,7 @@ impl Display for Board {
             output.push_str(&format!("{}   ", 1 + rank));
             for file in 0..8 {
                 let square = Square::from_rank_and_file(rank, file);
-                let piece: OptionPiece<SidedPiece> = self.get_piece_at_square(square);
+                let piece: OptionPiece<SidedPiece> = self.piece_at_square(square);
                 if let OptionPiece::Some(p) = piece {
                     output.push_str(&format!(" {} ", p));
                 } else {
@@ -341,56 +283,53 @@ impl Display for Board {
 
 #[cfg(test)]
 mod tests {
-    use crate::search::data::SearchData;
+    use crate::{lookup::queen_attacks, search::data::SearchData};
 
     use super::*;
 
     #[test]
     fn test_get_rook_attack() {
-        let board = Board::new();
         let mut occ = BitBoard(0);
 
-        board.get_rook_attacks(Square::A6, occ).print_board();
+        rook_attacks(Square::A6, occ).print_board();
 
         occ.set_bit(Square::E3);
         occ.set_bit(Square::G5);
         occ.set_bit(Square::G3);
 
-        board.get_rook_attacks(Square::G3, occ).print_board();
+        rook_attacks(Square::G3, occ).print_board();
     }
 
     #[test]
     fn test_get_bishop_attack() {
-        let board = Board::new();
         let mut occ = BitBoard(0);
 
-        board.get_bishop_attacks(Square::A3, occ).print_board();
+        bishop_attacks(Square::A3, occ).print_board();
 
         occ.set_bit(Square::D6);
-        board.get_bishop_attacks(Square::G3, occ).print_board();
+        bishop_attacks(Square::G3, occ).print_board();
     }
 
     #[test]
     fn test_get_queen_attack() {
-        let board = Board::new();
         let mut occ = BitBoard(0);
 
-        board.get_queen_attacks(Square::A6, occ).print_board();
+        queen_attacks(Square::A6, occ).print_board();
 
         occ.set_bit(Square::E3);
         occ.set_bit(Square::G5);
         occ.set_bit(Square::G3);
         occ.set_bit(Square::D6);
 
-        board.get_queen_attacks(Square::G3, occ).print_board();
-        board.get_queen_attacks(Square::E4, occ).print_board();
+        queen_attacks(Square::G3, occ).print_board();
+        queen_attacks(Square::E4, occ).print_board();
     }
 
     #[test]
     fn test_board_occupancy() {
         let mut board = Board::from_fen(STARTING_FEN).unwrap();
         board.remove_piece(Side::White, Piece::Pawn, Square::A2);
-        board.get_all_occupancy().print_board();
+        board.all_occupancy().print_board();
         board.state.occupancies[Side::Black as usize].print_board();
         board.state.occupancies[Side::White as usize].print_board();
     }

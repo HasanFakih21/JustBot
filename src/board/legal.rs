@@ -1,6 +1,7 @@
 use crate::{
     attacks::{BETWEEN, RAYS},
     board::Board,
+    lookup::{attacks, bishop_attacks, king_attacks, pawn_attacks, rook_attacks},
     types::{
         BitBoard, Castling, KING_TO, Move, MoveKind, NORTH, OptionPiece, Piece, RANK_1, RANK_8,
         ROOK_TO, SOUTH, Side,
@@ -10,11 +11,11 @@ use crate::{
 impl Board {
     pub fn is_legal(&self, m: Move) -> bool {
         let stm = self.state.side_to_move;
-        let from = m.get_from();
-        let to = m.get_to();
-        let king_square = self.get_king_square(stm);
+        let from = m.from();
+        let to = m.to();
+        let king_square = self.king_square(stm);
 
-        let OptionPiece::Some(piece) = self.get_piece_at_square(from) else {
+        let OptionPiece::Some(piece) = self.piece_at_square(from) else {
             return false;
         };
 
@@ -42,15 +43,15 @@ impl Board {
                 let king_path = BETWEEN[king_square][to] | king_square.to_bb() | to.to_bb();
 
                 return self.state.castling_rights.can(Castling::KINDS[stm][dir])
-                    && (between & self.get_all_occupancy()).is_empty()
+                    && (between & self.all_occupancy()).is_empty()
                     && (king_path & self.state.threats).is_empty()
                     && !self.state.pinned[stm].contains(rook_square);
             }
 
-            return matches!(m.get_kind(), MoveKind::Capture | MoveKind::QuietMove)
+            return matches!(m.kind(), MoveKind::Capture | MoveKind::QuietMove)
                 && !self.state.occupancies[stm as usize].contains(to)
                 && m.is_capture() == self.state.occupancies[stm.other() as usize].contains(to)
-                && (self.get_king_attacks(from) & !self.state.threats).contains(to);
+                && (king_attacks(from) & !self.state.threats).contains(to);
         }
 
         if self.state.occupancies[stm as usize].contains(to) // If to square has piece of the same side
@@ -58,7 +59,7 @@ impl Board {
             || self.king_in_check()
                 && (self.state.checkers.count_bits() > 1 // If there's multiple checkers then the king has to move 
                 // If it's a check and it also doesn't contain a move that's between the king and checking piece or a capture of the checking piece
-                || ((m.get_kind() != MoveKind::EnPassant) && !(self.state.checkers | BETWEEN[king_square as usize][self.state.checkers.least_sig_bit().unwrap() as usize]).contains(to)))
+                || ((m.kind() != MoveKind::EnPassant) && !(self.state.checkers | BETWEEN[king_square as usize][self.state.checkers.least_sig_bit().unwrap() as usize]).contains(to)))
         {
             return false;
         }
@@ -71,15 +72,15 @@ impl Board {
                 };
 
                 let occupancies =
-                    self.get_all_occupancy() ^ from.to_bb() ^ to.to_bb() ^ (to ^ 8).to_bb();
-                let bishop_queens = self.get_piece_bb(stm.other(), Piece::Bishop)
-                    | self.get_piece_bb(stm.other(), Piece::Queen);
-                let rook_queens = self.get_piece_bb(stm.other(), Piece::Rook)
-                    | self.get_piece_bb(stm.other(), Piece::Queen);
-                let diagonal = self.get_bishop_attacks(king_square, occupancies) & bishop_queens;
-                let orthogonal = self.get_rook_attacks(king_square, occupancies) & rook_queens;
+                    self.all_occupancy() ^ from.to_bb() ^ to.to_bb() ^ (to ^ 8).to_bb();
+                let bishop_queens = self.piece_bb(stm.other(), Piece::Bishop)
+                    | self.piece_bb(stm.other(), Piece::Queen);
+                let rook_queens = self.piece_bb(stm.other(), Piece::Rook)
+                    | self.piece_bb(stm.other(), Piece::Queen);
+                let diagonal = bishop_attacks(king_square, occupancies) & bishop_queens;
+                let orthogonal = rook_attacks(king_square, occupancies) & rook_queens;
                 return to == ep_square
-                    && self.get_pawn_attacks(from, stm).contains(to)
+                    && pawn_attacks(from, stm).contains(to)
                     && (orthogonal | diagonal).is_empty();
             }
 
@@ -95,7 +96,7 @@ impl Board {
             }
 
             if m.is_capture() {
-                return self.get_pawn_attacks(from, stm).contains(to)
+                return pawn_attacks(from, stm).contains(to)
                     && self.state.occupancies[stm.other() as usize].contains(to);
             }
 
@@ -104,7 +105,7 @@ impl Board {
                 Side::Black => SOUTH,
             };
 
-            if m.get_kind() == MoveKind::DoublePawn {
+            if m.kind() == MoveKind::DoublePawn {
                 let home_rank = match stm {
                     Side::White => 1,
                     Side::Black => 6,
@@ -112,17 +113,17 @@ impl Board {
 
                 return from.to_rank() == home_rank
                     && from.shift(2 * offset) == to
-                    && !self.get_all_occupancy().contains(from.shift(offset))
-                    && !self.get_all_occupancy().contains(to);
+                    && !self.all_occupancy().contains(from.shift(offset))
+                    && !self.all_occupancy().contains(to);
             }
 
             return !m.is_castling()
                 && from.shift(offset) == to
-                && !self.get_all_occupancy().contains(to);
+                && !self.all_occupancy().contains(to);
         }
 
-        matches!(m.get_kind(), MoveKind::Capture | MoveKind::QuietMove)
+        matches!(m.kind(), MoveKind::Capture | MoveKind::QuietMove)
             && m.is_capture() == self.state.occupancies[stm.other() as usize].contains(to)
-            && self.get_piece_attack(stm, from, moving_piece).contains(to)
+            && attacks(stm, from, moving_piece, self.all_occupancy()).contains(to)
     }
 }

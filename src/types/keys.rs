@@ -9,7 +9,7 @@ pub struct Keys {
 
 impl Keys {
     pub fn toggle(&mut self, side: Side, piece: Piece, square: Square) {
-        let key = ZOBRIST.get_piece_num(side, piece, square);
+        let key = ZOBRIST.piece(side, piece, square);
 
         self.full ^= key;
         if piece == Piece::Pawn {
@@ -20,14 +20,14 @@ impl Keys {
     }
 
     pub fn toggle_castling(&mut self, rights: CastlingRights) {
-        self.full ^= ZOBRIST.get_castling_num(rights)
+        self.full ^= ZOBRIST.castling(rights)
     }
 
     pub fn toggle_en_passant(&mut self, square: Square) {
-        self.full ^= ZOBRIST.get_enpassant_num(square)
+        self.full ^= ZOBRIST.enpassant(square)
     }
 
     pub fn toggle_side(&mut self) {
-        self.full ^= ZOBRIST.get_side_num()
+        self.full ^= ZOBRIST.side()
     }
 }

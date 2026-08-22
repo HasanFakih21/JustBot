@@ -1,6 +1,7 @@
 use crate::{
     attacks::RAYS,
     board::Board,
+    lookup::{bishop_attacks, king_attacks, knight_attacks, pawn_attacks, rook_attacks},
     types::{BitBoard, Move, OptionPiece, Piece, Side, Square},
 };
 
@@ -22,14 +23,14 @@ impl Board {
             return true;
         }
 
-        let mut occupancies = self.get_all_occupancy();
-        occupancies.clear_bit(m.get_from());
+        let mut occupancies = self.all_occupancy();
+        occupancies.clear_bit(m.from());
 
         if m.is_en_passant() {
-            occupancies.clear_bit(m.get_to() ^ 8);
+            occupancies.clear_bit(m.to() ^ 8);
         }
 
-        let mut attackers = self.attackers_to(m.get_to(), occupancies) & occupancies;
+        let mut attackers = self.attackers_to(m.to(), occupancies) & occupancies;
         let mut stm = self.state.side_to_move.other();
 
         let diagonals =
@@ -38,8 +39,8 @@ impl Board {
             self.state.pieces[Piece::Rook as usize] | self.state.pieces[Piece::Queen as usize];
 
         let king_rays = [
-            RAYS[m.get_to() as usize][self.get_king_square(Side::White) as usize],
-            RAYS[m.get_to() as usize][self.get_king_square(Side::Black) as usize],
+            RAYS[m.to() as usize][self.king_square(Side::White) as usize],
+            RAYS[m.to() as usize][self.king_square(Side::Black) as usize],
         ];
 
         loop {
@@ -76,11 +77,11 @@ impl Board {
 
             // Update possble revealed sliding attackers
             if matches!(attacker, Piece::Bishop | Piece::Queen | Piece::Pawn) {
-                attackers |= self.get_bishop_attacks(m.get_to(), occupancies) & diagonals;
+                attackers |= bishop_attacks(m.to(), occupancies) & diagonals;
             }
 
             if matches!(attacker, Piece::Rook | Piece::Queen) {
-                attackers |= self.get_rook_attacks(m.get_to(), occupancies) & orthogonals;
+                attackers |= rook_attacks(m.to(), occupancies) & orthogonals;
             }
 
             attackers &= occupancies;
@@ -91,10 +92,10 @@ impl Board {
 
     pub const fn move_loss(&self, m: Move) -> i32 {
         if m.is_promotion() {
-            return unsafe { m.get_promoted_piece().unwrap_unchecked().value() };
+            return unsafe { m.promoted_piece().unwrap_unchecked().value() };
         }
 
-        if let OptionPiece::Some(piece) = self.get_piece_at_square(m.get_from()) {
+        if let OptionPiece::Some(piece) = self.piece_at_square(m.from()) {
             return piece.kind().value();
         }
 
@@ -102,9 +103,9 @@ impl Board {
     }
 
     pub const fn move_value(&self, m: Move) -> i32 {
-        if let OptionPiece::Some(piece) = self.get_piece_at_square(m.get_capture_square()) {
+        if let OptionPiece::Some(piece) = self.piece_at_square(m.capture_square()) {
             let mut value = piece.kind().value();
-            if let Some(promotion_piece) = m.get_promoted_piece() {
+            if let Some(promotion_piece) = m.promoted_piece() {
                 value += promotion_piece.value() - Piece::Pawn.value();
             }
 
@@ -148,14 +149,12 @@ impl Board {
         let orthogonals =
             self.state.pieces[Piece::Rook as usize] | self.state.pieces[Piece::Queen as usize];
 
-        (self.get_bishop_attacks(square, occupancies) & diagonals)
-            | (self.get_rook_attacks(square, occupancies) & orthogonals)
-            | (self.get_pawn_attacks(square, Side::White)
-                & self.get_piece_bb(Side::Black, Piece::Pawn))
-            | (self.get_pawn_attacks(square, Side::Black)
-                & self.get_piece_bb(Side::White, Piece::Pawn))
-            | (self.get_knight_attacks(square) & self.state.pieces[Piece::Knight as usize])
-            | (self.get_king_attacks(square) & self.state.pieces[Piece::King as usize])
+        (bishop_attacks(square, occupancies) & diagonals)
+            | (rook_attacks(square, occupancies) & orthogonals)
+            | (pawn_attacks(square, Side::White) & self.piece_bb(Side::Black, Piece::Pawn))
+            | (pawn_attacks(square, Side::Black) & self.piece_bb(Side::White, Piece::Pawn))
+            | (knight_attacks(square) & self.state.pieces[Piece::Knight as usize])
+            | (king_attacks(square) & self.state.pieces[Piece::King as usize])
     }
 }
 

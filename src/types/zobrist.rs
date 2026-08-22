@@ -10,19 +10,19 @@ pub struct Zobrist {
 }
 
 impl Zobrist {
-    pub fn get_piece_num(&self, side: Side, piece: Piece, square: Square) -> u64 {
+    pub fn piece(&self, side: Side, piece: Piece, square: Square) -> u64 {
         self.pieces[(piece as usize) + (side as usize * 6)][square as usize]
     }
 
-    pub fn get_side_num(&self) -> u64 {
+    pub fn side(&self) -> u64 {
         self.side
     }
 
-    pub fn get_castling_num(&self, rights: CastlingRights) -> u64 {
+    pub fn castling(&self, rights: CastlingRights) -> u64 {
         self.castling[rights.0 as usize]
     }
 
-    pub fn get_enpassant_num(&self, square: Square) -> u64 {
+    pub fn enpassant(&self, square: Square) -> u64 {
         self.enpassant[square as usize % 8]
     }
 
@@ -118,12 +118,12 @@ mod tests {
     #[test]
     fn test_board_hashing() {
         let board1 = Board::from_fen("8/6K1/3N4/8/5Q2/8/1kr5/8 w - - 0 1").unwrap();
-        let ver_hash = ZOBRIST.get_piece_num(Side::White, Piece::Knight, Square::D6)
-            ^ ZOBRIST.get_piece_num(Side::White, Piece::Queen, Square::F4)
-            ^ ZOBRIST.get_piece_num(Side::White, Piece::King, Square::G7)
-            ^ ZOBRIST.get_piece_num(Side::Black, Piece::Rook, Square::C2)
-            ^ ZOBRIST.get_piece_num(Side::Black, Piece::King, Square::B2)
-            ^ ZOBRIST.get_castling_num(CastlingRights(0));
+        let ver_hash = ZOBRIST.piece(Side::White, Piece::Knight, Square::D6)
+            ^ ZOBRIST.piece(Side::White, Piece::Queen, Square::F4)
+            ^ ZOBRIST.piece(Side::White, Piece::King, Square::G7)
+            ^ ZOBRIST.piece(Side::Black, Piece::Rook, Square::C2)
+            ^ ZOBRIST.piece(Side::Black, Piece::King, Square::B2)
+            ^ ZOBRIST.castling(CastlingRights(0));
 
         assert_eq!(board1.state.keys.full, ver_hash);
     }

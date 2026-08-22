@@ -99,7 +99,7 @@ fn test_mate_in_four() {
     let board = Board::from_fen("6k1/5pp1/5n1p/8/5P1q/2RQ3P/B5PK/8 b - - 0 36").unwrap();
     data.board = board;
 
-    data.get_time_settings().nodes = 8000;
+    data.time_settings().nodes = 8000;
     data.time.set_nodes_limit();
     data.root_moves = data
         .board
@@ -140,7 +140,7 @@ fn test_pv_line() {
             score: 0,
         })
         .collect();
-    data.get_time_settings().nodes = 20000;
+    data.time_settings().nodes = 20000;
     data.time.set_nodes_limit();
 
     search_runner(&mut data);
@@ -196,7 +196,7 @@ fn test_bugged_position() {
 #[test]
 fn test_transposition_timeout() {
     let mut data = SearchData::default();
-    data.get_time_settings().btime = Some(8080);
+    data.time_settings().btime = Some(8080);
     let board = Board::from_fen("6k1/2p5/4R1pp/1p1r4/pP1p4/P5PP/2P2P2/6K1 b - - 0 32").unwrap();
     data.time
         .set_time_limits(board.state.side_to_move, board.state.full_move);

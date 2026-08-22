@@ -44,7 +44,7 @@ impl MovePicker {
         if self.status == Stage::HashMove {
             self.status = Stage::FirstNoisy;
             let tt_move = self.tt_move.unwrap();
-            if (!skip_quiets || !tt_move.get_kind().is_quiet()) && data.board.is_legal(tt_move) {
+            if (!skip_quiets || !tt_move.kind().is_quiet()) && data.board.is_legal(tt_move) {
                 return Some(tt_move);
             }
         }
@@ -104,15 +104,15 @@ impl MovePicker {
             let mut score = 0;
 
             // Bonus for promotions
-            if mv.get_kind().is_queen_promotion() {
+            if mv.kind().is_queen_promotion() {
                 score += 5000;
             }
 
-            let piece = data.board.get_piece_at_square(mv.get_from());
-            let to = mv.get_to();
+            let piece = data.board.piece_at_square(mv.from());
+            let to = mv.to();
             let captured = data
                 .board
-                .get_piece_at_square(mv.get_capture_square())
+                .piece_at_square(mv.capture_square())
                 .map(|e| e.kind());
             if let OptionPiece::Some(p) = captured {
                 score += see::value(p)
@@ -129,14 +129,14 @@ impl MovePicker {
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
-            let piece = data.board.get_piece_at_square(mv.get_from());
-            let to = mv.get_to();
+            let piece = data.board.piece_at_square(mv.from());
+            let to = mv.to();
 
             let conthistory_score =
                 1000 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
-                    + 1595 * data.get_conthistory(mv, ply, 1) / 1024
-                    + 1050 * data.get_conthistory(mv, ply, 2) / 1024
-                    + 1000 * data.get_conthistory(mv, ply, 4) / 1024;
+                    + 1595 * data.conthistory(mv, ply, 1) / 1024
+                    + 1050 * data.conthistory(mv, ply, 2) / 1024
+                    + 1000 * data.conthistory(mv, ply, 4) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score

@@ -140,7 +140,7 @@ pub static ROOK_MAGIC_NUMBERS: [u64; 64] = [
 ];
 
 // XOR Shift Pseudo-Random Number Generator
-pub fn get_random_num() -> u32 {
+pub fn random_num() -> u32 {
     let mut number = SEED.lock().unwrap();
 
     *number ^= *number << 13;
@@ -150,14 +150,14 @@ pub fn get_random_num() -> u32 {
     *number
 }
 
-pub fn get_random_u64_num() -> u64 {
-    let nums: [u64; 4] = std::array::from_fn(|_e| (get_random_num() as u64) & 0xFFFF);
+pub fn random_u64_num() -> u64 {
+    let nums: [u64; 4] = std::array::from_fn(|_e| (random_num() as u64) & 0xFFFF);
 
     nums[0] | (nums[1] << 16) | (nums[2] << 32) | (nums[3] << 48)
 }
 
 pub fn generate_magic_number() -> u64 {
-    get_random_u64_num() & get_random_u64_num() & get_random_u64_num()
+    random_u64_num() & random_u64_num() & random_u64_num()
 }
 
 pub fn find_magic_number(square: Square, piece: Piece) -> u64 {
@@ -198,7 +198,7 @@ pub fn find_magic_number(square: Square, piece: Piece) -> u64 {
 
         let (mut index, mut fail) = (0, false);
         while !fail && (index < (1 << relevant_bits)) {
-            let magic_index = get_magic_index(occupancies[index], relevant_bits, magic_number);
+            let magic_index = magic_index(occupancies[index], relevant_bits, magic_number);
 
             if used_attacks[magic_index] == BitBoard(0) {
                 used_attacks[magic_index] = attacks[index];
@@ -217,7 +217,7 @@ pub fn find_magic_number(square: Square, piece: Piece) -> u64 {
     0
 }
 
-pub const fn get_magic_index(occ_bb: BitBoard, relevant_bits: usize, magic_number: u64) -> usize {
+pub const fn magic_index(occ_bb: BitBoard, relevant_bits: usize, magic_number: u64) -> usize {
     ((occ_bb.0.wrapping_mul(magic_number)) >> (64 - relevant_bits)) as usize
 }
 
@@ -281,19 +281,19 @@ mod tests {
 
     #[test]
     fn test_random_num() {
-        println!("{}", get_random_num());
-        println!("{}", get_random_num());
-        println!("{}", get_random_num());
-        println!("{}", get_random_num());
+        println!("{}", random_num());
+        println!("{}", random_num());
+        println!("{}", random_num());
+        println!("{}", random_num());
     }
 
     #[test]
     fn test_u64_random_num() {
-        println!("{}", get_random_u64_num());
-        println!("{}", get_random_u64_num());
-        println!("{}", get_random_u64_num());
-        println!("{}", get_random_u64_num());
-        println!("{}", get_random_u64_num());
+        println!("{}", random_u64_num());
+        println!("{}", random_u64_num());
+        println!("{}", random_u64_num());
+        println!("{}", random_u64_num());
+        println!("{}", random_u64_num());
     }
 
     #[test]

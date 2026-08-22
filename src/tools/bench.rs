@@ -71,7 +71,7 @@ pub fn bench() -> (u64, u64) {
         time_manager.set_depth_limit();
 
         pool.start(&board, time_manager, &shared, true);
-        total_node_count += shared.get_total_nodes_searched();
+        total_node_count += shared.total_nodes_searched();
     }
 
     let nps = (total_node_count as f64 / time.elapsed().as_secs_f64()) as u64;

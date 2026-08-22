@@ -73,11 +73,11 @@ impl Entry {
         ((32 + tt_age - self.flags.age()) & MAX_AGE) as i32
     }
 
-    pub fn get_key(&self) -> u16 {
+    pub fn key(&self) -> u16 {
         self.key
     }
 
-    pub fn get_bound(&self) -> Bound {
+    pub fn bound(&self) -> Bound {
         self.flags.bound()
     }
 
@@ -85,19 +85,19 @@ impl Entry {
         self.flags.pv()
     }
 
-    pub fn get_best_move(&self) -> Move {
+    pub fn best_move(&self) -> Move {
         self.best_move
     }
 
-    pub fn get_score(&self) -> i32 {
+    pub fn score(&self) -> i32 {
         self.score as i32
     }
 
-    pub fn get_depth(&self) -> i32 {
+    pub fn depth(&self) -> i32 {
         self.depth as i32
     }
 
-    pub fn get_eval(&self) -> i32 {
+    pub fn eval(&self) -> i32 {
         self.eval as i32
     }
 }
@@ -109,9 +109,9 @@ pub struct Cluster {
 
 impl Cluster {
     pub fn lookup_key(&self, key: u16) -> Option<&Entry> {
-        self.entries.iter().find(|e| {
-            e.get_key() == key && (e.get_bound() != Bound::None || e.get_score() == Score::NONE)
-        })
+        self.entries
+            .iter()
+            .find(|e| e.key() == key && (e.bound() != Bound::None || e.score() == Score::NONE))
     }
 }
 
@@ -162,14 +162,14 @@ impl TranspositionTable {
 
         let cluster = unsafe { &mut *self.ptr().add(index) };
         let key = hash as u16;
-        let tt_age = self.get_age();
+        let tt_age = self.age();
 
         let replacement_index = {
             let mut index = 0;
             let mut worst_quality = i32::MAX;
 
             for (i, entry) in cluster.entries.iter().enumerate() {
-                if entry.get_key() == key || entry.flags.bound() == Bound::None {
+                if entry.key() == key || entry.flags.bound() == Bound::None {
                     index = i;
                     break;
                 }
@@ -185,7 +185,7 @@ impl TranspositionTable {
         };
 
         let entry = &mut cluster.entries[replacement_index];
-        let same_key = key == entry.get_key();
+        let same_key = key == entry.key();
 
         // Keep the stored move if the new move is null for the same position
         if !(same_key && best_move.is_null()) {
@@ -193,8 +193,7 @@ impl TranspositionTable {
         }
 
         // Don't replace entry if this is true
-        if same_key && depth + 4 + 2 * pv as i32 <= entry.get_depth() && entry.flags.age() == tt_age
-        {
+        if same_key && depth + 4 + 2 * pv as i32 <= entry.depth() && entry.flags.age() == tt_age {
             return;
         }
 
@@ -216,7 +215,7 @@ impl TranspositionTable {
         unsafe { self.ptr().write_bytes(0, self.len()) }
     }
 
-    pub fn get_entry(&self, hash: u64, ply: isize) -> Option<Entry> {
+    pub fn entry(&self, hash: u64, ply: isize) -> Option<Entry> {
         let index = index(hash, self.len());
         debug_assert!(index < self.len());
 
@@ -238,7 +237,7 @@ impl TranspositionTable {
 
         for c in clusters.iter().take(1000) {
             for e in c.entries.iter() {
-                if e.flags.bound() != Bound::None && e.flags.age() == self.get_age() {
+                if e.flags.bound() != Bound::None && e.flags.age() == self.age() {
                     count += 1;
                 }
             }
@@ -247,12 +246,12 @@ impl TranspositionTable {
         count / NUM_ENTRIES_PER_CLUSTER
     }
 
-    pub fn get_age(&self) -> u8 {
+    pub fn age(&self) -> u8 {
         self.age.load(Ordering::Relaxed)
     }
 
     pub fn increase_age(&self) {
-        let current_age = self.get_age();
+        let current_age = self.age();
         self.age
             .store((current_age + 1) & MAX_AGE, Ordering::Relaxed);
     }
