@@ -212,6 +212,9 @@ impl Board {
             return;
         }
 
+        // Pawn Moves
+        self.gen_pawn_moves(move_list, kind);
+
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             // Only moves that can block the check
@@ -312,9 +315,6 @@ impl Board {
             // Castling Moves
             self.gen_castling_moves(move_list)
         }
-
-        // Pawn Moves
-        self.gen_pawn_moves(move_list, kind);
     }
 }
 
