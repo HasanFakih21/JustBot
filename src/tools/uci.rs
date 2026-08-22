@@ -4,7 +4,7 @@ use std::thread;
 
 use crate::board::Board;
 use crate::board::movegen::MoveGenKind;
-use crate::search::data::SharedData;
+use crate::search::data::{Report, SharedData};
 use crate::search::time::TimeManager;
 use crate::threads::SearchThreads;
 use crate::tools::bench::bench;
@@ -14,12 +14,18 @@ use crate::tools::datagen::generate_random_openings;
 use crate::tools::parameters::{list_params, print_params_ob, set_param};
 use crate::types::*;
 
+#[derive(Default)]
+pub struct UCISettings {
+    pub frc: bool,
+    pub report: Report,
+}
+
 pub fn input_loop(cli_args: String) {
     let shared = Arc::new(SharedData::default());
     let mut pool = SearchThreads::new(shared.clone(), 1);
     let mut board = Board::from_fen(STARTING_FEN).unwrap();
     let mut time = TimeManager::new();
-    let mut frc = false;
+    let mut uci_settings = UCISettings::default();
 
     let rx = listen(shared.clone());
 
@@ -42,10 +48,10 @@ pub fn input_loop(cli_args: String) {
         let (command, args) = input.split_once(" ").unwrap_or((&input, ""));
 
         match command.trim() {
-            "position" => position(args, &mut board, frc),
+            "position" => position(args, &mut board, uci_settings.frc),
             "uci" => uci(),
             "isready" => println!("readyok"),
-            "setoption" => set_option(args, &mut frc, shared.clone(), &mut pool),
+            "setoption" => set_option(args, &mut uci_settings, shared.clone(), &mut pool),
             "ucinewgame" => {
                 shared.tt.clear();
                 let thread_count = pool.threads.len();
@@ -53,7 +59,14 @@ pub fn input_loop(cli_args: String) {
             }
             "go" => {
                 time.clear_limits();
-                if let Some(m) = go(args, &mut pool, &mut board, &mut time, &shared, false) {
+                if let Some(m) = go(
+                    args,
+                    &mut pool,
+                    &mut board,
+                    &mut time,
+                    &shared,
+                    &uci_settings,
+                ) {
                     println!("bestmove {}", m.to_uci(&board));
                 } else {
                     println!("bestmove 0000");
@@ -164,10 +177,24 @@ pub fn position(args: &str, board: &mut Board, frc: bool) {
     }
 }
 
-pub fn set_option(args: &str, frc: &mut bool, shared: Arc<SharedData>, pool: &mut SearchThreads) {
+pub fn set_option(
+    args: &str,
+    uci_settings: &mut UCISettings,
+    shared: Arc<SharedData>,
+    pool: &mut SearchThreads,
+) {
     let args = args.to_ascii_lowercase();
     let args: Vec<&str> = args.split_ascii_whitespace().collect();
     match args.as_slice() {
+        ["name", "minimal", "value", v] => {
+            let v = v.parse().unwrap_or(false);
+            if v {
+                uci_settings.report = Report::Minimal
+            } else {
+                uci_settings.report = Report::Full
+            }
+            println!("info string Set Minimal to {v}");
+        }
         ["name", "hash", "value", amount] => {
             let amount = amount.parse::<usize>().unwrap_or(16);
             shared.tt.resize(amount);
@@ -184,7 +211,7 @@ pub fn set_option(args: &str, frc: &mut bool, shared: Arc<SharedData>, pool: &mu
         }
         ["name", "uci_chess960", "value", v] => {
             let v = v.parse().unwrap_or(false);
-            *frc = v;
+            uci_settings.frc = v;
             println!("info string Set UCI_Chess960 to {v}");
         }
         #[cfg(feature = "tuning")]
@@ -206,11 +233,11 @@ pub fn go(
     board: &mut Board,
     time: &mut TimeManager,
     shared: &Arc<SharedData>,
-    mute: bool,
+    uci_settings: &UCISettings,
 ) -> Option<Move> {
     let (command, args) = args.split_once(" ").unwrap_or((args, ""));
     if args.is_empty() {
-        return pool.start(board, time.clone(), shared, mute);
+        return pool.start(board, time.clone(), shared, uci_settings.report);
     }
 
     match command.trim() {
@@ -218,46 +245,46 @@ pub fn go(
             let (depth, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.depth = depth.trim().parse().unwrap_or(MAX_PLY as i32 - 1);
             time.set_depth_limit();
-            go(args, pool, board, time, shared, mute)
+            go(args, pool, board, time, shared, uci_settings)
         }
         "wtime" => {
             // Example: go wtime 900000 btime 900000 winc 0 binc 0
             let (wtime, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.wtime = Some(wtime.trim().parse().unwrap_or(500));
-            go(args, pool, board, time, shared, mute)
+            go(args, pool, board, time, shared, uci_settings)
         }
         "btime" => {
             let (btime, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.btime = Some(btime.trim().parse().unwrap_or(500));
-            go(args, pool, board, time, shared, mute)
+            go(args, pool, board, time, shared, uci_settings)
         }
         "winc" => {
             let (winc, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.winc = winc.trim().parse().unwrap_or(0);
-            go(args, pool, board, time, shared, mute)
+            go(args, pool, board, time, shared, uci_settings)
         }
         "binc" => {
             let (binc, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.binc = binc.trim().parse().unwrap_or(0);
-            go(args, pool, board, time, shared, mute)
+            go(args, pool, board, time, shared, uci_settings)
         }
         "movestogo" => {
             let (movestogo, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.movestogo = movestogo.trim().parse().unwrap_or(0);
-            go(args, pool, board, time, shared, mute)
+            go(args, pool, board, time, shared, uci_settings)
         }
         "movetime" => {
             let (movetime, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.movetime = Some(movetime.trim().parse().unwrap_or(500));
-            go(args, pool, board, time, shared, mute)
+            go(args, pool, board, time, shared, uci_settings)
         }
         "nodes" => {
             let (nodes, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.nodes = nodes.trim().parse().unwrap_or(0);
             time.set_nodes_limit();
-            go(args, pool, board, time, shared, mute)
+            go(args, pool, board, time, shared, uci_settings)
         }
-        _ => go(args, pool, board, time, shared, mute),
+        _ => go(args, pool, board, time, shared, uci_settings),
     }
 }
 
@@ -268,6 +295,7 @@ pub fn uci() {
     println!("option name Hash type spin default 16 min 1 max 1048576");
     println!("option name Clear Hash type button");
     println!("option name UCI_Chess960 type check default false");
+    println!("option name Minimal type check default false");
     #[cfg(feature = "tuning")]
     list_params();
     println!("uciok");
@@ -321,7 +349,7 @@ pub mod tests {
             &mut board,
             &mut time,
             &shared,
-            false,
+            &UCISettings::default(),
         );
     }
 
@@ -337,7 +365,7 @@ pub mod tests {
             &mut board,
             &mut time,
             &shared,
-            false,
+            &UCISettings::default(),
         );
         println!(
             "{:?}\nBestmove: {}",
@@ -350,8 +378,12 @@ pub mod tests {
     fn test_set_option() {
         let shared = Arc::new(SharedData::default());
         let mut pool = SearchThreads::new(shared.clone(), 1);
-        let mut frc = false;
 
-        set_option("name Hash value 32", &mut frc, shared, &mut pool);
+        set_option(
+            "name Hash value 32",
+            &mut UCISettings::default(),
+            shared,
+            &mut pool,
+        );
     }
 }

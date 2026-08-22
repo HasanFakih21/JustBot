@@ -73,6 +73,14 @@ impl Default for SharedData {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub enum Report {
+    #[default]
+    Full,
+    Minimal,
+    None,
+}
+
 pub struct SearchData {
     pub id: usize,
     pub best_move: Option<Move>,
@@ -80,7 +88,7 @@ pub struct SearchData {
     pub pv: PVTable,
     pub board: Board,
     pub time: TimeManager,
-    pub report: bool,
+    pub report: Report,
     pub stack: Box<Stack>,
     pub root_moves: Vec<RootMove>,
 
@@ -103,7 +111,7 @@ impl SearchData {
             pv: PVTable::new(),
             board: Board::from_fen(STARTING_FEN).unwrap(),
             time: TimeManager::new(),
-            report: true,
+            report: Report::None,
             stack: Stack::new(),
             root_moves: Vec::new(),
 
@@ -116,14 +124,6 @@ impl SearchData {
 
             network: Network::new(),
         }
-    }
-
-    pub fn mute(&mut self) {
-        self.report = false;
-    }
-
-    pub fn report(&mut self) {
-        self.report = true;
     }
 
     pub fn start_time(&mut self) {
@@ -245,39 +245,37 @@ impl SearchData {
 
     pub fn print_uci_info(&self, depth: i32) {
         // All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
-        if self.report {
-            let root_move = &self.root_moves[0];
-            let score = root_move.score;
+        let root_move = &self.root_moves[0];
+        let score = root_move.score;
 
-            // Report mate score
-            let score_print = if is_decisive(score) {
-                let num_plies = Score::MATE - score.abs();
-                let mate_in = score.signum() * ((num_plies + 1) / 2);
-                format!("mate {}", mate_in)
-            } else {
-                format!("cp {}", score)
-            };
+        // Report mate score
+        let score_print = if is_decisive(score) {
+            let num_plies = Score::MATE - score.abs();
+            let mate_in = score.signum() * ((num_plies + 1) / 2);
+            format!("mate {}", mate_in)
+        } else {
+            format!("cp {}", score)
+        };
 
-            let pv_display = {
-                let mut output = format!("{} ", root_move.m.to_uci(&self.board));
-                for m in &root_move.pv.inner {
-                    output = format!("{output}{} ", m.to_uci(&self.board));
-                }
+        let pv_display = {
+            let mut output = format!("{} ", root_move.m.to_uci(&self.board));
+            for m in &root_move.pv.inner {
+                output = format!("{output}{} ", m.to_uci(&self.board));
+            }
 
-                output
-            };
+            output
+        };
 
-            println!(
-                "info depth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
-                depth - 1,
-                self.time.elapsed().as_millis(),
-                score_print,
-                self.shared.total_nodes_searched(),
-                self.nodes_per_second(),
-                pv_display,
-                self.shared.tt.hashfull(),
-            );
-        }
+        println!(
+            "info depth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
+            depth - 1,
+            self.time.elapsed().as_millis(),
+            score_print,
+            self.shared.total_nodes_searched(),
+            self.nodes_per_second(),
+            pv_display,
+            self.shared.tt.hashfull(),
+        );
     }
 
     pub fn make_move(&mut self, m: Move, ply: isize) {

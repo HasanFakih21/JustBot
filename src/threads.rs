@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     board::Board,
     search::{
-        data::{RootMove, SearchData, SharedData},
+        data::{Report, RootMove, SearchData, SharedData},
         search_runner,
         time::TimeManager,
     },
@@ -29,7 +29,7 @@ impl SearchThreads {
         board: &Board,
         mut time: TimeManager,
         shared: &Arc<SharedData>,
-        mute: bool,
+        report: Report,
     ) -> Option<Move> {
         shared.tt.increase_age();
         time.set_time_limits(board.state.side_to_move, board.state.full_move);
@@ -48,8 +48,8 @@ impl SearchThreads {
         std::thread::scope(|scope| {
             let mut handles = Vec::new();
             for t in self.threads.iter_mut() {
-                if t.id != 0 || mute {
-                    t.mute();
+                if t.id == 0 {
+                    t.report = report;
                 }
 
                 t.board = board.clone();
@@ -74,7 +74,10 @@ mod tests {
 
     use crate::{
         board::Board,
-        search::{data::SharedData, time::TimeManager},
+        search::{
+            data::{Report, SharedData},
+            time::TimeManager,
+        },
         threads::SearchThreads,
         types::STARTING_FEN,
     };
@@ -92,7 +95,7 @@ mod tests {
         let board = Board::from_fen(STARTING_FEN).unwrap();
 
         let mut pool = SearchThreads::new(shared.clone(), 3);
-        let m = pool.start(&board, time, &shared, false).unwrap();
+        let m = pool.start(&board, time, &shared, Report::None).unwrap();
         println!("{}", m.to_uci(&board));
     }
 }
