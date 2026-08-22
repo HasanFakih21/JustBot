@@ -157,45 +157,6 @@ impl Board {
         }
     }
 
-    pub fn gen_knight_moves(&self, move_list: &mut MoveList, kind: MoveGenKind) {
-        let stm = self.state.side_to_move;
-        let king_square = self.get_king_square(stm);
-        let occupied = self.get_all_occupancy();
-        let pinned = self.state.pinned[stm];
-
-        let target = if self.king_in_check() {
-            debug_assert!(self.state.checkers.count_bits() == 1);
-            // Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square][checking_piece_square] | self.state.checkers
-        } else {
-            !BitBoard(0)
-        };
-
-        let knights = self.get_piece_bb(stm, Piece::Knight);
-        if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other()];
-            for from in knights & !pinned {
-                move_list.push_setwise(
-                    from,
-                    self.get_knight_attacks(from) & target,
-                    MoveKind::Capture,
-                );
-            }
-        }
-
-        if kind.is_quiet() {
-            let target = target & !occupied;
-            for from in knights & !pinned {
-                move_list.push_setwise(
-                    from,
-                    self.get_knight_attacks(from) & target,
-                    MoveKind::QuietMove,
-                );
-            }
-        }
-    }
-
     pub fn gen_sliding_moves<F: Fn(Square) -> BitBoard>(
         &self,
         move_list: &mut MoveList,
@@ -215,187 +176,145 @@ impl Board {
         }
     }
 
-    pub fn gen_bishop_moves(&self, move_list: &mut MoveList, kind: MoveGenKind) {
-        let stm = self.state.side_to_move;
-        let king_square = self.get_king_square(stm);
-        let occupied = self.get_all_occupancy();
-        let pinned = self.state.pinned[stm];
-
-        let target = if self.king_in_check() {
-            debug_assert!(self.state.checkers.count_bits() == 1);
-            // Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square][checking_piece_square] | self.state.checkers
-        } else {
-            !BitBoard(0)
-        };
-
-        let bishops = self.get_piece_bb(stm, Piece::Bishop);
-        let attacks = |square| self.get_bishop_attacks(square, occupied);
-
-        if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other()];
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::Capture,
-                bishops,
-                attacks,
-                target,
-                pinned,
-            );
-        }
-
-        if kind.is_quiet() {
-            let target = target & !occupied;
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::QuietMove,
-                bishops,
-                attacks,
-                target,
-                pinned,
-            );
-        }
-    }
-
-    pub fn gen_rook_moves(&self, move_list: &mut MoveList, kind: MoveGenKind) {
-        let stm = self.state.side_to_move;
-        let king_square = self.get_king_square(stm);
-        let occupied = self.get_all_occupancy();
-        let pinned = self.state.pinned[stm];
-
-        let target = if self.king_in_check() {
-            debug_assert!(self.state.checkers.count_bits() == 1);
-            // Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square][checking_piece_square] | self.state.checkers
-        } else {
-            !BitBoard(0)
-        };
-
-        let rooks = self.get_piece_bb(stm, Piece::Rook);
-        let attacks = |square| self.get_rook_attacks(square, occupied);
-
-        if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other()];
-            self.gen_sliding_moves(move_list, MoveKind::Capture, rooks, attacks, target, pinned);
-        }
-
-        if kind.is_quiet() {
-            let target = target & !occupied;
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::QuietMove,
-                rooks,
-                attacks,
-                target,
-                pinned,
-            );
-        }
-    }
-
-    pub fn gen_queen_moves(&self, move_list: &mut MoveList, kind: MoveGenKind) {
-        let stm = self.state.side_to_move;
-        let king_square = self.get_king_square(stm);
-        let occupied = self.get_all_occupancy();
-        let pinned = self.state.pinned[stm];
-
-        let target = if self.king_in_check() {
-            debug_assert!(self.state.checkers.count_bits() == 1);
-            // Only moves that can block the check
-            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square][checking_piece_square] | self.state.checkers
-        } else {
-            !BitBoard(0)
-        };
-
-        let queens = self.get_piece_bb(stm, Piece::Queen);
-        let attacks = |square| self.get_queen_attacks(square, occupied);
-
-        if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other()];
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::Capture,
-                queens,
-                attacks,
-                target,
-                pinned,
-            );
-        }
-
-        if kind.is_quiet() {
-            let target = target & !occupied;
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::QuietMove,
-                queens,
-                attacks,
-                target,
-                pinned,
-            );
-        }
-    }
-
-    pub fn gen_king_moves(&self, move_list: &mut MoveList, kind: MoveGenKind) {
-        let stm = self.state.side_to_move;
-        let occupancies = self.get_all_occupancy();
-        let king_square = self.get_king_square(stm);
-
-        let attacks = self.get_king_attacks(king_square);
-        let mut targets = BitBoard(0);
-        if kind.is_quiet() {
-            targets |= !occupancies & attacks & !self.state.threats;
-            for target in targets {
-                move_list.push(Move::new(king_square, target, MoveKind::QuietMove));
-            }
-
-            targets = BitBoard(0);
-        }
-
-        if kind.is_noisy() {
-            targets |= self.state.occupancies[stm.other()] & attacks & !self.state.threats;
-            for target in targets {
-                move_list.push(Move::new(king_square, target, MoveKind::Capture));
-            }
-        }
-    }
-
     pub fn generate_moves(&self, kind: MoveGenKind) -> MoveList {
         let mut move_list = MoveList::new();
-        self.gen_king_moves(&mut move_list, kind);
-        if self.state.checkers.count_bits() > 1 {
-            return move_list;
-        }
-
-        self.gen_pawn_moves(&mut move_list, kind);
-        self.gen_knight_moves(&mut move_list, kind);
-        self.gen_bishop_moves(&mut move_list, kind);
-        self.gen_rook_moves(&mut move_list, kind);
-        self.gen_queen_moves(&mut move_list, kind);
-
-        if kind.is_quiet() {
-            self.gen_castling_moves(&mut move_list)
-        }
-
+        self.append_moves(kind, &mut move_list);
         move_list
     }
 
     pub fn append_moves(&self, kind: MoveGenKind, move_list: &mut MoveList) {
-        self.gen_king_moves(move_list, kind);
+        let stm = self.state.side_to_move;
+        let king_square = self.get_king_square(stm);
+        let occupancies = self.get_all_occupancy();
+        let pinned = self.state.pinned[stm];
+
+        // Noisy King Moves
+        if kind.is_noisy() {
+            move_list.push_setwise(
+                king_square,
+                self.get_king_attacks(king_square)
+                    & self.state.occupancies[stm.other()]
+                    & !self.state.threats,
+                MoveKind::Capture,
+            );
+        }
+
+        // Quiet King Moves
+        if kind.is_quiet() {
+            move_list.push_setwise(
+                king_square,
+                self.get_king_attacks(king_square) & !occupancies & !self.state.threats,
+                MoveKind::QuietMove,
+            );
+        }
+
         if self.state.checkers.count_bits() > 1 {
             return;
         }
 
-        self.gen_pawn_moves(move_list, kind);
-        self.gen_knight_moves(move_list, kind);
-        self.gen_bishop_moves(move_list, kind);
-        self.gen_rook_moves(move_list, kind);
-        self.gen_queen_moves(move_list, kind);
+        let target = if self.king_in_check() {
+            debug_assert!(self.state.checkers.count_bits() == 1);
+            // Only moves that can block the check
+            let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
+            BETWEEN[king_square][checking_piece_square] | self.state.checkers
+        } else {
+            !BitBoard(0)
+        };
+
+        let knights = self.get_piece_bb(stm, Piece::Knight);
+        let bishops = self.get_piece_bb(stm, Piece::Bishop);
+        let rooks = self.get_piece_bb(stm, Piece::Rook);
+        let queens = self.get_piece_bb(stm, Piece::Queen);
+
+        if kind.is_noisy() {
+            let target = target & self.state.occupancies[stm.other()];
+            // Noisy Knight Moves
+            for from in knights & !pinned {
+                move_list.push_setwise(
+                    from,
+                    self.get_knight_attacks(from) & target,
+                    MoveKind::Capture,
+                );
+            }
+
+            // Noisy Bishop Moves
+            self.gen_sliding_moves(
+                move_list,
+                MoveKind::Capture,
+                bishops,
+                |square| self.get_bishop_attacks(square, occupancies),
+                target,
+                pinned,
+            );
+
+            // Noisy Rook Moves
+            self.gen_sliding_moves(
+                move_list,
+                MoveKind::Capture,
+                rooks,
+                |square| self.get_rook_attacks(square, occupancies),
+                target,
+                pinned,
+            );
+
+            // Noisy Queen Moves
+            self.gen_sliding_moves(
+                move_list,
+                MoveKind::Capture,
+                queens,
+                |square| self.get_queen_attacks(square, occupancies),
+                target,
+                pinned,
+            );
+        }
 
         if kind.is_quiet() {
+            let target = target & !occupancies;
+            // Quiet Knight Moves
+            for from in knights & !pinned {
+                move_list.push_setwise(
+                    from,
+                    self.get_knight_attacks(from) & target,
+                    MoveKind::QuietMove,
+                );
+            }
+
+            // Quiet Bishop Moves
+            self.gen_sliding_moves(
+                move_list,
+                MoveKind::QuietMove,
+                bishops,
+                |square| self.get_bishop_attacks(square, occupancies),
+                target,
+                pinned,
+            );
+
+            // Quiet Rook Moves
+            self.gen_sliding_moves(
+                move_list,
+                MoveKind::QuietMove,
+                rooks,
+                |square| self.get_rook_attacks(square, occupancies),
+                target,
+                pinned,
+            );
+
+            // Quiet Queen Moves
+            self.gen_sliding_moves(
+                move_list,
+                MoveKind::QuietMove,
+                queens,
+                |square| self.get_queen_attacks(square, occupancies),
+                target,
+                pinned,
+            );
+
+            // Castling Moves
             self.gen_castling_moves(move_list)
         }
+
+        // Pawn Moves
+        self.gen_pawn_moves(move_list, kind);
     }
 }
 
