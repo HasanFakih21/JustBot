@@ -85,7 +85,7 @@ impl Board {
 
         board.update_all_threats();
         board.update_en_passant();
-        board.game_history.push(board.hash());
+        board.game_history.push(board.state.keys.full);
 
         Ok(board)
     }
