@@ -454,6 +454,7 @@ pub fn search<Node: NodeType>(
             r += 447 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 296 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 449 * history / 4096;
+            r -= 850 * is_direct_check as i32;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
