@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use crate::tools::magics::{
     BISHOP_MAGIC_NUMBERS, BISHOP_OCCUPANCY_BIT_COUNTS, ROOK_MAGIC_NUMBERS,
-    ROOK_OCCUPANCY_BIT_COUNTS, get_magic_index, set_occupancy,
+    ROOK_OCCUPANCY_BIT_COUNTS, magic_index, set_occupancy,
 };
 use crate::types::bitboard::BitBoard;
 use crate::types::constants::*;
@@ -77,7 +77,7 @@ pub static BISHOP_ATTACKS: LazyLock<Vec<BitBoard>> = LazyLock::new(|| {
 
         for index in 0..512 {
             let occupancy_bb = set_occupancy(index, relevant_bits, BISHOP_MASKS[square]);
-            let magic_index = get_magic_index(occupancy_bb, relevant_bits, magic_number);
+            let magic_index = magic_index(occupancy_bb, relevant_bits, magic_number);
             bishop_attacks[(square * 512) + magic_index] =
                 blocked_bishop_attacks(Square::from(square), occupancy_bb);
         }
@@ -94,7 +94,7 @@ pub static ROOK_ATTACKS: LazyLock<Vec<BitBoard>> = LazyLock::new(|| {
 
         for index in 0..4096 {
             let occupancy_bb = set_occupancy(index, relevant_bits, ROOK_MASKS[square]);
-            let magic_index = get_magic_index(occupancy_bb, relevant_bits, magic_number);
+            let magic_index = magic_index(occupancy_bb, relevant_bits, magic_number);
             rook_attacks[(square * 4096) + magic_index] =
                 blocked_rook_attacks(Square::from(square), occupancy_bb);
         }

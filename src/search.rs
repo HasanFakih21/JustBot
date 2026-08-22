@@ -184,18 +184,18 @@ pub fn search<Node: NodeType>(
     let mut depth = depth.min(MAX_PLY as i32 - 1);
 
     // Transposition Table Entries
-    let tt_entry = data.shared.tt.get_entry(data.board.hash(), ply);
+    let tt_entry = data.shared.tt.entry(data.board.hash(), ply);
     let tt_move = tt_entry
         .as_ref()
-        .map(|e| e.get_best_move())
+        .map(|e| e.best_move())
         .filter(|m| !m.is_null());
-    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_bound = tt_entry.as_ref().map(|e| e.bound());
     let tt_score = tt_entry
         .as_ref()
-        .map(|e| e.get_score())
+        .map(|e| e.score())
         .filter(|s| *s != Score::NONE);
     let tt_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
-    let tt_depth = tt_entry.as_ref().map(|e| e.get_depth());
+    let tt_depth = tt_entry.as_ref().map(|e| e.depth());
 
     // TT Cutoffs
     if !Node::PV
@@ -225,9 +225,9 @@ pub fn search<Node: NodeType>(
         raw_eval = Score::NONE;
         static_eval = data.stack[ply].eval
     } else if let Some(e) = &tt_entry
-        && e.get_eval() != Score::NONE
+        && e.eval() != Score::NONE
     {
-        raw_eval = e.get_eval();
+        raw_eval = e.eval();
         static_eval = raw_eval + correction;
     } else {
         raw_eval = data.network.evaluate(&data.board);
@@ -386,19 +386,19 @@ pub fn search<Node: NodeType>(
 
         move_count += 1;
         let is_direct_check = data.board.is_direct_check(m);
-        let is_quiet = m.get_kind().is_quiet();
+        let is_quiet = m.kind().is_quiet();
         let history = if is_quiet {
             data.quiet_history.get(data.board.state.threats, stm, m)
-                + data.get_conthistory(m, ply, 1)
-                + data.get_conthistory(m, ply, 2)
+                + data.conthistory(m, ply, 1)
+                + data.conthistory(m, ply, 2)
         } else {
             let captured = data
                 .board
-                .get_piece_at_square(m.get_capture_square())
+                .piece_at_square(m.capture_square())
                 .map(|p| p.kind());
             data.noisy_history.get(
-                data.board.get_piece_at_square(m.get_from()),
-                m.get_to(),
+                data.board.piece_at_square(m.from()),
+                m.to(),
                 captured,
                 data.board.state.threats,
             )
@@ -529,7 +529,7 @@ pub fn search<Node: NodeType>(
     }
 
     if let Some(m) = best_move {
-        let is_quiet = m.get_kind().is_quiet();
+        let is_quiet = m.kind().is_quiet();
 
         let quiet_bonus = (321 * depth).min(935) - 228;
         let quiet_malus = (289 * depth).min(948) - 232;
@@ -543,8 +543,8 @@ pub fn search<Node: NodeType>(
         let threats = data.board.state.threats;
 
         if is_quiet {
-            let piece = data.board.get_piece_at_square(m.get_from());
-            let to = m.get_to();
+            let piece = data.board.piece_at_square(m.from());
+            let to = m.to();
             let pawn_key = data.board.state.keys.pawn;
             // Pawn History Bonus
             data.pawn_history.update(pawn_key, piece, to, quiet_bonus);
@@ -553,8 +553,8 @@ pub fn search<Node: NodeType>(
             // Conthistory Bonus
             data.update_conthistories(m, ply, cont_bonus);
             for quiet_move in quiets_searched.iter() {
-                let piece = data.board.get_piece_at_square(quiet_move.get_from());
-                let to = quiet_move.get_to();
+                let piece = data.board.piece_at_square(quiet_move.from());
+                let to = quiet_move.to();
                 // Pawn History Malus
                 data.pawn_history.update(pawn_key, piece, to, -quiet_malus);
                 // Quiet History Malus
@@ -565,11 +565,11 @@ pub fn search<Node: NodeType>(
             }
         } else {
             // Noisy History Bonus
-            let piece = data.board.get_piece_at_square(m.get_from());
-            let to = m.get_to();
+            let piece = data.board.piece_at_square(m.from());
+            let to = m.to();
             let captured = data
                 .board
-                .get_piece_at_square(m.get_capture_square())
+                .piece_at_square(m.capture_square())
                 .map(|e| e.kind());
             data.noisy_history
                 .update(piece, to, captured, threats, noisy_bonus);
@@ -577,11 +577,11 @@ pub fn search<Node: NodeType>(
 
         // Noisy History Malus
         for m in noisies_searched.iter() {
-            let piece = data.board.get_piece_at_square(m.get_from());
-            let to = m.get_to();
+            let piece = data.board.piece_at_square(m.from());
+            let to = m.to();
             let captured = data
                 .board
-                .get_piece_at_square(m.get_capture_square())
+                .piece_at_square(m.capture_square())
                 .map(|e| e.kind());
             data.noisy_history
                 .update(piece, to, captured, threats, -noisy_malus);
@@ -603,7 +603,7 @@ pub fn search<Node: NodeType>(
 
     // Update Correction Histories
     if !in_check
-        && best_move.is_none_or(|m| m.get_kind().is_quiet())
+        && best_move.is_none_or(|m| m.kind().is_quiet())
         && ((bound == Bound::Lower && best_score >= static_eval)
             || (bound == Bound::Upper && best_score <= static_eval)
             || bound == Bound::Exact)
@@ -636,11 +636,11 @@ pub fn quiesce<Node: NodeType>(
         return Score::TIMEOUT;
     }
 
-    let tt_entry = data.shared.tt.get_entry(data.board.hash(), ply);
-    let tt_bound = tt_entry.as_ref().map(|e| e.get_bound());
+    let tt_entry = data.shared.tt.entry(data.board.hash(), ply);
+    let tt_bound = tt_entry.as_ref().map(|e| e.bound());
     let tt_score = tt_entry
         .as_ref()
-        .map(|e| e.get_score())
+        .map(|e| e.score())
         .filter(|s| *s != Score::NONE);
 
     // TT Cutoffs
@@ -676,9 +676,9 @@ pub fn quiesce<Node: NodeType>(
         static_eval = -Score::INFINITY;
         best_score = static_eval;
     } else if let Some(e) = &tt_entry
-        && e.get_eval() != Score::NONE
+        && e.eval() != Score::NONE
     {
-        raw_eval = e.get_eval();
+        raw_eval = e.eval();
         static_eval = raw_eval + data.correction(ply);
         best_score = static_eval;
     } else {
@@ -709,7 +709,7 @@ pub fn quiesce<Node: NodeType>(
         alpha = best_score;
     }
 
-    let tt_move = tt_entry.map(|e| e.get_best_move()).filter(|m| !m.is_null());
+    let tt_move = tt_entry.map(|e| e.best_move()).filter(|m| !m.is_null());
 
     let mut move_picker = MovePicker::new(tt_move);
     let mut move_count = 0;
@@ -763,14 +763,14 @@ pub fn quiesce<Node: NodeType>(
 
     if best_score >= beta
         && let Some(m) = best_move
-        && !m.get_kind().is_quiet()
+        && !m.kind().is_quiet()
     {
         // Add noisy bonus to history
-        let piece = data.board.get_piece_at_square(m.get_from());
-        let to = m.get_to();
+        let piece = data.board.piece_at_square(m.from());
+        let to = m.to();
         let captured = data
             .board
-            .get_piece_at_square(m.get_capture_square())
+            .piece_at_square(m.capture_square())
             .map(|e| e.kind());
         data.noisy_history
             .update(piece, to, captured, data.board.state.threats, 103);

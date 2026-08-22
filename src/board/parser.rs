@@ -106,9 +106,7 @@ impl Board {
 
         let move_list = self.generate_moves(MoveGenKind::All);
         if let Some(m) = move_list.iter().find(|e| {
-            e.mv.get_from() == from
-                && e.mv.get_to() == to
-                && e.mv.get_promoted_piece() == promotion_piece
+            e.mv.from() == from && e.mv.to() == to && e.mv.promoted_piece() == promotion_piece
         }) {
             Ok(m.mv)
         } else {
@@ -128,7 +126,7 @@ impl Board {
                 let rook_square = (file.to_bb() & HOME_RANK[side].to_bb())
                     .least_sig_bit()
                     .unwrap();
-                let king_square = self.get_king_square(side);
+                let king_square = self.king_square(side);
                 let dir = if rook_square > king_square {
                     Castling::KING_SIDE
                 } else {
@@ -152,7 +150,7 @@ impl Board {
         for rank in (0..8).rev() {
             let mut empty = 0;
             for file in 0..8 {
-                let p = self.get_piece_at_square(Square::from_rank_and_file(rank, file));
+                let p = self.piece_at_square(Square::from_rank_and_file(rank, file));
                 if let OptionPiece::Some(piece) = p {
                     if empty > 0 {
                         fen.push_str(&empty.to_string());

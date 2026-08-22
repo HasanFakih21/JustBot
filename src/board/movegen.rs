@@ -1,5 +1,6 @@
 use crate::attacks::{BETWEEN, DIAGONALS, RAYS};
 use crate::board::Board;
+use crate::lookup::{bishop_attacks, king_attacks, knight_attacks, queen_attacks, rook_attacks};
 use crate::types::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -43,9 +44,9 @@ impl Board {
         };
 
         let pinned = self.state.pinned[stm];
-        let king_square = self.get_king_square(stm);
-        let pawns = self.get_piece_bb(stm, Piece::Pawn);
-        let occupied = self.get_all_occupancy();
+        let king_square = self.king_square(stm);
+        let pawns = self.piece_bb(stm, Piece::Pawn);
+        let occupied = self.all_occupancy();
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
@@ -126,8 +127,8 @@ impl Board {
 
     pub fn gen_castling_moves(&self, move_list: &mut MoveList) {
         let stm = self.state.side_to_move;
-        let king_square = self.get_king_square(stm);
-        let occupancies = self.get_all_occupancy();
+        let king_square = self.king_square(stm);
+        let occupancies = self.all_occupancy();
         let kinds = [MoveKind::KingCastle, MoveKind::QueenCastle];
 
         // Need to check whether the path between is occupied and whether the path between where the king is and where the king lands is under attack
@@ -170,7 +171,7 @@ impl Board {
             move_list.push_setwise(from, attacks(from) & target, kind);
         }
 
-        let king_square = self.get_king_square(self.state.side_to_move);
+        let king_square = self.king_square(self.state.side_to_move);
         for from in pieces & pinned {
             move_list.push_setwise(from, attacks(from) & target & RAYS[from][king_square], kind);
         }
@@ -184,15 +185,15 @@ impl Board {
 
     pub fn append_moves(&self, kind: MoveGenKind, move_list: &mut MoveList) {
         let stm = self.state.side_to_move;
-        let king_square = self.get_king_square(stm);
-        let occupancies = self.get_all_occupancy();
+        let king_square = self.king_square(stm);
+        let occupancies = self.all_occupancy();
         let pinned = self.state.pinned[stm];
 
         // Noisy King Moves
         if kind.is_noisy() {
             move_list.push_setwise(
                 king_square,
-                self.get_king_attacks(king_square)
+                king_attacks(king_square)
                     & self.state.occupancies[stm.other()]
                     & !self.state.threats,
                 MoveKind::Capture,
@@ -203,7 +204,7 @@ impl Board {
         if kind.is_quiet() {
             move_list.push_setwise(
                 king_square,
-                self.get_king_attacks(king_square) & !occupancies & !self.state.threats,
+                king_attacks(king_square) & !occupancies & !self.state.threats,
                 MoveKind::QuietMove,
             );
         }
@@ -224,20 +225,16 @@ impl Board {
             !BitBoard(0)
         };
 
-        let knights = self.get_piece_bb(stm, Piece::Knight);
-        let bishops = self.get_piece_bb(stm, Piece::Bishop);
-        let rooks = self.get_piece_bb(stm, Piece::Rook);
-        let queens = self.get_piece_bb(stm, Piece::Queen);
+        let knights = self.piece_bb(stm, Piece::Knight);
+        let bishops = self.piece_bb(stm, Piece::Bishop);
+        let rooks = self.piece_bb(stm, Piece::Rook);
+        let queens = self.piece_bb(stm, Piece::Queen);
 
         if kind.is_noisy() {
             let target = target & self.state.occupancies[stm.other()];
             // Noisy Knight Moves
             for from in knights & !pinned {
-                move_list.push_setwise(
-                    from,
-                    self.get_knight_attacks(from) & target,
-                    MoveKind::Capture,
-                );
+                move_list.push_setwise(from, knight_attacks(from) & target, MoveKind::Capture);
             }
 
             // Noisy Bishop Moves
@@ -245,7 +242,7 @@ impl Board {
                 move_list,
                 MoveKind::Capture,
                 bishops,
-                |square| self.get_bishop_attacks(square, occupancies),
+                |square| bishop_attacks(square, occupancies),
                 target,
                 pinned,
             );
@@ -255,7 +252,7 @@ impl Board {
                 move_list,
                 MoveKind::Capture,
                 rooks,
-                |square| self.get_rook_attacks(square, occupancies),
+                |square| rook_attacks(square, occupancies),
                 target,
                 pinned,
             );
@@ -265,7 +262,7 @@ impl Board {
                 move_list,
                 MoveKind::Capture,
                 queens,
-                |square| self.get_queen_attacks(square, occupancies),
+                |square| queen_attacks(square, occupancies),
                 target,
                 pinned,
             );
@@ -275,11 +272,7 @@ impl Board {
             let target = target & !occupancies;
             // Quiet Knight Moves
             for from in knights & !pinned {
-                move_list.push_setwise(
-                    from,
-                    self.get_knight_attacks(from) & target,
-                    MoveKind::QuietMove,
-                );
+                move_list.push_setwise(from, knight_attacks(from) & target, MoveKind::QuietMove);
             }
 
             // Quiet Bishop Moves
@@ -287,7 +280,7 @@ impl Board {
                 move_list,
                 MoveKind::QuietMove,
                 bishops,
-                |square| self.get_bishop_attacks(square, occupancies),
+                |square| bishop_attacks(square, occupancies),
                 target,
                 pinned,
             );
@@ -297,7 +290,7 @@ impl Board {
                 move_list,
                 MoveKind::QuietMove,
                 rooks,
-                |square| self.get_rook_attacks(square, occupancies),
+                |square| rook_attacks(square, occupancies),
                 target,
                 pinned,
             );
@@ -307,7 +300,7 @@ impl Board {
                 move_list,
                 MoveKind::QuietMove,
                 queens,
-                |square| self.get_queen_attacks(square, occupancies),
+                |square| queen_attacks(square, occupancies),
                 target,
                 pinned,
             );
@@ -355,7 +348,7 @@ mod tests {
         let kind = MoveKind::DoublePawn;
 
         let m = Move::new(from, to, kind);
-        println!("{:?}, {:?}, {:?}", m.get_from(), m.get_to(), m.get_kind());
+        println!("{:?}, {:?}, {:?}", m.from(), m.to(), m.kind());
     }
 
     #[test]

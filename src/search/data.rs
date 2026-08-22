@@ -48,11 +48,11 @@ impl SharedData {
         );
     }
 
-    pub fn get_node_count(&self, id: usize) -> u64 {
+    pub fn node_count(&self, id: usize) -> u64 {
         self.nodes[id].load(Ordering::Relaxed)
     }
 
-    pub fn get_total_nodes_searched(&self) -> u64 {
+    pub fn total_nodes_searched(&self) -> u64 {
         self.nodes.iter().map(|n| n.load(Ordering::Relaxed)).sum()
     }
 
@@ -131,7 +131,7 @@ impl SearchData {
     }
 
     pub fn nodes(&self) -> u64 {
-        self.shared.get_node_count(self.id)
+        self.shared.node_count(self.id)
     }
 
     pub fn reset_nodes(&self) {
@@ -139,10 +139,10 @@ impl SearchData {
     }
 
     pub fn nodes_per_second(&self) -> usize {
-        (self.shared.get_total_nodes_searched() as f32 / self.time.elapsed().as_secs_f32()) as usize
+        (self.shared.total_nodes_searched() as f32 / self.time.elapsed().as_secs_f32()) as usize
     }
 
-    pub fn get_time_settings(&mut self) -> &mut TimeSettings {
+    pub fn time_settings(&mut self) -> &mut TimeSettings {
         &mut self.time.settings
     }
 
@@ -155,8 +155,8 @@ impl SearchData {
             for i in [1, 2, 4] {
                 self.conthistory.update(
                     self.stack[ply - i].conthistory,
-                    self.board.get_piece_at_square(m.get_from()),
-                    m.get_to(),
+                    self.board.piece_at_square(m.from()),
+                    m.to(),
                     bonus,
                 );
             }
@@ -185,7 +185,7 @@ impl SearchData {
                 self.contcorrhistory.update(
                     self.stack[ply - 2].contcorrhistory,
                     self.stack[ply - 1].piece,
-                    self.stack[ply - 1].m.get_to(),
+                    self.stack[ply - 1].m.to(),
                     bonus,
                 );
             }
@@ -194,7 +194,7 @@ impl SearchData {
                 self.contcorrhistory.update(
                     self.stack[ply - 4].contcorrhistory,
                     self.stack[ply - 1].piece,
-                    self.stack[ply - 1].m.get_to(),
+                    self.stack[ply - 1].m.to(),
                     bonus,
                 );
             }
@@ -213,7 +213,7 @@ impl SearchData {
                     self.contcorrhistory.get(
                         self.stack[ply - 2].contcorrhistory,
                         self.stack[ply - 1].piece,
-                        self.stack[ply - 1].m.get_to(),
+                        self.stack[ply - 1].m.to(),
                     )
                 } else {
                     0
@@ -224,7 +224,7 @@ impl SearchData {
                     self.contcorrhistory.get(
                         self.stack[ply - 4].contcorrhistory,
                         self.stack[ply - 1].piece,
-                        self.stack[ply - 1].m.get_to(),
+                        self.stack[ply - 1].m.to(),
                     )
                 } else {
                     0
@@ -233,12 +233,12 @@ impl SearchData {
             / 64
     }
 
-    pub fn get_conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
+    pub fn conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
         unsafe {
             self.conthistory.get(
                 self.stack[ply - index].conthistory,
-                self.board.get_piece_at_square(m.get_from()),
-                m.get_to(),
+                self.board.piece_at_square(m.from()),
+                m.to(),
             )
         }
     }
@@ -269,7 +269,7 @@ impl SearchData {
                 depth - 1,
                 self.time.elapsed().as_millis(),
                 score_print,
-                self.shared.get_total_nodes_searched(),
+                self.shared.total_nodes_searched(),
                 self.nodes_per_second(),
                 pv_display,
                 self.shared.tt.hashfull(),
@@ -280,9 +280,9 @@ impl SearchData {
     pub fn make_move(&mut self, m: Move, ply: isize) {
         self.network.push(&self.board, m);
 
-        let from = m.get_from();
-        let to = m.get_to();
-        let piece = self.board.get_piece_at_square(from);
+        let from = m.from();
+        let to = m.to();
+        let piece = self.board.piece_at_square(from);
 
         self.stack[ply].m = m;
         self.stack[ply].piece = piece;

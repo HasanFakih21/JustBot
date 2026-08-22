@@ -44,12 +44,12 @@ impl DualAccumulators {
     ) {
         let Some(delta) = &self.delta else { return };
 
-        let from = delta.m.get_from();
-        let to = delta.m.get_to();
+        let from = delta.m.from();
+        let to = delta.m.to();
         let stm = delta.stm;
         let moving_piece = delta.piece;
         let resulting_piece = if delta.m.is_promotion() {
-            delta.m.get_promoted_piece().unwrap()
+            delta.m.promoted_piece().unwrap()
         } else {
             moving_piece
         };
@@ -58,7 +58,7 @@ impl DualAccumulators {
         let sub1 = feature_index(stm, moving_piece, from, king_square, pov);
 
         if let Some(captured_piece) = delta.captured {
-            let capture_square = delta.m.get_capture_square();
+            let capture_square = delta.m.capture_square();
             let sub2 = feature_index(
                 stm.other(),
                 captured_piece,
@@ -128,7 +128,7 @@ impl DualAccumulators {
         parameters: &Parameters,
         cache: &mut AccumulatorCache,
     ) {
-        let king_square = board.get_king_square(pov);
+        let king_square = board.king_square(pov);
         let (input_bucket, hm) = input_context(king_square ^ (56 * pov as u8));
         let cache_data = cache.get_mut(pov, hm, input_bucket);
 
@@ -137,7 +137,7 @@ impl DualAccumulators {
 
         for side in Side::ALL {
             for piece in Piece::ALL {
-                let piece_bb = board.get_piece_bb(side, piece);
+                let piece_bb = board.piece_bb(side, piece);
                 let to_add = piece_bb & !(cache_data.pieces[piece] & cache_data.occupancies[side]);
                 let to_sub = !piece_bb & (cache_data.pieces[piece] & cache_data.occupancies[side]);
 

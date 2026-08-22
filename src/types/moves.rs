@@ -106,47 +106,44 @@ impl Move {
         Move(from as u16 | ((to as u16) << 6) | ((kind as u16) << 12))
     }
 
-    pub const fn get_capture_square(&self) -> Square {
+    pub const fn capture_square(&self) -> Square {
         if self.is_en_passant() {
-            Square::from(self.get_to() as usize ^ 8)
+            Square::from(self.to() as usize ^ 8)
         } else {
-            self.get_to()
+            self.to()
         }
     }
 
-    pub const fn get_from(&self) -> Square {
+    pub const fn from(&self) -> Square {
         Square::from((0x003F & self.0) as usize)
     }
 
-    pub const fn get_to(&self) -> Square {
+    pub const fn to(&self) -> Square {
         Square::from(((0x0FC0 & self.0) >> 6) as usize)
     }
 
-    pub const fn get_kind(&self) -> MoveKind {
+    pub const fn kind(&self) -> MoveKind {
         MoveKind::from(((0xF000 & self.0) >> 12) as u8)
     }
 
     pub const fn is_castling(&self) -> bool {
-        matches!(
-            self.get_kind(),
-            MoveKind::KingCastle | MoveKind::QueenCastle
-        )
+        matches!(self.kind(), MoveKind::KingCastle | MoveKind::QueenCastle)
     }
 
     pub const fn is_promotion(&self) -> bool {
-        self.get_kind().is_promotion()
+        self.kind().is_promotion()
     }
 
     pub const fn is_capture(&self) -> bool {
-        self.get_kind().is_capture()
+        self.kind().is_capture()
     }
 
     pub const fn is_en_passant(&self) -> bool {
-        matches!(self.get_kind(), MoveKind::EnPassant)
+        matches!(self.kind(), MoveKind::EnPassant)
     }
 
-    pub const fn get_promoted_piece(&self) -> Option<Piece> {
-        let kind = self.get_kind();
+    pub const fn promoted_piece(&self) -> Option<Piece> {
+        let kind = self.kind();
         let mut promoted_piece = None;
 
         if kind.is_knight_promotion() {
@@ -166,7 +163,7 @@ impl Move {
     }
 
     pub const fn castle_direction(&self) -> Option<usize> {
-        match self.get_kind() {
+        match self.kind() {
             MoveKind::KingCastle => Some(Castling::KING_SIDE),
             MoveKind::QueenCastle => Some(Castling::QUEEN_SIDE),
             _ => None,
@@ -181,13 +178,13 @@ impl Move {
         if board.frc
             && let Some(castle_kind) = self.castle_direction()
         {
-            let from = self.get_from();
+            let from = self.from();
             let to = board.castling_rooks[(from as usize > 7) as usize][castle_kind];
             return format!("{from}{to}");
         }
 
         let mut promotion_piece = "";
-        match self.get_kind() {
+        match self.kind() {
             MoveKind::BPromotion | MoveKind::BPromCapture => promotion_piece = "b",
             MoveKind::NPromotion | MoveKind::NPromCapture => promotion_piece = "n",
             MoveKind::RPromotion | MoveKind::RPromCapture => promotion_piece = "r",
@@ -195,7 +192,7 @@ impl Move {
             _ => (),
         }
 
-        format!("{}{}{}", self.get_from(), self.get_to(), promotion_piece)
+        format!("{}{}{}", self.from(), self.to(), promotion_piece)
     }
 }
 

@@ -15,8 +15,8 @@ impl QuietHistory {
     }
 
     pub fn update(&mut self, threats: BitBoard, side: Side, m: Move, bonus: i32) {
-        let from = m.get_from();
-        let to = m.get_to();
+        let from = m.from();
+        let to = m.to();
 
         let from_threats = threats.contains(from);
         let to_threats = threats.contains(to);
@@ -27,8 +27,8 @@ impl QuietHistory {
     }
 
     pub fn get(&self, threats: BitBoard, side: Side, m: Move) -> i32 {
-        let from = m.get_from();
-        let to = m.get_to();
+        let from = m.from();
+        let to = m.to();
 
         let from_threats = threats.contains(from);
         let to_threats = threats.contains(to);

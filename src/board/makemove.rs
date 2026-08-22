@@ -1,15 +1,18 @@
 use super::Board;
-use crate::types::{
-    Castling, OptionPiece, Piece, ROOK_TO, Side, Square,
-    moves::{Move, MoveKind},
+use crate::{
+    lookup::{bishop_attacks, pawn_attacks, rook_attacks},
+    types::{
+        Castling, OptionPiece, Piece, ROOK_TO, Side, Square,
+        moves::{Move, MoveKind},
+    },
 };
 
 impl Board {
     pub fn make_move(&mut self, m: Move) {
-        let from = m.get_from();
-        let to = m.get_to();
-        let kind = m.get_kind();
-        let side_piece = self.get_piece_at_square(from).unwrap();
+        let from = m.from();
+        let to = m.to();
+        let kind = m.kind();
+        let side_piece = self.piece_at_square(from).unwrap();
         let side = side_piece.side();
         let piece = side_piece.kind();
 
@@ -52,13 +55,11 @@ impl Board {
             self.state.castling_rights.clear_king_side(side);
             self.state.castling_rights.clear_queen_side(side);
             self.place_piece(side, Piece::Rook, ROOK_TO[side][castle_kind]);
-        } else if let OptionPiece::Some(sided_piece) =
-            self.get_piece_at_square(m.get_capture_square())
-        {
+        } else if let OptionPiece::Some(sided_piece) = self.piece_at_square(m.capture_square()) {
             let other_side = sided_piece.side();
             let captured_piece = sided_piece.kind();
             self.remove_piece(side, piece, from);
-            self.remove_piece(other_side, captured_piece, m.get_capture_square());
+            self.remove_piece(other_side, captured_piece, m.capture_square());
             if captured_piece == Piece::Rook {
                 if to == self.castling_rooks[other_side][Castling::KING_SIDE] {
                     self.state.castling_rights.clear_king_side(other_side);
@@ -70,7 +71,7 @@ impl Board {
             self.remove_piece(side, piece, from);
         }
 
-        if let Some(promotion_piece) = m.get_promoted_piece() {
+        if let Some(promotion_piece) = m.promoted_piece() {
             self.place_piece(side, promotion_piece, to);
         } else {
             self.place_piece(side, piece, to);
@@ -98,26 +99,25 @@ impl Board {
     pub fn update_en_passant(&mut self) {
         if let Some(enpassant) = self.state.enpassant {
             let stm = self.state.side_to_move;
-            let king_square = self.get_king_square(stm);
+            let king_square = self.king_square(stm);
             let pawn_square = Square::from(enpassant as usize ^ 8);
 
             // Update occupancy as if enpassant pawn was taken for each possible ep taker
-            let occupancies = self.get_all_occupancy() ^ enpassant.to_bb() ^ pawn_square.to_bb();
+            let occupancies = self.all_occupancy() ^ enpassant.to_bb() ^ pawn_square.to_bb();
             let possible_takers =
-                self.get_pawn_attacks(enpassant, stm.other()) & self.get_piece_bb(stm, Piece::Pawn);
+                pawn_attacks(enpassant, stm.other()) & self.piece_bb(stm, Piece::Pawn);
 
             debug_assert!(possible_takers.count_bits() <= 2);
 
             for taker in possible_takers {
                 let new_occ = occupancies ^ taker.to_bb();
-                let bishop_queens = self.get_piece_bb(stm.other(), Piece::Bishop)
-                    | self.get_piece_bb(stm.other(), Piece::Queen);
-                let bishop_queen_checkers =
-                    self.get_bishop_attacks(king_square, new_occ) & bishop_queens;
+                let bishop_queens = self.piece_bb(stm.other(), Piece::Bishop)
+                    | self.piece_bb(stm.other(), Piece::Queen);
+                let bishop_queen_checkers = bishop_attacks(king_square, new_occ) & bishop_queens;
 
-                let rook_queens = self.get_piece_bb(stm.other(), Piece::Rook)
-                    | self.get_piece_bb(stm.other(), Piece::Queen);
-                let rook_queen_checkers = self.get_rook_attacks(king_square, new_occ) & rook_queens;
+                let rook_queens = self.piece_bb(stm.other(), Piece::Rook)
+                    | self.piece_bb(stm.other(), Piece::Queen);
+                let rook_queen_checkers = rook_attacks(king_square, new_occ) & rook_queens;
                 let checkers = bishop_queen_checkers | rook_queen_checkers;
 
                 if checkers.is_empty() {

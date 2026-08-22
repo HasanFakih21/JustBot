@@ -77,8 +77,8 @@ impl Network {
 
             let needs_refresh = delta.piece == Piece::King
                 && delta.stm == pov
-                && input_context(delta.m.get_from() ^ (56 * (delta.stm == Side::Black) as u8))
-                    != input_context(delta.m.get_to() ^ (56 * (delta.stm == Side::Black) as u8));
+                && input_context(delta.m.from() ^ (56 * (delta.stm == Side::Black) as u8))
+                    != input_context(delta.m.to() ^ (56 * (delta.stm == Side::Black) as u8));
 
             if needs_refresh {
                 return None;
@@ -89,19 +89,14 @@ impl Network {
     }
 
     pub fn push(&mut self, board: &Board, m: Move) {
-        debug_assert!(board.get_piece_at_square(m.get_from()) != OptionPiece::None);
+        debug_assert!(board.piece_at_square(m.from()) != OptionPiece::None);
         self.index += 1;
         self.stack[self.index].delta = Some(Delta {
             m,
             stm: board.state.side_to_move,
-            piece: board.get_piece_at_square(m.get_from()).unwrap().kind(),
+            piece: board.piece_at_square(m.from()).unwrap().kind(),
             captured: if m.is_capture() {
-                Some(
-                    board
-                        .get_piece_at_square(m.get_capture_square())
-                        .unwrap()
-                        .kind(),
-                )
+                Some(board.piece_at_square(m.capture_square()).unwrap().kind())
             } else {
                 None
             },
@@ -122,7 +117,7 @@ impl Network {
             match self.can_update(pov) {
                 Some(last_accurate) => {
                     // Update all the not yet updated accumulators
-                    let king_square = board.get_king_square(pov);
+                    let king_square = board.king_square(pov);
                     for index in last_accurate..self.index {
                         if let Some((prev, [current, ..])) =
                             self.stack.split_at_mut_checked(index + 1)
@@ -260,7 +255,7 @@ fn input_bucket(king_square: Square) -> usize {
 #[inline]
 fn output_bucket(pos: &Board) -> usize {
     let divisor = 32usize.div_ceil(NUM_OUTPUT_BUCKETS);
-    ((pos.get_all_occupancy().count_bits() - 2) / divisor).min(NUM_OUTPUT_BUCKETS - 1)
+    ((pos.all_occupancy().count_bits() - 2) / divisor).min(NUM_OUTPUT_BUCKETS - 1)
 }
 
 #[cfg(test)]
