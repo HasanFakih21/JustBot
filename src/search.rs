@@ -1,4 +1,4 @@
-use crate::search::data::{SearchData, Status};
+use crate::search::data::{Report, SearchData, Status};
 use crate::search::movepicker::MovePicker;
 use crate::types::stack::Stack;
 use crate::types::stackvec::StackVec;
@@ -93,7 +93,10 @@ pub fn search_runner(data: &mut SearchData) {
         data.root_moves
             .sort_by_key(|rm| std::cmp::Reverse(rm.score));
         best_move = Some(data.root_moves[0].m);
-        data.print_uci_info(depth);
+
+        if data.report == Report::Full {
+            data.print_uci_info(depth);
+        }
 
         let multiplier = || {
             let ratio = data.root_moves[0].nodes as f32 / data.nodes() as f32;
@@ -108,6 +111,10 @@ pub fn search_runner(data: &mut SearchData) {
         delta = 25;
         alpha = (score - delta).max(-Score::INFINITY);
         beta = (score + delta).min(Score::INFINITY);
+    }
+
+    if data.report == Report::Minimal {
+        data.print_uci_info(depth);
     }
 
     data.best_move = best_move;
@@ -495,7 +502,10 @@ pub fn search<Node: NodeType>(
             if score > alpha {
                 best_move = Some(m);
                 bound = Bound::Exact;
-                data.pv.add(m, ply);
+
+                if !Node::ROOT && Node::PV {
+                    data.pv.add(m, ply);
+                }
 
                 // Cutoff
                 if score >= beta {

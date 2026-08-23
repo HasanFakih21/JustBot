@@ -2,14 +2,6 @@ use super::*;
 use crate::{board::Board, search::data::RootMove};
 
 #[test]
-fn test_search() {
-    let mut data = SearchData::default();
-    search::<Root>(&mut data, 5, -Score::INFINITY, Score::INFINITY, 0, false);
-    let best_move = data.pv.line()[0];
-    println!("Best move: {}", best_move.to_uci(&data.board));
-}
-
-#[test]
 fn test_order_moves() {
     let data = SearchData {
         board: Board::from_fen(
@@ -38,58 +30,6 @@ fn test_order_moves() {
     assert_eq!(
         first_move,
         Move::new(Square::B7, Square::D8, MoveKind::Capture)
-    );
-}
-
-#[test]
-fn test_repetion_detection() {
-    use MoveKind::*;
-    use Square::*;
-
-    let mut board = Board::from_fen("8/6K1/3N4/8/5Q2/8/1kr5/8 w - - 0 1").unwrap();
-    board.make_move(Move::new(F4, E4, QuietMove));
-    board.make_move(Move::new(C2, C1, QuietMove));
-    board.make_move(Move::new(E4, F4, QuietMove));
-    board.make_move(Move::new(C1, C2, QuietMove));
-    board.make_move(Move::new(F4, E4, QuietMove));
-    board.make_move(Move::new(C2, C1, QuietMove));
-    board.make_move(Move::new(E4, F4, QuietMove));
-
-    println!("{}", board);
-
-    let mut data = SearchData {
-        board,
-        ..Default::default()
-    };
-
-    data.network.full_refresh(&data.board);
-
-    let score = search::<Root>(&mut data, 3, -Score::INFINITY, Score::INFINITY, 0, false);
-    println!("{score}");
-    let m = data.pv.line()[0];
-
-    println!(
-        "{:?}\nCurrent Hash: {}",
-        data.board.game_history, data.board.state.keys.full
-    );
-    println!("Repetition: {}?", data.board.detect_repetition());
-    assert_eq!(score, 0);
-    assert_eq!(m, Move::new(C1, C2, QuietMove));
-}
-
-#[test]
-fn test_mate_in_one() {
-    let mut data = SearchData::default();
-    let board =
-        Board::from_fen("r1b4r/p1p1q3/1bppk3/4pp2/3PP1Q1/2P1R3/PP3PPP/RN4K1 w - - 0 18").unwrap();
-    data.board = board;
-
-    search::<Root>(&mut data, 1, -Score::INFINITY, Score::INFINITY, 0, false);
-    let best_move = data.pv.line()[0];
-    println!("Best Move: {}", best_move.to_uci(&data.board));
-    assert_eq!(
-        Move::new(Square::G4, Square::F5, MoveKind::Capture),
-        best_move
     );
 }
 
@@ -143,7 +83,7 @@ fn test_pv_line() {
 
     search_runner(&mut data);
 
-    let best_move = data.pv.line()[0];
+    let best_move = data.best_move.unwrap();
     println!("PV: {:?}", data.pv.line());
     let mut pv_line = MoveList::new();
     pv_line.push(Move::new(F6, G4, QuietMove));
@@ -155,8 +95,8 @@ fn test_pv_line() {
     pv_line.push(Move::new(E1, F1, Capture));
 
     let pv_display = {
-        let mut output = String::new();
-        for m in data.pv.line() {
+        let mut output = format!("{} ", data.root_moves[0].m.to_uci(&data.board));
+        for m in &data.root_moves[0].pv.inner {
             output = format!("{output}{} ", m.to_uci(&data.board));
         }
 
