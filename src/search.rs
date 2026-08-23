@@ -502,7 +502,10 @@ pub fn search<Node: NodeType>(
             if score > alpha {
                 best_move = Some(m);
                 bound = Bound::Exact;
-                data.pv.add(m, ply);
+
+                if !Node::ROOT && Node::PV {
+                    data.pv.add(m, ply);
+                }
 
                 // Cutoff
                 if score >= beta {
