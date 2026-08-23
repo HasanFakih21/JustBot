@@ -91,6 +91,7 @@ pub struct SearchData {
     pub report: Report,
     pub stack: Box<Stack>,
     pub root_moves: Vec<RootMove>,
+    pub root_depth: i32,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -114,6 +115,7 @@ impl SearchData {
             report: Report::None,
             stack: Stack::new(),
             root_moves: Vec::new(),
+            root_depth: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -243,19 +245,38 @@ impl SearchData {
         }
     }
 
-    pub fn print_uci_info(&self, depth: i32) {
-        // All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
+    pub fn print_uci_info(&self) {
+        debug_assert!(self.report != Report::None);
         let root_move = &self.root_moves[0];
-        let score = root_move.score;
+
+        let mut upperbound = root_move.upperbound;
+        let mut lowerbound = root_move.lowerbound;
+
+        let mut score = root_move.display_score;
+
+        if root_move.score == -Score::INFINITY {
+            score = root_move.previous_score;
+
+            upperbound = false;
+            lowerbound = false;
+        }
 
         // Report mate score
-        let score_print = if is_decisive(score) {
+        let mut score_print = if is_decisive(score) {
             let num_plies = Score::MATE - score.abs();
             let mate_in = score.signum() * ((num_plies + 1) / 2);
             format!("mate {}", mate_in)
         } else {
             format!("cp {}", score)
         };
+
+        if upperbound {
+            score_print.push_str(" upperbound");
+        }
+
+        if lowerbound {
+            score_print.push_str(" lowerbound");
+        }
 
         let pv_display = {
             let mut output = format!("{} ", root_move.m.to_uci(&self.board));
@@ -268,7 +289,7 @@ impl SearchData {
 
         println!(
             "info depth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
-            depth - 1,
+            root_move.searched_depth,
             self.time.elapsed().as_millis(),
             score_print,
             self.shared.total_nodes_searched(),
@@ -312,12 +333,33 @@ pub struct CorrectionHistories {
     pub non_pawn: [CorrectionHistory; 2],
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct RootMove {
     pub m: Move,
-    pub score: i32,
     pub nodes: u64,
     pub pv: RootPV,
+    pub score: i32,
+    pub previous_score: i32,
+    pub display_score: i32,
+    pub upperbound: bool,
+    pub lowerbound: bool,
+    pub searched_depth: i32,
+}
+
+impl Default for RootMove {
+    fn default() -> Self {
+        RootMove {
+            m: Move::default(),
+            nodes: 0,
+            pv: RootPV::default(),
+            score: -Score::INFINITY,
+            previous_score: -Score::INFINITY,
+            display_score: -Score::INFINITY,
+            upperbound: false,
+            lowerbound: false,
+            searched_depth: 0,
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]

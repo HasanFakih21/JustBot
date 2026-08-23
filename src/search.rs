@@ -54,9 +54,10 @@ pub fn search_runner(data: &mut SearchData) {
 
     // Iterative Deepening
     loop {
+        data.root_depth = depth;
         data.stack = Stack::new();
 
-        if (data.time.hard_limit(data.nodes(), data.id)
+        if (data.time.hard_limit(data)
             || data
                 .time
                 .node_limit()
@@ -90,12 +91,16 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         depth += 1;
+
         data.root_moves
             .sort_by_key(|rm| std::cmp::Reverse(rm.score));
         best_move = Some(data.root_moves[0].m);
+        data.root_moves
+            .iter_mut()
+            .for_each(|rm| rm.previous_score = rm.score);
 
         if data.report == Report::Full {
-            data.print_uci_info(depth);
+            data.print_uci_info();
         }
 
         let multiplier = || {
@@ -114,7 +119,7 @@ pub fn search_runner(data: &mut SearchData) {
     }
 
     if data.report == Report::Minimal {
-        data.print_uci_info(depth);
+        data.print_uci_info();
     }
 
     data.best_move = best_move;
@@ -171,7 +176,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Check for Time Outs
-    if (data.time.hard_limit(data.nodes(), data.id)
+    if (data.time.hard_limit(data)
         || data
             .time
             .node_limit()
@@ -489,6 +494,21 @@ pub fn search<Node: NodeType>(
 
                 if move_count == 1 || score > alpha {
                     root_move.score = score;
+                    root_move.display_score = score;
+
+                    root_move.searched_depth = data.root_depth;
+
+                    root_move.upperbound = false;
+                    root_move.lowerbound = false;
+
+                    if score <= alpha {
+                        root_move.display_score = alpha;
+                        root_move.upperbound = true;
+                    } else if score >= beta {
+                        root_move.display_score = beta;
+                        root_move.lowerbound = true;
+                    }
+
                     root_move.pv.commit(&data.pv.inner[1][..data.pv.len[1]]);
                 } else {
                     root_move.score = -Score::INFINITY;
@@ -636,7 +656,7 @@ pub fn quiesce<Node: NodeType>(
         return Score::DRAW;
     }
 
-    if (data.time.hard_limit(data.nodes(), data.id)
+    if (data.time.hard_limit(data)
         || data
             .time
             .node_limit()
