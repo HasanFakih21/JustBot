@@ -246,7 +246,11 @@ impl SearchData {
     pub fn print_uci_info(&self, depth: i32) {
         // All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
         let root_move = &self.root_moves[0];
-        let score = root_move.score;
+        let score = if root_move.score == -Score::INFINITY {
+            root_move.previous_score
+        } else {
+            root_move.score
+        };
 
         // Report mate score
         let score_print = if is_decisive(score) {
@@ -312,12 +316,29 @@ pub struct CorrectionHistories {
     pub non_pawn: [CorrectionHistory; 2],
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct RootMove {
     pub m: Move,
-    pub score: i32,
     pub nodes: u64,
     pub pv: RootPV,
+    pub score: i32,
+    pub previous_score: i32,
+    pub upperbound: bool,
+    pub lowerbound: bool,
+}
+
+impl Default for RootMove {
+    fn default() -> Self {
+        RootMove {
+            m: Move::default(),
+            nodes: 0,
+            pv: RootPV::default(),
+            score: -Score::INFINITY,
+            previous_score: -Score::INFINITY,
+            upperbound: false,
+            lowerbound: false,
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
