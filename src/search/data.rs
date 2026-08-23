@@ -243,9 +243,12 @@ impl SearchData {
         }
     }
 
-    pub fn print_uci_info(&self, score: i32, depth: i32, board: &Board) {
+    pub fn print_uci_info(&self, depth: i32) {
         // All infos belonging to the pv should be sent together e.g. info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
         if self.report {
+            let root_move = &self.root_moves[0];
+            let score = root_move.score;
+
             // Report mate score
             let score_print = if is_decisive(score) {
                 let num_plies = Score::MATE - score.abs();
@@ -256,9 +259,9 @@ impl SearchData {
             };
 
             let pv_display = {
-                let mut output = String::new();
-                for m in self.pv.line() {
-                    output = format!("{output}{} ", m.to_uci(board));
+                let mut output = format!("{} ", root_move.m.to_uci(&self.board));
+                for m in &root_move.pv.inner {
+                    output = format!("{output}{} ", m.to_uci(&self.board));
                 }
 
                 output
@@ -316,4 +319,16 @@ pub struct RootMove {
     pub m: Move,
     pub score: i32,
     pub nodes: u64,
+    pub pv: RootPV,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct RootPV {
+    pub inner: Vec<Move>,
+}
+
+impl RootPV {
+    pub fn commit(&mut self, line: &[Move]) {
+        self.inner = Vec::from(line)
+    }
 }

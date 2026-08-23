@@ -90,20 +90,14 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         depth += 1;
-        best_move = data.pv.line().first().copied();
-        data.print_uci_info(score, depth, &data.board);
+        data.root_moves
+            .sort_by_key(|rm| std::cmp::Reverse(rm.score));
+        best_move = Some(data.root_moves[0].m);
+        data.print_uci_info(depth);
 
         let multiplier = || {
-            (2.977
-                - (data
-                    .root_moves
-                    .iter()
-                    .find(|rm| rm.m == best_move.unwrap())
-                    .unwrap()
-                    .nodes as f32
-                    / data.nodes() as f32)
-                    * 2.495)
-                .max(0.553)
+            let ratio = data.root_moves[0].nodes as f32 / data.nodes() as f32;
+            (2.977 - ratio * 2.495).max(0.553)
         };
 
         if data.time.soft_limit(multiplier) && data.id == 0 {
@@ -485,6 +479,13 @@ pub fn search<Node: NodeType>(
             let nodes = data.nodes();
             if let Some(root_move) = data.root_moves.iter_mut().find(|rm| rm.m == m) {
                 root_move.nodes += nodes - initial_nodes;
+
+                if move_count == 1 || score > alpha {
+                    root_move.score = score;
+                    root_move.pv.commit(&data.pv.inner[1][..data.pv.len[1]]);
+                } else {
+                    root_move.score = -Score::INFINITY;
+                }
             };
         }
 

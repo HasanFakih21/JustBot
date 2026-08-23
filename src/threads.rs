@@ -41,8 +41,7 @@ impl SearchThreads {
             .iter()
             .map(|e| RootMove {
                 m: e.mv,
-                nodes: 0,
-                score: 0,
+                ..Default::default()
             })
             .collect();
 

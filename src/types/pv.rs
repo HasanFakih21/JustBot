@@ -2,8 +2,8 @@ use crate::types::{MAX_PLY, Move};
 
 #[derive(Debug)]
 pub struct PVTable {
-    inner: Box<[[Move; MAX_PLY + 1]]>,
-    len: [usize; MAX_PLY + 1],
+    pub inner: Box<[[Move; MAX_PLY + 1]]>,
+    pub len: [usize; MAX_PLY + 1],
 }
 
 impl PVTable {

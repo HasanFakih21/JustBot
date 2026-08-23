@@ -107,8 +107,7 @@ fn test_mate_in_four() {
         .iter()
         .map(|e| RootMove {
             m: e.mv,
-            nodes: 0,
-            score: 0,
+            ..Default::default()
         })
         .collect();
 
@@ -136,8 +135,7 @@ fn test_pv_line() {
         .iter()
         .map(|e| RootMove {
             m: e.mv,
-            nodes: 0,
-            score: 0,
+            ..Default::default()
         })
         .collect();
     data.time_settings().nodes = 20000;
@@ -207,8 +205,7 @@ fn test_transposition_timeout() {
         .iter()
         .map(|e| RootMove {
             m: e.mv,
-            nodes: 0,
-            score: 0,
+            ..Default::default()
         })
         .collect();
 
