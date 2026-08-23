@@ -54,6 +54,7 @@ pub fn search_runner(data: &mut SearchData) {
 
     // Iterative Deepening
     loop {
+        data.root_depth = depth;
         data.stack = Stack::new();
 
         if (data.time.hard_limit(data.nodes(), data.id)
@@ -90,6 +91,7 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         depth += 1;
+
         data.root_moves
             .sort_by_key(|rm| std::cmp::Reverse(rm.score));
         best_move = Some(data.root_moves[0].m);
@@ -98,7 +100,7 @@ pub fn search_runner(data: &mut SearchData) {
             .for_each(|rm| rm.previous_score = rm.score);
 
         if data.report == Report::Full {
-            data.print_uci_info(depth);
+            data.print_uci_info();
         }
 
         let multiplier = || {
@@ -117,7 +119,7 @@ pub fn search_runner(data: &mut SearchData) {
     }
 
     if data.report == Report::Minimal {
-        data.print_uci_info(depth);
+        data.print_uci_info();
     }
 
     data.best_move = best_move;
@@ -492,12 +494,18 @@ pub fn search<Node: NodeType>(
 
                 if move_count == 1 || score > alpha {
                     root_move.score = score;
+                    root_move.display_score = score;
+
+                    root_move.searched_depth = data.root_depth;
+
                     root_move.upperbound = false;
                     root_move.lowerbound = false;
 
                     if score <= alpha {
+                        root_move.display_score = alpha;
                         root_move.upperbound = true;
                     } else if score >= beta {
+                        root_move.display_score = beta;
                         root_move.lowerbound = true;
                     }
 
