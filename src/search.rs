@@ -57,7 +57,7 @@ pub fn search_runner(data: &mut SearchData) {
         data.root_depth = depth;
         data.stack = Stack::new();
 
-        if (data.time.hard_limit(data.nodes(), data.id)
+        if (data.time.hard_limit(data)
             || data
                 .time
                 .node_limit()
@@ -176,7 +176,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Check for Time Outs
-    if (data.time.hard_limit(data.nodes(), data.id)
+    if (data.time.hard_limit(data)
         || data
             .time
             .node_limit()
@@ -656,7 +656,7 @@ pub fn quiesce<Node: NodeType>(
         return Score::DRAW;
     }
 
-    if (data.time.hard_limit(data.nodes(), data.id)
+    if (data.time.hard_limit(data)
         || data
             .time
             .node_limit()

@@ -1,6 +1,9 @@
 use std::time::{Duration, Instant};
 
-use crate::types::{MAX_PLY, MOVE_OVERHEAD, Side};
+use crate::{
+    search::data::SearchData,
+    types::{MAX_PLY, MOVE_OVERHEAD, Side},
+};
 
 #[derive(Debug, Clone)]
 pub struct TimeManager {
@@ -145,8 +148,8 @@ impl TimeManager {
         }
     }
 
-    pub fn hard_limit(&self, nodes: u64, id: usize) -> bool {
-        if !nodes.is_multiple_of(2048) || id != 0 {
+    pub fn hard_limit(&self, data: &SearchData) -> bool {
+        if !data.nodes().is_multiple_of(2048) || data.id != 0 || data.root_depth <= 1 {
             return false;
         }
 
