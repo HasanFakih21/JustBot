@@ -563,7 +563,7 @@ pub fn search<Node: NodeType>(
         let is_quiet = m.kind().is_quiet();
 
         let quiet_bonus = (321 * depth).min(935) - 228;
-        let quiet_malus = (289 * depth).min(948) - 232;
+        let quiet_malus = 0;
 
         let noisy_bonus = (257 * depth).min(1058) - 196;
         let noisy_malus = (302 * depth).min(937) - 273;
