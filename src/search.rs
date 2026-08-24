@@ -645,16 +645,16 @@ pub fn search<Node: NodeType>(
             ply,
             Node::PV,
         );
-    }
 
-    // Update Correction Histories
-    if !in_check
-        && best_move.is_none_or(|m| m.kind().is_quiet())
-        && ((bound == Bound::Lower && best_score >= static_eval)
-            || (bound == Bound::Upper && best_score <= static_eval)
-            || bound == Bound::Exact)
-    {
-        data.update_correction_histories(best_score - static_eval, depth, ply);
+        // Update Correction Histories
+        if !in_check
+            && best_move.is_none_or(|m| m.kind().is_quiet())
+            && ((bound == Bound::Lower && best_score >= static_eval)
+                || (bound == Bound::Upper && best_score <= static_eval)
+                || bound == Bound::Exact)
+        {
+            data.update_correction_histories(best_score - static_eval, depth, ply);
+        }
     }
 
     best_score
