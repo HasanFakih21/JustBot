@@ -26,7 +26,7 @@ mod simd {
     pub use scalar::*;
 }
 
-const HIDDEN_SIZE: usize = 768;
+const HIDDEN_SIZE: usize = 1024;
 const SCALE: i32 = 400;
 const NUM_OUTPUT_BUCKETS: usize = 8;
 const QA: i16 = 255;
