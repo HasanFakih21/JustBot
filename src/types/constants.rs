@@ -67,8 +67,8 @@ pub static LMR_TABLE: LazyLock<Box<[[[i32; 64]; 128]; 2]>> = {
     LazyLock::new(|| {
         let mut table: Box<[[[i32; 64]; 128]; 2]> = zeroed_box();
 
-        for depth in 0..128 {
-            for move_count in 0..64 {
+        for depth in 1..128 {
+            for move_count in 1..64 {
                 // Quiet Moves
                 table[1][depth][move_count] = ((0.7851
                     + (move_count as f32).ln() * (depth as f32).ln() / 2.3482)
