@@ -11,7 +11,7 @@ impl QuietHistory {
     const MAX_HISTORY: i32 = 8128;
 
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        Self(zeroed_box())
     }
 
     pub fn update(&mut self, threats: BitBoard, side: Side, m: Move, bonus: i32) {
@@ -46,7 +46,7 @@ impl NoisyHistory {
     const MAX_HISTORY: i32 = 8209;
 
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        Self(zeroed_box())
     }
 
     pub fn update(
@@ -80,7 +80,7 @@ impl ContinuationHistory {
     pub const MAX_HISTORY: i32 = 7813;
 
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        Self(zeroed_box())
     }
 
     pub fn subtable(
@@ -124,7 +124,7 @@ impl ContinuationCorrectionHistory {
     pub const MAX_HISTORY: i32 = 12000;
 
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        Self(zeroed_box())
     }
 
     pub fn subtable(
@@ -171,7 +171,7 @@ impl CorrectionHistory {
     const MASK: usize = Self::SIZE - 1;
 
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        Self(zeroed_box())
     }
 
     pub fn update(&mut self, stm: Side, key: u64, bonus: i32) {
@@ -195,7 +195,7 @@ impl PawnHistory {
     const MASK: usize = Self::SIZE - 1;
 
     pub fn new() -> Self {
-        Self(allocate_empty_history())
+        Self(zeroed_box())
     }
 
     pub fn update(&mut self, key: u64, piece: OptionPiece<SidedPiece>, to: Square, bonus: i32) {
@@ -208,10 +208,13 @@ impl PawnHistory {
     }
 }
 
-fn allocate_empty_history<T>() -> Box<T> {
+pub fn zeroed_box<T>() -> Box<T> {
     let layout = std::alloc::Layout::new::<T>();
     unsafe {
         let p = std::alloc::alloc_zeroed(layout);
+        if p.is_null() {
+            std::alloc::handle_alloc_error(layout);
+        }
         Box::<T>::from_raw(p.cast())
     }
 }
