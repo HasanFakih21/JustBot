@@ -416,7 +416,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && !is_win(beta)
                 && is_quiet
-                && move_count as i32 > (3011 + 1493 * depth * depth) / 1024
+                && move_count > (3011 + 1493 * depth * depth) / 1024
             {
                 skip_quiets = true;
                 continue;
@@ -454,7 +454,7 @@ pub fn search<Node: NodeType>(
 
         // Late Move Reductions (LMR)
         if depth > 2 && move_count > 1 {
-            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            let mut r = 420 * depth.ilog2() as i32;
             r += 217 * !improving as i32;
             r -= 197 * tt_pv as i32;
             r += 447 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
