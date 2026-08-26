@@ -454,7 +454,7 @@ pub fn search<Node: NodeType>(
 
         // Late Move Reductions (LMR)
         if depth > 2 && move_count > 1 {
-            let mut r = 420 * depth.ilog2() as i32;
+            let mut r = 624 * depth.ilog2() as i32;
             r += 217 * !improving as i32;
             r -= 197 * tt_pv as i32;
             r += 447 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
