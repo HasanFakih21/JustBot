@@ -375,6 +375,7 @@ pub fn search<Node: NodeType>(
     }
 
     let mut move_count = 0;
+    let mut alpha_raises = 0;
     let mut best_score = -Score::INFINITY;
     let mut best_move: Option<Move> = None;
     // Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
@@ -460,6 +461,7 @@ pub fn search<Node: NodeType>(
             r += 447 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 296 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 449 * history / 4096;
+            r += 600 * alpha_raises;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
@@ -534,6 +536,7 @@ pub fn search<Node: NodeType>(
                 }
 
                 alpha = score;
+                alpha_raises += 1;
             }
         }
 
