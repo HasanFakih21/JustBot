@@ -1,3 +1,6 @@
+use crate::search::data::{Report, SearchData, Status};
+use crate::search::movepicker::MovePicker;
+use crate::tools::parameters::*;
 use crate::tools::parameters::{
     fail_high_delta, fail_low_delta, fp_history, fp_offset, fp_scale, hindight_ext_reduction, hindight_red_reduction,
     hindsight_red_eval, hp_scale, lmp_base1, lmp_base2, lmp_improivng, main_see_max, main_see_offset, main_see_scale,
@@ -6,14 +9,6 @@ use crate::tools::parameters::{
     se_triple_new_pv, se_triple_pv, tt_cutoff_quiet_max, tt_cutoff_quiet_offset, tt_cutoff_quiet_scale,
 };
 use crate::types::*;
-use crate::types::{stack::Stack, stackvec::StackVec};
-use crate::{
-    search::{
-        data::{Report, SearchData, Status},
-        movepicker::MovePicker,
-    },
-    tools::parameters::init_delta,
-};
 
 pub mod data;
 pub mod movepicker;
@@ -47,6 +42,7 @@ impl NodeType for Root {
 }
 
 pub fn search_runner(data: &mut SearchData) {
+    data.lmr_table.init();
     data.start_time();
     data.network.full_refresh(&data.board);
     data.pv.clear(0);
@@ -495,7 +491,7 @@ pub fn search<Node: NodeType>(
 
         // Late Move Reductions (LMR)
         if depth >= 2 && move_count > 1 {
-            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            let mut r = data.lmr_table.base[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r += 217 * !improving as i32;
             r -= 197 * tt_pv as i32;
             r += 447 * (tt_score.is_some_and(|s| s <= alpha)) as i32;

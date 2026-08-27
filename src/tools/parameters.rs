@@ -128,4 +128,15 @@ tunable_params! {
     main_see_max = -34, -100..=0, true;
 
     // LMR
+    lmr_quiet_base = 5551, 2550..=8550, true;
+    lmr_noisy_base = 1051, -3050..=4050, true;
+
+    lmr_quiet_div = 24482, 20000..=28500, true;
+    lmr_noisy_div = 30004, 25000..=35000, true;
+
+    lmr_improving = 217, 100..=400, true;
+    lmr_ttpv = 197, 100..=400, true;
+    lmr_tt_score = 447, 250..=600, true;
+    lmr_tt_depth = 296, 150..=500, true;
+    lmr_history = 449, 300..=800, true;
 }
