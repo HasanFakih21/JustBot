@@ -8,8 +8,8 @@ use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory,
-    PawnHistory, STARTING_FEN, Score, Side, is_decisive,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, LMRTable, Move,
+    NoisyHistory, PawnHistory, STARTING_FEN, Score, Side, is_decisive,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -92,6 +92,7 @@ pub struct SearchData {
     pub stack: Box<Stack>,
     pub root_moves: Vec<RootMove>,
     pub root_depth: i32,
+    pub lmr_table: LMRTable,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -116,6 +117,7 @@ impl SearchData {
             stack: Stack::new(),
             root_moves: Vec::new(),
             root_depth: 0,
+            lmr_table: LMRTable::default(),
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),

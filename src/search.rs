@@ -1,5 +1,6 @@
 use crate::search::data::{Report, SearchData, Status};
 use crate::search::movepicker::MovePicker;
+use crate::tools::parameters::*;
 use crate::types::stack::Stack;
 use crate::types::stackvec::StackVec;
 use crate::types::*;
@@ -36,6 +37,7 @@ impl NodeType for Root {
 }
 
 pub fn search_runner(data: &mut SearchData) {
+    data.lmr_table.init();
     data.reset_pv();
     data.start_time();
     data.network.full_refresh(&data.board);
@@ -454,12 +456,13 @@ pub fn search<Node: NodeType>(
 
         // Late Move Reductions (LMR)
         if depth > 2 && move_count > 1 {
-            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
-            r += 217 * !improving as i32;
-            r -= 197 * tt_pv as i32;
-            r += 447 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
-            r += 296 * (tt_depth.is_some_and(|d| d < depth)) as i32;
-            r -= 449 * history / 4096;
+            let mut r =
+                data.lmr_table.base[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            r += lmr_improving() * !improving as i32;
+            r -= lmr_ttpv() * tt_pv as i32;
+            r += lmr_tt_score() * (tt_score.is_some_and(|s| s <= alpha)) as i32;
+            r += lmr_tt_depth() * (tt_depth.is_some_and(|d| d < depth)) as i32;
+            r -= lmr_history() * history / 4096;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
