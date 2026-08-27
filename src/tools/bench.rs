@@ -73,7 +73,7 @@ pub fn bench() -> (u64, u64) {
         time_manager.settings.depth = 12;
         time_manager.set_depth_limit();
 
-        pool.start(&board, time_manager, &shared, Report::None);
+        pool.start(&board, time_manager, Report::None);
         total_node_count += shared.total_nodes_searched();
     }
 

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     board::Board,
     search::{
@@ -11,7 +9,7 @@ use crate::{
 };
 
 pub struct SearchThreads {
-    pub threads: Vec<SearchData>,
+    threads: Vec<SearchData>,
 }
 
 impl SearchThreads {
@@ -24,17 +22,13 @@ impl SearchThreads {
         SearchThreads { threads }
     }
 
-    pub fn start(
-        &mut self,
-        board: &Board,
-        mut time: TimeManager,
-        shared: &Arc<SharedData>,
-        report: Report,
-    ) -> Option<Move> {
-        shared.tt.increase_age();
+    pub fn start(&mut self, board: &Board, mut time: TimeManager, report: Report) -> Option<Move> {
+        debug_assert!(!self.threads.is_empty());
+
         time.set_time_limits(board.state.side_to_move, board.state.full_move);
-        shared.reset_all_nodes();
-        shared.status.run();
+        self.threads[0].shared.tt.increase_age();
+        self.threads[0].shared.reset_all_nodes();
+        self.threads[0].shared.status.run();
 
         let root_moves: Vec<RootMove> = board
             .generate_moves(crate::board::movegen::MoveGenKind::All)
@@ -64,7 +58,11 @@ impl SearchThreads {
             }
         });
 
-        self.threads.first().map(|t| t.best_move)?
+        self.threads[0].best_move
+    }
+
+    pub fn count(&self) -> usize {
+        self.threads.len()
     }
 }
 
@@ -95,7 +93,7 @@ mod tests {
         let board = Board::from_fen(STARTING_FEN).unwrap();
 
         let mut pool = SearchThreads::new(shared.clone(), 3);
-        let m = pool.start(&board, time, &shared, Report::None).unwrap();
+        let m = pool.start(&board, time, Report::None).unwrap();
         println!("{}", m.to_uci(&board));
     }
 }
