@@ -469,8 +469,8 @@ pub fn search<Node: NodeType>(
             data.stack[ply].reduction = 0;
 
             if score > alpha {
-                let go_deeper = score > best_score + 45 + 5 * new_depth;
-                new_depth += go_deeper as i32;
+                new_depth += (score > best_score + 45 + 5 * new_depth) as i32;
+                new_depth -= (score < best_score + new_depth) as i32;
 
                 if reduced_depth < new_depth {
                     score =
