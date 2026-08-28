@@ -55,6 +55,7 @@ pub fn input_loop(cli_args: String) {
             "ucinewgame" => {
                 shared.tt.clear();
                 let thread_count = pool.count();
+                drop(pool);
                 pool = SearchThreads::new(shared.clone(), thread_count);
             }
             "go" => {

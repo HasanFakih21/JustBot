@@ -22,7 +22,7 @@ pub struct SearchThreads {
 }
 
 #[derive(Debug, Clone)]
-pub struct SearchParams {
+struct SearchParams {
     pub board: Board,
     pub root_moves: Vec<RootMove>,
     pub time: TimeManager,
@@ -91,9 +91,9 @@ impl Drop for SearchThreads {
             let _ = w.comm.send(Command::Quit);
         }
 
-        self.workers
-            .drain(..)
-            .for_each(|w| w.handle.join().unwrap());
+        for w in self.workers.drain(..) {
+            let _ = w.handle.join();
+        }
     }
 }
 
