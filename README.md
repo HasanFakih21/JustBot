@@ -2,7 +2,7 @@
 <img width="283" height="242" alt="justbot_logo" src="https://github.com/user-attachments/assets/8b7be8b4-403a-4839-aeb5-d542a0c945d7" />
 <h1>JustBot Chess Engine</h1>
   
-[![License: GPL-3.0](https://img.shields.io/github/license/HasanFakih21/JustBot?style=flat-square&color=blue)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+[![License: AGPL v3.0](https://img.shields.io/github/license/HasanFakih21/JustBot?style=flat-square&color=orange)](https://www.gnu.org/licenses/agpl-3.0)
 [![GitHub Release](https://img.shields.io/github/v/release/HasanFakih21/JustBot?include_prereleases&style=flat-square&color=green)](https://github.com/HasanFakih21/JustBot/releases)
 
 </div>
