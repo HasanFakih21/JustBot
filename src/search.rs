@@ -57,6 +57,7 @@ pub fn search_runner(data: &mut SearchData) {
     // Iterative Deepening
     loop {
         data.stack = Stack::new();
+        data.root_depth = depth;
 
         if (data.time.hard_limit(data)
             || data
@@ -91,7 +92,6 @@ pub fn search_runner(data: &mut SearchData) {
             continue;
         }
 
-        data.root_depth = depth;
         data.sel_depth = 0;
         depth += 1;
 
