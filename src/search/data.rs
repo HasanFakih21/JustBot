@@ -92,6 +92,7 @@ pub struct SearchData {
     pub stack: Box<Stack>,
     pub root_moves: Vec<RootMove>,
     pub root_depth: i32,
+    pub sel_depth: i32,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -116,6 +117,7 @@ impl SearchData {
             stack: Stack::new(),
             root_moves: Vec::new(),
             root_depth: 0,
+            sel_depth: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -146,10 +148,6 @@ impl SearchData {
 
     pub fn time_settings(&mut self) -> &mut TimeSettings {
         &mut self.time.settings
-    }
-
-    pub fn reset_pv(&mut self) {
-        self.pv = PVTable::new();
     }
 
     pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
@@ -288,8 +286,9 @@ impl SearchData {
         };
 
         println!(
-            "info depth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
+            "info depth {} seldepth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
             root_move.searched_depth,
+            root_move.sel_depth,
             self.time.elapsed().as_millis(),
             score_print,
             self.shared.total_nodes_searched(),
@@ -344,6 +343,7 @@ pub struct RootMove {
     pub upperbound: bool,
     pub lowerbound: bool,
     pub searched_depth: i32,
+    pub sel_depth: i32,
 }
 
 impl Default for RootMove {
@@ -358,6 +358,7 @@ impl Default for RootMove {
             upperbound: false,
             lowerbound: false,
             searched_depth: 0,
+            sel_depth: 0,
         }
     }
 }

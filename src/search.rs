@@ -36,9 +36,9 @@ impl NodeType for Root {
 }
 
 pub fn search_runner(data: &mut SearchData) {
-    data.reset_pv();
     data.start_time();
     data.network.full_refresh(&data.board);
+    data.pv.clear(0);
 
     let mut delta = 25;
     let mut alpha = -Score::INFINITY;
@@ -46,6 +46,8 @@ pub fn search_runner(data: &mut SearchData) {
 
     let mut depth = 1;
     let mut best_move = None;
+    data.root_depth = 0;
+    data.sel_depth = 0;
 
     if data.root_moves.is_empty() {
         data.best_move = None;
@@ -54,8 +56,8 @@ pub fn search_runner(data: &mut SearchData) {
 
     // Iterative Deepening
     loop {
-        data.root_depth = depth;
         data.stack = Stack::new();
+        data.root_depth = depth;
 
         if (data.time.hard_limit(data)
             || data
@@ -90,6 +92,7 @@ pub fn search_runner(data: &mut SearchData) {
             continue;
         }
 
+        data.sel_depth = 0;
         depth += 1;
 
         data.root_moves
@@ -133,8 +136,11 @@ pub fn search<Node: NodeType>(
     ply: isize,
     cutnode: bool,
 ) -> i32 {
-    if Node::PV && !Node::ROOT {
-        data.pv.clear(ply);
+    if Node::PV {
+        data.sel_depth = data.sel_depth.max(ply as i32);
+        if !Node::ROOT {
+            data.pv.clear(ply);
+        }
     }
 
     if data.shared.status.get() == Status::STOPPED {
@@ -510,6 +516,7 @@ pub fn search<Node: NodeType>(
                     }
 
                     root_move.pv.commit(&data.pv.inner[1][..data.pv.len[1]]);
+                    root_move.sel_depth = data.sel_depth;
                 } else {
                     root_move.score = -Score::INFINITY;
                 }
@@ -652,6 +659,12 @@ pub fn quiesce<Node: NodeType>(
     ply: isize,
 ) -> i32 {
     data.shared.increment_nodes(data.id);
+
+    if Node::PV {
+        data.pv.clear(ply);
+        data.sel_depth = data.sel_depth.max(ply as i32);
+    }
+
     if data.board.is_draw() {
         return Score::DRAW;
     }
@@ -776,6 +789,10 @@ pub fn quiesce<Node: NodeType>(
 
             if score > alpha {
                 best_move = Some(m);
+
+                if Node::PV {
+                    data.pv.add(m, ply);
+                }
 
                 // Cutoff
                 if score >= beta {
