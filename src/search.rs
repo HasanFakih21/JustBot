@@ -46,6 +46,8 @@ pub fn search_runner(data: &mut SearchData) {
 
     let mut depth = 1;
     let mut best_move = None;
+    data.root_depth = 0;
+    data.sel_depth = 0;
 
     if data.root_moves.is_empty() {
         data.best_move = None;
@@ -54,8 +56,6 @@ pub fn search_runner(data: &mut SearchData) {
 
     // Iterative Deepening
     loop {
-        data.root_depth = depth;
-        data.sel_depth = 0;
         data.stack = Stack::new();
 
         if (data.time.hard_limit(data)
@@ -91,6 +91,8 @@ pub fn search_runner(data: &mut SearchData) {
             continue;
         }
 
+        data.root_depth = depth;
+        data.sel_depth = 0;
         depth += 1;
 
         data.root_moves
