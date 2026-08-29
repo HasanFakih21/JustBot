@@ -456,10 +456,10 @@ pub fn search<Node: NodeType>(
         if depth > 2 && move_count > 1 {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r += 218 * !improving as i32;
-            r -= 192 * tt_pv as i32;
-            r += 446 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
-            r += 292 * (tt_depth.is_some_and(|d| d < depth)) as i32;
-            r -= 436 * history / 4096;
+            r -= 189 * tt_pv as i32;
+            r += 445 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
+            r += 290 * (tt_depth.is_some_and(|d| d < depth)) as i32;
+            r -= 437 * history / 4096;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
