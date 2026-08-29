@@ -54,19 +54,13 @@ pub fn input_loop(cli_args: String) {
             "setoption" => set_option(args, &mut uci_settings, shared.clone(), &mut pool),
             "ucinewgame" => {
                 shared.tt.clear();
-                let thread_count = pool.threads.len();
+                let thread_count = pool.count();
+                drop(pool);
                 pool = SearchThreads::new(shared.clone(), thread_count);
             }
             "go" => {
                 time.clear_limits();
-                if let Some(m) = go(
-                    args,
-                    &mut pool,
-                    &mut board,
-                    &mut time,
-                    &shared,
-                    &uci_settings,
-                ) {
+                if let Some(m) = go(args, &mut pool, &mut board, &mut time, &uci_settings) {
                     println!("bestmove {}", m.to_uci(&board));
                 } else {
                     println!("bestmove 0000");
@@ -232,12 +226,11 @@ pub fn go(
     pool: &mut SearchThreads,
     board: &mut Board,
     time: &mut TimeManager,
-    shared: &Arc<SharedData>,
     uci_settings: &UCISettings,
 ) -> Option<Move> {
     let (command, args) = args.split_once(" ").unwrap_or((args, ""));
     if args.is_empty() {
-        return pool.start(board, time.clone(), shared, uci_settings.report);
+        return pool.start(board, time.clone(), uci_settings.report);
     }
 
     match command.trim() {
@@ -245,46 +238,46 @@ pub fn go(
             let (depth, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.depth = depth.trim().parse().unwrap_or(MAX_PLY as i32 - 1);
             time.set_depth_limit();
-            go(args, pool, board, time, shared, uci_settings)
+            go(args, pool, board, time, uci_settings)
         }
         "wtime" => {
             // Example: go wtime 900000 btime 900000 winc 0 binc 0
             let (wtime, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.wtime = Some(wtime.trim().parse().unwrap_or(500));
-            go(args, pool, board, time, shared, uci_settings)
+            go(args, pool, board, time, uci_settings)
         }
         "btime" => {
             let (btime, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.btime = Some(btime.trim().parse().unwrap_or(500));
-            go(args, pool, board, time, shared, uci_settings)
+            go(args, pool, board, time, uci_settings)
         }
         "winc" => {
             let (winc, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.winc = winc.trim().parse().unwrap_or(0);
-            go(args, pool, board, time, shared, uci_settings)
+            go(args, pool, board, time, uci_settings)
         }
         "binc" => {
             let (binc, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.binc = binc.trim().parse().unwrap_or(0);
-            go(args, pool, board, time, shared, uci_settings)
+            go(args, pool, board, time, uci_settings)
         }
         "movestogo" => {
             let (movestogo, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.movestogo = movestogo.trim().parse().unwrap_or(0);
-            go(args, pool, board, time, shared, uci_settings)
+            go(args, pool, board, time, uci_settings)
         }
         "movetime" => {
             let (movetime, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.movetime = Some(movetime.trim().parse().unwrap_or(500));
-            go(args, pool, board, time, shared, uci_settings)
+            go(args, pool, board, time, uci_settings)
         }
         "nodes" => {
             let (nodes, args) = args.split_once(" ").unwrap_or((args, ""));
             time.settings.nodes = nodes.trim().parse().unwrap_or(0);
             time.set_nodes_limit();
-            go(args, pool, board, time, shared, uci_settings)
+            go(args, pool, board, time, uci_settings)
         }
-        _ => go(args, pool, board, time, shared, uci_settings),
+        _ => go(args, pool, board, time, uci_settings),
     }
 }
 
@@ -348,7 +341,6 @@ pub mod tests {
             &mut pool,
             &mut board,
             &mut time,
-            &shared,
             &UCISettings::default(),
         );
     }
@@ -364,7 +356,6 @@ pub mod tests {
             &mut pool,
             &mut board,
             &mut time,
-            &shared,
             &UCISettings::default(),
         );
         println!(
