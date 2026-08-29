@@ -46,6 +46,7 @@ pub fn search_runner(data: &mut SearchData) {
 
     let mut depth = 1;
     let mut best_move = None;
+    let mut best_score = 0;
     data.root_depth = 0;
     data.sel_depth = 0;
 
@@ -97,10 +98,11 @@ pub fn search_runner(data: &mut SearchData) {
 
         data.root_moves
             .sort_by_key(|rm| std::cmp::Reverse(rm.score));
-        best_move = Some(data.root_moves[0].m);
         data.root_moves
             .iter_mut()
             .for_each(|rm| rm.previous_score = rm.score);
+        best_move = Some(data.root_moves[0].m);
+        best_score = data.root_moves[0].score;
 
         if data.report == Report::Full {
             data.print_uci_info();
@@ -108,7 +110,12 @@ pub fn search_runner(data: &mut SearchData) {
 
         let multiplier = || {
             let ratio = data.root_moves[0].nodes as f32 / data.nodes() as f32;
-            (2.977 - ratio * 2.495).max(0.553)
+            let node_tm = (2.977 - ratio * 2.495).max(0.553);
+
+            let diff = (data.prev_score - best_score) as f32;
+            let score_trend = (0.75 + 0.045 * diff).clamp(0.7, 1.5);
+
+            node_tm * score_trend
         };
 
         if data.time.soft_limit(multiplier) && data.id == 0 {
@@ -125,6 +132,7 @@ pub fn search_runner(data: &mut SearchData) {
         data.print_uci_info();
     }
 
+    data.prev_score = best_score;
     data.best_move = best_move;
 }
 
