@@ -46,7 +46,7 @@ const BUCKET_LAYOUT: [usize; 32] = [
 
 const NUM_INPUT_BUCKETS: usize = 3;
 
-pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!("../model.nnue")) };
+pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!(env!("MODEL"))) };
 
 pub struct Network {
     parameters: &'static Parameters,
