@@ -15,7 +15,7 @@ impl<T: Copy, const SIZE: usize> StackVec<T, SIZE> {
     }
 
     pub fn push(&mut self, e: T) {
-        self.inner[self.len].write(e);
+        unsafe { self.inner.get_unchecked_mut(self.len).write(e) };
         self.len += 1;
     }
 

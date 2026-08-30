@@ -37,28 +37,32 @@ impl Status {
 pub struct SharedData {
     pub tt: TranspositionTable,
     pub status: Status,
-    pub nodes: Box<[AtomicU64; 512]>,
+    nodes: Box<[AlignedAtomicU64; 512]>,
 }
+
+#[derive(Debug)]
+#[repr(align(64))]
+struct AlignedAtomicU64(AtomicU64);
 
 impl SharedData {
     pub fn increment_nodes(&self, id: usize) {
-        self.nodes[id].store(
-            self.nodes[id].load(Ordering::Relaxed) + 1,
+        self.nodes[id].0.store(
+            self.nodes[id].0.load(Ordering::Relaxed) + 1,
             Ordering::Relaxed,
         );
     }
 
     pub fn node_count(&self, id: usize) -> u64 {
-        self.nodes[id].load(Ordering::Relaxed)
+        self.nodes[id].0.load(Ordering::Relaxed)
     }
 
     pub fn total_nodes_searched(&self) -> u64 {
-        self.nodes.iter().map(|n| n.load(Ordering::Relaxed)).sum()
+        self.nodes.iter().map(|n| n.0.load(Ordering::Relaxed)).sum()
     }
 
     pub fn reset_all_nodes(&self) {
         for t in self.nodes.iter() {
-            t.store(0, Ordering::Relaxed);
+            t.0.store(0, Ordering::Relaxed);
         }
     }
 }
@@ -68,7 +72,7 @@ impl Default for SharedData {
         Self {
             tt: TranspositionTable::default(),
             status: Status(AtomicBool::new(Status::RUNNING)),
-            nodes: Box::new(array::from_fn(|_| AtomicU64::new(0))),
+            nodes: Box::new(array::from_fn(|_| AlignedAtomicU64(AtomicU64::new(0)))),
         }
     }
 }
@@ -141,7 +145,7 @@ impl SearchData {
     }
 
     pub fn reset_nodes(&self) {
-        self.shared.nodes[self.id].store(0, Ordering::Relaxed);
+        self.shared.nodes[self.id].0.store(0, Ordering::Relaxed);
     }
 
     pub fn nodes_per_second(&self) -> usize {
