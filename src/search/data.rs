@@ -93,6 +93,7 @@ pub struct SearchData {
     pub root_moves: Vec<RootMove>,
     pub root_depth: i32,
     pub sel_depth: i32,
+    pub prev_score: i32,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -118,6 +119,7 @@ impl SearchData {
             root_moves: Vec::new(),
             root_depth: 0,
             sel_depth: 0,
+            prev_score: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
