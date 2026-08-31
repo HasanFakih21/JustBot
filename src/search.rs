@@ -281,10 +281,7 @@ pub fn search<Node: NodeType>(
         }
 
         // Hindsight Reduction
-        if depth >= 2
-            && data.stack[ply - 1].reduction >= 2048
-            && static_eval + data.stack[ply - 1].eval >= 200
-        {
+        if depth >= 2 && data.stack[ply - 1].reduction >= 2048 && static_eval + data.stack[ply - 1].eval >= 200 {
             depth -= 1;
         }
     }
