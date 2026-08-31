@@ -607,7 +607,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.get_kind().is_quiet() {
+    if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.kind().is_quiet() {
         let bonus = (120 * depth - 75).min(1200);
         data.quiet_history.update(
             data.stack[ply - 1].threats,
