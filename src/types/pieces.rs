@@ -165,13 +165,13 @@ impl Display for SidedPiece {
 pub trait PieceRepresentation {
     const NONE_INDEX: usize;
 
-    fn as_usize(&self) -> usize;
+    fn to_index(&self) -> usize;
 }
 
 impl PieceRepresentation for SidedPiece {
     const NONE_INDEX: usize = 12;
 
-    fn as_usize(&self) -> usize {
+    fn to_index(&self) -> usize {
         *self as usize
     }
 }
@@ -179,7 +179,7 @@ impl PieceRepresentation for SidedPiece {
 impl PieceRepresentation for Piece {
     const NONE_INDEX: usize = 6;
 
-    fn as_usize(&self) -> usize {
+    fn to_index(&self) -> usize {
         *self as usize
     }
 }
@@ -220,7 +220,7 @@ where
     fn index(&self, index: OptionPiece<P>) -> &Self::Output {
         &self[{
             match index {
-                OptionPiece::Some(piece) => piece.as_usize(),
+                OptionPiece::Some(piece) => piece.to_index(),
                 OptionPiece::None => P::NONE_INDEX,
             }
         }]
@@ -234,7 +234,7 @@ where
     fn index_mut(&mut self, index: OptionPiece<P>) -> &mut Self::Output {
         &mut self[{
             match index {
-                OptionPiece::Some(piece) => piece.as_usize(),
+                OptionPiece::Some(piece) => piece.to_index(),
                 OptionPiece::None => P::NONE_INDEX,
             }
         }]
