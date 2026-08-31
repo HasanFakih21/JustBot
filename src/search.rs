@@ -300,8 +300,7 @@ pub fn search<Node: NodeType>(
     if !in_check
         && !Node::PV
         && !excluded
-        && static_eval
-            >= beta + (85 * depth + 5 * depth * depth - 75 * improving as i32 + 200 * correction.abs() / 1024).max(0)
+        && static_eval >= beta + 85 * depth + 5 * depth * depth - 75 * improving as i32 + 512 * correction.abs() / 1024
         && !is_decisive(beta)
         && !is_decisive(static_eval)
     {
