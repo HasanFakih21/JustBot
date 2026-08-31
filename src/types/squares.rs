@@ -139,7 +139,7 @@ impl<T> IndexMut<Square> for [T; Square::NUM] {
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 #[repr(u8)]
 #[rustfmt::skip]
-pub enum Rank { 
+pub enum Rank {
     R1, 
     R2, 
     R3, 
