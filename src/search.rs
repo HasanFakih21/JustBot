@@ -281,10 +281,7 @@ pub fn search<Node: NodeType>(
         }
 
         // Hindsight Reduction
-        if depth >= 2
-            && data.stack[ply - 1].reduction >= 2048
-            && static_eval + data.stack[ply - 1].eval >= 200
-        {
+        if depth >= 2 && data.stack[ply - 1].reduction >= 2048 && static_eval + data.stack[ply - 1].eval >= 200 {
             depth -= 1;
         }
     }
@@ -371,6 +368,10 @@ pub fn search<Node: NodeType>(
             extension = 1
                 + (singular_score < singular_beta - double_margin) as i32
                 + (singular_score < singular_beta - triple_margin) as i32;
+        }
+        // Multi Cut
+        else if singular_score >= beta && !is_decisive(singular_score) {
+            return singular_score;
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
