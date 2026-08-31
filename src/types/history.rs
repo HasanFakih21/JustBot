@@ -18,11 +18,10 @@ impl QuietHistory {
         let from = m.from();
         let to = m.to();
 
-        let from_threats = threats.contains(from);
-        let to_threats = threats.contains(to);
+        let from_threat = threats.contains(from);
+        let to_threat = threats.contains(to);
 
-        let entry = &mut self.0[side as usize][from_threats as usize][to_threats as usize]
-            [from as usize][to as usize];
+        let entry = &mut self.0[side][from_threat as usize][to_threat as usize][from][to];
         update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
@@ -30,11 +29,10 @@ impl QuietHistory {
         let from = m.from();
         let to = m.to();
 
-        let from_threats = threats.contains(from);
-        let to_threats = threats.contains(to);
+        let from_threat = threats.contains(from);
+        let to_threat = threats.contains(to);
 
-        self.0[side as usize][from_threats as usize][to_threats as usize][from as usize]
-            [to as usize] as i32
+        self.0[side][from_threat as usize][to_threat as usize][from][to] as i32
     }
 }
 
@@ -57,7 +55,7 @@ impl NoisyHistory {
         threats: BitBoard,
         bonus: i32,
     ) {
-        let entry = &mut self.0[piece][to as usize][captured][threats.contains(to) as usize];
+        let entry = &mut self.0[piece][to][captured][threats.contains(to) as usize];
         update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
@@ -68,7 +66,7 @@ impl NoisyHistory {
         captured: OptionPiece<Piece>,
         threats: BitBoard,
     ) -> i32 {
-        self.0[piece][to as usize][captured][threats.contains(to) as usize] as i32
+        self.0[piece][to][captured][threats.contains(to) as usize] as i32
     }
 }
 
@@ -88,7 +86,7 @@ impl ContinuationHistory {
         piece: OptionPiece<SidedPiece>,
         to: Square,
     ) -> *mut PieceToHistory<i16> {
-        &raw mut self.0[piece][to as usize]
+        &raw mut self.0[piece][to]
     }
 
     /// # Safety
@@ -100,7 +98,7 @@ impl ContinuationHistory {
         to: Square,
         bonus: i32,
     ) {
-        let entry = &mut unsafe { &mut *subtable }[piece][to as usize];
+        let entry = &mut unsafe { &mut *subtable }[piece][to];
         update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
@@ -112,7 +110,7 @@ impl ContinuationHistory {
         piece: OptionPiece<SidedPiece>,
         to: Square,
     ) -> i32 {
-        (unsafe { &*subtable }[piece][to as usize]) as i32
+        (unsafe { &*subtable }[piece][to]) as i32
     }
 }
 
@@ -132,7 +130,7 @@ impl ContinuationCorrectionHistory {
         piece: OptionPiece<SidedPiece>,
         to: Square,
     ) -> *mut PieceToHistory<i16> {
-        &raw mut self.0[piece][to as usize]
+        &raw mut self.0[piece][to]
     }
 
     /// # Safety
@@ -144,7 +142,7 @@ impl ContinuationCorrectionHistory {
         to: Square,
         bonus: i32,
     ) {
-        let entry = &mut unsafe { &mut *subtable }[piece][to as usize];
+        let entry = &mut unsafe { &mut *subtable }[piece][to];
         update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
@@ -156,7 +154,7 @@ impl ContinuationCorrectionHistory {
         piece: OptionPiece<SidedPiece>,
         to: Square,
     ) -> i32 {
-        (unsafe { &*subtable }[piece][to as usize]) as i32
+        (unsafe { &*subtable }[piece][to]) as i32
     }
 }
 
@@ -175,12 +173,12 @@ impl CorrectionHistory {
     }
 
     pub fn update(&mut self, stm: Side, key: u64, bonus: i32) {
-        let entry = &mut self.0[stm as usize][key as usize & Self::MASK];
+        let entry = &mut self.0[stm][key as usize & Self::MASK];
         update_entry::<{ Self::MAX_HISTORY }>(bonus, entry);
     }
 
     pub fn get(&self, stm: Side, key: u64) -> i32 {
-        self.0[stm as usize][key as usize & Self::MASK] as i32
+        self.0[stm][key as usize & Self::MASK] as i32
     }
 }
 

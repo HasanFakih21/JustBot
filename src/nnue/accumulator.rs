@@ -88,7 +88,7 @@ impl DualAccumulators {
         pov: Side,
         parameters: &Parameters,
     ) {
-        let current = prev.values[pov as usize].vals.as_ptr();
+        let current = prev.values[pov].vals.as_ptr();
         let updated = self.values[pov].vals.as_mut_ptr();
 
         unsafe {

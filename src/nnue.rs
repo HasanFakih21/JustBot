@@ -144,10 +144,8 @@ impl Network {
 
         let stm = board.state.side_to_move;
         let (us, them) = (
-            self.stack[self.index].values[stm as usize].vals.as_ptr(),
-            self.stack[self.index].values[stm.other() as usize]
-                .vals
-                .as_ptr(),
+            self.stack[self.index].values[stm].vals.as_ptr(),
+            self.stack[self.index].values[stm.other()].vals.as_ptr(),
         );
 
         let bucket = output_bucket(board);
@@ -192,8 +190,8 @@ impl Network {
         let mut output = 0;
         let stm = board.state.side_to_move;
         let (us, them) = (
-            self.stack[self.index].values[stm as usize],
-            self.stack[self.index].values[stm.other() as usize],
+            self.stack[self.index].values[stm],
+            self.stack[self.index].values[stm.other()],
         );
 
         let bucket = output_bucket(board);

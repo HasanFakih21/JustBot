@@ -49,17 +49,17 @@ impl Board {
             }
 
             return matches!(m.kind(), MoveKind::Capture | MoveKind::QuietMove)
-                && !self.state.occupancies[stm as usize].contains(to)
-                && m.is_capture() == self.state.occupancies[stm.other() as usize].contains(to)
+                && !self.state.occupancies[stm].contains(to)
+                && m.is_capture() == self.state.occupancies[stm.other()].contains(to)
                 && (king_attacks(from) & !self.state.threats).contains(to);
         }
 
-        if self.state.occupancies[stm as usize].contains(to) // If to square has piece of the same side
-            || self.state.pinned[stm as usize].contains(from) && !RAYS[from as usize][king_square as usize].contains(to) // If piece is pinned and the to square isn't on the same ray as the king
+        if self.state.occupancies[stm].contains(to) // If to square has piece of the same side
+            || self.state.pinned[stm].contains(from) && !RAYS[from][king_square].contains(to) // If piece is pinned and the to square isn't on the same ray as the king
             || self.king_in_check()
                 && (self.state.checkers.count_bits() > 1 // If there's multiple checkers then the king has to move 
                 // If it's a check and it also doesn't contain a move that's between the king and checking piece or a capture of the checking piece
-                || ((m.kind() != MoveKind::EnPassant) && !(self.state.checkers | BETWEEN[king_square as usize][self.state.checkers.least_sig_bit().unwrap() as usize]).contains(to)))
+                || ((m.kind() != MoveKind::EnPassant) && !(self.state.checkers | BETWEEN[king_square][self.state.checkers.least_sig_bit().unwrap()]).contains(to)))
         {
             return false;
         }
@@ -97,7 +97,7 @@ impl Board {
 
             if m.is_capture() {
                 return pawn_attacks(from, stm).contains(to)
-                    && self.state.occupancies[stm.other() as usize].contains(to);
+                    && self.state.occupancies[stm.other()].contains(to);
             }
 
             let offset = match stm {
@@ -123,7 +123,7 @@ impl Board {
         }
 
         matches!(m.kind(), MoveKind::Capture | MoveKind::QuietMove)
-            && m.is_capture() == self.state.occupancies[stm.other() as usize].contains(to)
+            && m.is_capture() == self.state.occupancies[stm.other()].contains(to)
             && attacks(stm, from, moving_piece, self.all_occupancy()).contains(to)
     }
 }

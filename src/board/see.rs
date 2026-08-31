@@ -33,20 +33,18 @@ impl Board {
         let mut attackers = self.attackers_to(m.to(), occupancies) & occupancies;
         let mut stm = self.state.side_to_move.other();
 
-        let diagonals =
-            self.state.pieces[Piece::Bishop as usize] | self.state.pieces[Piece::Queen as usize];
-        let orthogonals =
-            self.state.pieces[Piece::Rook as usize] | self.state.pieces[Piece::Queen as usize];
+        let diagonals = self.state.pieces[Piece::Bishop] | self.state.pieces[Piece::Queen];
+        let orthogonals = self.state.pieces[Piece::Rook] | self.state.pieces[Piece::Queen];
 
         let king_rays = [
-            RAYS[m.to() as usize][self.king_square(Side::White) as usize],
-            RAYS[m.to() as usize][self.king_square(Side::Black) as usize],
+            RAYS[m.to()][self.king_square(Side::White)],
+            RAYS[m.to()][self.king_square(Side::Black)],
         ];
 
         loop {
-            let mut our_attackers = attackers & self.state.occupancies[stm as usize];
-            if !((self.state.pinners[stm.other() as usize] & occupancies).is_empty()) {
-                our_attackers &= !(self.state.pinned[stm as usize] & !king_rays[stm as usize]);
+            let mut our_attackers = attackers & self.state.occupancies[stm];
+            if !((self.state.pinners[stm.other()] & occupancies).is_empty()) {
+                our_attackers &= !(self.state.pinned[stm] & !king_rays[stm]);
             }
 
             if our_attackers.is_empty() {
@@ -57,13 +55,13 @@ impl Board {
 
             // Makes sure the king can't capture a defended piece
             if attacker == Piece::King
-                && !(attackers & self.state.occupancies[stm.other() as usize]).is_empty()
+                && !(attackers & self.state.occupancies[stm.other()]).is_empty()
             {
                 break;
             }
 
             occupancies.clear_bit(
-                (self.state.pieces[attacker as usize] & our_attackers)
+                (self.state.pieces[attacker] & our_attackers)
                     .least_sig_bit()
                     .unwrap(),
             );
@@ -90,7 +88,7 @@ impl Board {
         stm != self.state.side_to_move
     }
 
-    pub const fn move_loss(&self, m: Move) -> i32 {
+    fn move_loss(&self, m: Move) -> i32 {
         if m.is_promotion() {
             return unsafe { m.promoted_piece().unwrap_unchecked().value() };
         }
@@ -102,7 +100,7 @@ impl Board {
         0
     }
 
-    pub const fn move_value(&self, m: Move) -> i32 {
+    fn move_value(&self, m: Move) -> i32 {
         if let OptionPiece::Some(piece) = self.piece_at_square(m.capture_square()) {
             let mut value = piece.kind().value();
             if let Some(promotion_piece) = m.promoted_piece() {
@@ -115,28 +113,28 @@ impl Board {
         0
     }
 
-    pub fn least_valuable_attacker(&self, attackers: BitBoard) -> Piece {
-        if !(attackers & self.state.pieces[Piece::Pawn as usize]).is_empty() {
+    fn least_valuable_attacker(&self, attackers: BitBoard) -> Piece {
+        if !(attackers & self.state.pieces[Piece::Pawn]).is_empty() {
             return Piece::Pawn;
         }
 
-        if !(attackers & self.state.pieces[Piece::Knight as usize]).is_empty() {
+        if !(attackers & self.state.pieces[Piece::Knight]).is_empty() {
             return Piece::Knight;
         }
 
-        if !(attackers & self.state.pieces[Piece::Bishop as usize]).is_empty() {
+        if !(attackers & self.state.pieces[Piece::Bishop]).is_empty() {
             return Piece::Bishop;
         }
 
-        if !(attackers & self.state.pieces[Piece::Rook as usize]).is_empty() {
+        if !(attackers & self.state.pieces[Piece::Rook]).is_empty() {
             return Piece::Rook;
         }
 
-        if !(attackers & self.state.pieces[Piece::Queen as usize]).is_empty() {
+        if !(attackers & self.state.pieces[Piece::Queen]).is_empty() {
             return Piece::Queen;
         }
 
-        if !(attackers & self.state.pieces[Piece::King as usize]).is_empty() {
+        if !(attackers & self.state.pieces[Piece::King]).is_empty() {
             return Piece::King;
         }
 
@@ -144,17 +142,15 @@ impl Board {
     }
 
     pub fn attackers_to(&self, square: Square, occupancies: BitBoard) -> BitBoard {
-        let diagonals =
-            self.state.pieces[Piece::Bishop as usize] | self.state.pieces[Piece::Queen as usize];
-        let orthogonals =
-            self.state.pieces[Piece::Rook as usize] | self.state.pieces[Piece::Queen as usize];
+        let diagonals = self.state.pieces[Piece::Bishop] | self.state.pieces[Piece::Queen];
+        let orthogonals = self.state.pieces[Piece::Rook] | self.state.pieces[Piece::Queen];
 
         (bishop_attacks(square, occupancies) & diagonals)
             | (rook_attacks(square, occupancies) & orthogonals)
             | (pawn_attacks(square, Side::White) & self.piece_bb(Side::Black, Piece::Pawn))
             | (pawn_attacks(square, Side::Black) & self.piece_bb(Side::White, Piece::Pawn))
-            | (knight_attacks(square) & self.state.pieces[Piece::Knight as usize])
-            | (king_attacks(square) & self.state.pieces[Piece::King as usize])
+            | (knight_attacks(square) & self.state.pieces[Piece::Knight])
+            | (king_attacks(square) & self.state.pieces[Piece::King])
     }
 }
 

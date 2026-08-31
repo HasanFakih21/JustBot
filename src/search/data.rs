@@ -175,12 +175,12 @@ impl SearchData {
         self.corrhistory
             .pawn
             .update(stm, self.board.state.keys.pawn, bonus);
-        self.corrhistory.non_pawn[Side::White as usize].update(
+        self.corrhistory.non_pawn[Side::White].update(
             stm,
             self.board.state.keys.non_pawn[Side::White],
             bonus,
         );
-        self.corrhistory.non_pawn[Side::Black as usize].update(
+        self.corrhistory.non_pawn[Side::Black].update(
             stm,
             self.board.state.keys.non_pawn[Side::Black],
             bonus,
@@ -210,9 +210,9 @@ impl SearchData {
     pub fn correction(&self, ply: isize) -> i32 {
         let stm = self.board.state.side_to_move;
         (self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
-            + self.corrhistory.non_pawn[Side::White as usize]
+            + self.corrhistory.non_pawn[Side::White]
                 .get(stm, self.board.state.keys.non_pawn[Side::White])
-            + self.corrhistory.non_pawn[Side::Black as usize]
+            + self.corrhistory.non_pawn[Side::Black]
                 .get(stm, self.board.state.keys.non_pawn[Side::Black])
             + unsafe {
                 if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {

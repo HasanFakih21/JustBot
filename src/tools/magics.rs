@@ -172,8 +172,8 @@ pub fn find_magic_number(square: Square, piece: Piece) -> u64 {
     };
 
     let relevant_bits = match piece {
-        Piece::Bishop => BISHOP_OCCUPANCY_BIT_COUNTS[square as usize],
-        Piece::Rook => ROOK_OCCUPANCY_BIT_COUNTS[square as usize],
+        Piece::Bishop => BISHOP_OCCUPANCY_BIT_COUNTS[square],
+        Piece::Rook => ROOK_OCCUPANCY_BIT_COUNTS[square],
         _ => return 0,
     };
 
@@ -263,21 +263,6 @@ pub fn set_occupancy(index: usize, num_bits_in_mask: usize, mut attack_mask: Bit
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // #[test]
-    //     fn magic_test() {
-    // for i in 0..64 {
-    // let square = Square::from(i);
-    // println!("0x{:x}, ", find_magic_number(square, Piece::Rook));
-    // }
-
-    // println!();
-
-    // for i in 0..64 {
-    // let square = Square::from(i);
-    // println!("0x{:x}, ", find_magic_number(square, Piece::Bishop));
-    // }
-    // }
 
     #[test]
     fn test_random_num() {

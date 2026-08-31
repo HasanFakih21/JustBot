@@ -15,7 +15,7 @@ impl Keys {
         if piece == Piece::Pawn {
             self.pawn ^= key;
         } else {
-            self.non_pawn[side as usize] ^= key;
+            self.non_pawn[side] ^= key;
         }
     }
 

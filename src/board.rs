@@ -106,7 +106,7 @@ impl Board {
 
     pub fn is_direct_check(&self, m: Move) -> bool {
         let piece = self.piece_at_square(m.from()).unwrap().kind();
-        self.state.checking_squares[piece as usize].contains(m.to())
+        self.state.checking_squares[piece].contains(m.to())
     }
 
     pub fn update_all_threats(&mut self) {
@@ -131,19 +131,18 @@ impl Board {
                 self.state.checkers = (pawn_attacks(king_square, stm) & pawn_attackers)
                     | (knight_attacks(king_square) & knight_attackers);
             } else {
-                self.state.checking_squares[Piece::Pawn as usize] =
-                    pawn_attacks(king_square, stm.other());
-                self.state.checking_squares[Piece::Knight as usize] = knight_attacks(king_square);
-                self.state.checking_squares[Piece::Bishop as usize] =
+                self.state.checking_squares[Piece::Pawn] = pawn_attacks(king_square, stm.other());
+                self.state.checking_squares[Piece::Knight] = knight_attacks(king_square);
+                self.state.checking_squares[Piece::Bishop] =
                     bishop_attacks(king_square, self.all_occupancy());
-                self.state.checking_squares[Piece::Rook as usize] =
+                self.state.checking_squares[Piece::Rook] =
                     rook_attacks(king_square, self.all_occupancy());
-                self.state.checking_squares[Piece::Queen as usize] = self.state.checking_squares
-                    [Piece::Rook as usize]
-                    | self.state.checking_squares[Piece::Bishop as usize];
+                self.state.checking_squares[Piece::Queen] = self.state.checking_squares
+                    [Piece::Rook]
+                    | self.state.checking_squares[Piece::Bishop];
             }
 
-            let opp_occ = self.state.occupancies[side.other() as usize];
+            let opp_occ = self.state.occupancies[side.other()];
             let diagonal = (self.piece_bb(side.other(), Piece::Bishop)
                 | self.piece_bb(side.other(), Piece::Queen))
                 & bishop_attacks(king_square, opp_occ);
@@ -152,13 +151,12 @@ impl Board {
                 & rook_attacks(king_square, opp_occ);
 
             for square in diagonal | orthogonal {
-                let blockers = BETWEEN[square as usize][king_square as usize]
-                    & self.state.occupancies[side as usize];
+                let blockers = BETWEEN[square][king_square] & self.state.occupancies[side];
 
                 let pieces_betweeen = blockers.count_bits();
                 if pieces_betweeen == 1 {
-                    self.state.pinned[side as usize] |= blockers;
-                    self.state.pinners[side.other() as usize].set_bit(square);
+                    self.state.pinned[side] |= blockers;
+                    self.state.pinners[side.other()].set_bit(square);
                 } else if pieces_betweeen == 0 {
                     self.state.checkers.set_bit(square);
                 }
@@ -166,30 +164,30 @@ impl Board {
         }
     }
 
-    pub const fn piece_bb(&self, side: Side, piece: Piece) -> BitBoard {
-        BitBoard(self.state.pieces[piece as usize].0 & self.state.occupancies[side as usize].0)
+    pub fn piece_bb(&self, side: Side, piece: Piece) -> BitBoard {
+        BitBoard(self.state.pieces[piece].0 & self.state.occupancies[side].0)
     }
 
-    pub const fn piece_at_square(&self, square: Square) -> OptionPiece<SidedPiece> {
-        self.state.mailbox[square as usize]
+    pub fn piece_at_square(&self, square: Square) -> OptionPiece<SidedPiece> {
+        self.state.mailbox[square]
     }
 
     pub fn place_piece(&mut self, side: Side, piece: Piece, square: Square) {
         // Bitboards
-        self.state.pieces[piece as usize].set_bit(square);
-        self.state.occupancies[side as usize].set_bit(square);
+        self.state.pieces[piece].set_bit(square);
+        self.state.occupancies[side].set_bit(square);
         // Mailbox
-        self.state.mailbox[square as usize] = OptionPiece::Some(SidedPiece::from(side, piece));
+        self.state.mailbox[square] = OptionPiece::Some(SidedPiece::from(side, piece));
         // Zobrist Hash
         self.state.keys.toggle(side, piece, square);
     }
 
     pub fn remove_piece(&mut self, side: Side, piece: Piece, square: Square) {
         // Bitboards
-        self.state.pieces[piece as usize].clear_bit(square);
-        self.state.occupancies[side as usize].clear_bit(square);
+        self.state.pieces[piece].clear_bit(square);
+        self.state.occupancies[side].clear_bit(square);
         // Mailbox
-        self.state.mailbox[square as usize] = OptionPiece::None;
+        self.state.mailbox[square] = OptionPiece::None;
         // Zobrist Hash
         self.state.keys.toggle(side, piece, square);
     }
@@ -254,7 +252,7 @@ impl Board {
     }
 
     pub fn all_occupancy(&self) -> BitBoard {
-        self.state.occupancies[Side::White as usize] | self.state.occupancies[Side::Black as usize]
+        self.state.occupancies[Side::White] | self.state.occupancies[Side::Black]
     }
 }
 
@@ -330,8 +328,8 @@ mod tests {
         let mut board = Board::from_fen(STARTING_FEN).unwrap();
         board.remove_piece(Side::White, Piece::Pawn, Square::A2);
         board.all_occupancy().print_board();
-        board.state.occupancies[Side::Black as usize].print_board();
-        board.state.occupancies[Side::White as usize].print_board();
+        board.state.occupancies[Side::Black].print_board();
+        board.state.occupancies[Side::White].print_board();
     }
 
     #[test]
@@ -379,7 +377,7 @@ mod tests {
 
         data.board.update_all_threats();
         let stm = data.board.state.side_to_move;
-        data.board.state.pinned[stm as usize].print_board();
+        data.board.state.pinned[stm].print_board();
 
         let mut data = SearchData {
             board: Board::from_fen("8/2K5/8/5k2/1n3p2/8/8/5Q2 b - - 0 1").unwrap(),
@@ -388,7 +386,7 @@ mod tests {
 
         data.board.update_all_threats();
         let stm = data.board.state.side_to_move;
-        data.board.state.pinned[stm as usize].print_board();
+        data.board.state.pinned[stm].print_board();
     }
 
     #[test]

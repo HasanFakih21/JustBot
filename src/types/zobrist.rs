@@ -11,7 +11,7 @@ pub struct Zobrist {
 
 impl Zobrist {
     pub fn piece(&self, side: Side, piece: Piece, square: Square) -> u64 {
-        self.pieces[(piece as usize) + (side as usize * 6)][square as usize]
+        self.pieces[(piece as usize) + (side as usize * 6)][square]
     }
 
     pub fn side(&self) -> u64 {
