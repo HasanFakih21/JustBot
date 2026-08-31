@@ -281,10 +281,7 @@ pub fn search<Node: NodeType>(
         }
 
         // Hindsight Reduction
-        if depth >= 2
-            && data.stack[ply - 1].reduction >= 2048
-            && static_eval + data.stack[ply - 1].eval >= 200
-        {
+        if depth >= 2 && data.stack[ply - 1].reduction >= 2048 && static_eval + data.stack[ply - 1].eval >= 200 {
             depth -= 1;
         }
     }
@@ -303,7 +300,8 @@ pub fn search<Node: NodeType>(
     if !in_check
         && !Node::PV
         && !excluded
-        && static_eval >= beta + 85 * depth + 5 * depth * depth - 75 * improving as i32
+        && static_eval
+            >= (beta + 85 * depth + 5 * depth * depth - 75 * improving as i32 + 200 * correction.abs() / 1024).max(0)
         && !is_decisive(beta)
         && !is_decisive(static_eval)
     {
