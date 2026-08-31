@@ -1,8 +1,8 @@
 use std::sync::LazyLock;
 
 use crate::tools::magics::{
-    BISHOP_MAGIC_NUMBERS, BISHOP_OCCUPANCY_BIT_COUNTS, ROOK_MAGIC_NUMBERS,
-    ROOK_OCCUPANCY_BIT_COUNTS, magic_index, set_occupancy,
+    BISHOP_MAGIC_NUMBERS, BISHOP_OCCUPANCY_BIT_COUNTS, ROOK_MAGIC_NUMBERS, ROOK_OCCUPANCY_BIT_COUNTS, magic_index,
+    set_occupancy,
 };
 use crate::types::bitboard::BitBoard;
 use crate::types::constants::*;
@@ -78,8 +78,7 @@ pub static BISHOP_ATTACKS: LazyLock<Vec<BitBoard>> = LazyLock::new(|| {
         for index in 0..512 {
             let occupancy_bb = set_occupancy(index, relevant_bits, BISHOP_MASKS[square]);
             let magic_index = magic_index(occupancy_bb, relevant_bits, magic_number);
-            bishop_attacks[(square * 512) + magic_index] =
-                blocked_bishop_attacks(Square::from(square), occupancy_bb);
+            bishop_attacks[(square * 512) + magic_index] = blocked_bishop_attacks(Square::from(square), occupancy_bb);
         }
     }
 
@@ -95,8 +94,7 @@ pub static ROOK_ATTACKS: LazyLock<Vec<BitBoard>> = LazyLock::new(|| {
         for index in 0..4096 {
             let occupancy_bb = set_occupancy(index, relevant_bits, ROOK_MASKS[square]);
             let magic_index = magic_index(occupancy_bb, relevant_bits, magic_number);
-            rook_attacks[(square * 4096) + magic_index] =
-                blocked_rook_attacks(Square::from(square), occupancy_bb);
+            rook_attacks[(square * 4096) + magic_index] = blocked_rook_attacks(Square::from(square), occupancy_bb);
         }
     }
 
@@ -109,8 +107,7 @@ pub static BETWEEN: [[BitBoard; 64]; 64] = {
     while square1 < 64 {
         let mut square2 = 0;
         while square2 < 64 {
-            between[square1][square2] =
-                generate_between(Square::from(square1), Square::from(square2));
+            between[square1][square2] = generate_between(Square::from(square1), Square::from(square2));
             square2 += 1;
         }
 
@@ -156,9 +153,7 @@ pub const DIAGONALS: [[BitBoard; 64]; 2] = {
 };
 
 pub const fn generate_between(square1: Square, square2: Square) -> BitBoard {
-    let directions = [
-        NORTH, SOUTH, EAST, WEST, NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST,
-    ];
+    let directions = [NORTH, SOUTH, EAST, WEST, NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST];
     let mut between = 0;
     let mut i = 0;
 
@@ -177,9 +172,7 @@ pub const fn generate_between(square1: Square, square2: Square) -> BitBoard {
 }
 
 pub const fn generate_ray(square1: Square, square2: Square) -> BitBoard {
-    let directions = [
-        NORTH, SOUTH, EAST, WEST, NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST,
-    ];
+    let directions = [NORTH, SOUTH, EAST, WEST, NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST];
     let mut ray = 0;
     let mut i = 0;
 
@@ -276,49 +269,17 @@ pub const fn mask_pawn_attacks(side: Side, square: Square) -> BitBoard {
 pub const fn mask_knight_attacks(square: Square) -> BitBoard {
     let current = 1u64 << square as u64;
 
-    let tl1 = if (current & A_FILE) == 0 {
-        current << 15
-    } else {
-        0
-    };
-    let tl2 = if (current & (A_FILE | B_FILE)) == 0 {
-        current << 6
-    } else {
-        0
-    };
+    let tl1 = if (current & A_FILE) == 0 { current << 15 } else { 0 };
+    let tl2 = if (current & (A_FILE | B_FILE)) == 0 { current << 6 } else { 0 };
 
-    let bl1 = if (current & (A_FILE | B_FILE)) == 0 {
-        current >> 10
-    } else {
-        0
-    };
-    let bl2 = if (current & A_FILE) == 0 {
-        current >> 17
-    } else {
-        0
-    };
+    let bl1 = if (current & (A_FILE | B_FILE)) == 0 { current >> 10 } else { 0 };
+    let bl2 = if (current & A_FILE) == 0 { current >> 17 } else { 0 };
 
-    let tr1 = if (current & H_FILE) == 0 {
-        current << 17
-    } else {
-        0
-    };
-    let tr2 = if (current & (H_FILE | G_FILE)) == 0 {
-        current << 10
-    } else {
-        0
-    };
+    let tr1 = if (current & H_FILE) == 0 { current << 17 } else { 0 };
+    let tr2 = if (current & (H_FILE | G_FILE)) == 0 { current << 10 } else { 0 };
 
-    let br1 = if (current & (H_FILE | G_FILE)) == 0 {
-        current >> 6
-    } else {
-        0
-    };
-    let br2 = if (current & H_FILE) == 0 {
-        current >> 15
-    } else {
-        0
-    };
+    let br1 = if (current & (H_FILE | G_FILE)) == 0 { current >> 6 } else { 0 };
+    let br2 = if (current & H_FILE) == 0 { current >> 15 } else { 0 };
 
     BitBoard(tl1 | tl2 | bl1 | bl2 | tr1 | tr2 | br1 | br2)
 }
@@ -326,37 +287,13 @@ pub const fn mask_knight_attacks(square: Square) -> BitBoard {
 pub const fn mask_king_attacks(square: Square) -> BitBoard {
     let current = 1u64 << square as u64;
     let n = current << 8;
-    let nw = if current & A_FILE == 0 {
-        current << 7
-    } else {
-        0
-    };
-    let w = if current & A_FILE == 0 {
-        current >> 1
-    } else {
-        0
-    };
-    let sw = if current & A_FILE == 0 {
-        current >> 9
-    } else {
-        0
-    };
+    let nw = if current & A_FILE == 0 { current << 7 } else { 0 };
+    let w = if current & A_FILE == 0 { current >> 1 } else { 0 };
+    let sw = if current & A_FILE == 0 { current >> 9 } else { 0 };
     let s = current >> 8;
-    let se = if current & H_FILE == 0 {
-        current >> 7
-    } else {
-        0
-    };
-    let e = if current & H_FILE == 0 {
-        current << 1
-    } else {
-        0
-    };
-    let ne = if current & H_FILE == 0 {
-        current << 9
-    } else {
-        0
-    };
+    let se = if current & H_FILE == 0 { current >> 7 } else { 0 };
+    let e = if current & H_FILE == 0 { current << 1 } else { 0 };
+    let ne = if current & H_FILE == 0 { current << 9 } else { 0 };
 
     BitBoard(n | nw | w | sw | s | se | e | ne)
 }

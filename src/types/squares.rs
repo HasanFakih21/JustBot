@@ -140,14 +140,14 @@ impl<T> IndexMut<Square> for [T; Square::NUM] {
 #[repr(u8)]
 #[rustfmt::skip]
 pub enum Rank {
-    R1, 
-    R2, 
-    R3, 
-    R4, 
-    R5, 
-    R6, 
-    R7, 
-    R8 
+    R1,
+    R2,
+    R3,
+    R4,
+    R5,
+    R6,
+    R7,
+    R8
 }
 
 impl Rank {

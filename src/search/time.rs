@@ -153,11 +153,7 @@ impl TimeManager {
             return false;
         }
 
-        if let Some(hard_limit) = self.limits.hard_time {
-            self.elapsed() > hard_limit
-        } else {
-            false
-        }
+        if let Some(hard_limit) = self.limits.hard_time { self.elapsed() > hard_limit } else { false }
     }
 }
 

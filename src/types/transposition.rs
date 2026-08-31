@@ -252,8 +252,7 @@ impl TranspositionTable {
 
     pub fn increase_age(&self) {
         let current_age = self.age();
-        self.age
-            .store((current_age + 1) & MAX_AGE, Ordering::Relaxed);
+        self.age.store((current_age + 1) & MAX_AGE, Ordering::Relaxed);
     }
 
     #[allow(clippy::len_without_is_empty)]

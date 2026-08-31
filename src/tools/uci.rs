@@ -29,11 +29,7 @@ pub fn input_loop(cli_args: String) {
 
     let rx = listen(shared.clone());
 
-    let mut input = if !cli_args.is_empty() {
-        cli_args
-    } else {
-        String::new()
-    };
+    let mut input = if !cli_args.is_empty() { cli_args } else { String::new() };
 
     loop {
         if input.is_empty() {
@@ -158,10 +154,7 @@ pub fn position(args: &str, board: &mut Board, frc: bool) {
     if !moves.trim().is_empty() {
         for m_str in moves.split_ascii_whitespace() {
             let all_moves = board.generate_moves(MoveGenKind::All);
-            if let Some(entry) = all_moves
-                .iter()
-                .find(|entry| entry.mv.to_uci(board) == m_str)
-            {
+            if let Some(entry) = all_moves.iter().find(|entry| entry.mv.to_uci(board) == m_str) {
                 board.make_move(entry.mv);
             } else {
                 eprintln!("Illegal Move!");
@@ -171,12 +164,7 @@ pub fn position(args: &str, board: &mut Board, frc: bool) {
     }
 }
 
-pub fn set_option(
-    args: &str,
-    uci_settings: &mut UCISettings,
-    shared: Arc<SharedData>,
-    pool: &mut SearchThreads,
-) {
+pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<SharedData>, pool: &mut SearchThreads) {
     let args = args.to_ascii_lowercase();
     let args: Vec<&str> = args.split_ascii_whitespace().collect();
     match args.as_slice() {
@@ -358,11 +346,7 @@ pub mod tests {
             &mut time,
             &UCISettings::default(),
         );
-        println!(
-            "{:?}\nBestmove: {}",
-            time.settings,
-            bm.unwrap().to_uci(&board)
-        );
+        println!("{:?}\nBestmove: {}", time.settings, bm.unwrap().to_uci(&board));
     }
 
     #[test]
@@ -370,11 +354,6 @@ pub mod tests {
         let shared = Arc::new(SharedData::default());
         let mut pool = SearchThreads::new(shared.clone(), 1);
 
-        set_option(
-            "name Hash value 32",
-            &mut UCISettings::default(),
-            shared,
-            &mut pool,
-        );
+        set_option("name Hash value 32", &mut UCISettings::default(), shared, &mut pool);
     }
 }

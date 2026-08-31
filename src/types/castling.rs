@@ -15,10 +15,7 @@ pub enum Castling {
 impl Castling {
     pub const KING_SIDE: usize = 0;
     pub const QUEEN_SIDE: usize = 1;
-    pub const KINDS: [[Self; 2]; 2] = [
-        [Self::WhiteKing, Self::WhiteQueen],
-        [Self::BlackKing, Self::BlackQueen],
-    ];
+    pub const KINDS: [[Self; 2]; 2] = [[Self::WhiteKing, Self::WhiteQueen], [Self::BlackKing, Self::BlackQueen]];
 
     pub const fn from(c: char) -> Self {
         match c {
@@ -134,23 +131,19 @@ impl CastlingRights {
 
         if board.frc {
             if self.can_king_side(Side::White) {
-                let file =
-                    b'A' + board.castling_rooks[Side::White][Castling::KING_SIDE].to_file() as u8;
+                let file = b'A' + board.castling_rooks[Side::White][Castling::KING_SIDE].to_file() as u8;
                 output_string.push(file as char);
             }
             if self.can_queen_side(Side::White) {
-                let file =
-                    b'A' + board.castling_rooks[Side::White][Castling::QUEEN_SIDE].to_file() as u8;
+                let file = b'A' + board.castling_rooks[Side::White][Castling::QUEEN_SIDE].to_file() as u8;
                 output_string.push(file as char);
             }
             if self.can_king_side(Side::Black) {
-                let file =
-                    b'a' + board.castling_rooks[Side::Black][Castling::KING_SIDE].to_file() as u8;
+                let file = b'a' + board.castling_rooks[Side::Black][Castling::KING_SIDE].to_file() as u8;
                 output_string.push(file as char);
             }
             if self.can_queen_side(Side::Black) {
-                let file =
-                    b'a' + board.castling_rooks[Side::Black][Castling::QUEEN_SIDE].to_file() as u8;
+                let file = b'a' + board.castling_rooks[Side::Black][Castling::QUEEN_SIDE].to_file() as u8;
                 output_string.push(file as char);
             }
         } else {

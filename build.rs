@@ -4,8 +4,7 @@ use std::{
     process::Command,
 };
 
-const BASE_URL: &str =
-    "https://github.com/HasanFakih21/JustBot-Networks/releases/download/Networks";
+const BASE_URL: &str = "https://github.com/HasanFakih21/JustBot-Networks/releases/download/Networks";
 const NETWORK_NAME: &str = "540-v1-1024HL.nnue";
 
 fn main() {

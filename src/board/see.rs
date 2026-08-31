@@ -54,17 +54,11 @@ impl Board {
             let attacker = self.least_valuable_attacker(our_attackers);
 
             // Makes sure the king can't capture a defended piece
-            if attacker == Piece::King
-                && !(attackers & self.state.occupancies[stm.other()]).is_empty()
-            {
+            if attacker == Piece::King && !(attackers & self.state.occupancies[stm.other()]).is_empty() {
                 break;
             }
 
-            occupancies.clear_bit(
-                (self.state.pieces[attacker] & our_attackers)
-                    .least_sig_bit()
-                    .unwrap(),
-            );
+            occupancies.clear_bit((self.state.pieces[attacker] & our_attackers).least_sig_bit().unwrap());
 
             stm = stm.other();
             balance = -balance - 1 - attacker.value();
@@ -174,8 +168,7 @@ mod tests {
     #[test]
     fn test_see() {
         let data = SearchData {
-            board: Board::from_fen("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - 0 1")
-                .unwrap(),
+            board: Board::from_fen("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - 0 1").unwrap(),
             ..Default::default()
         };
 
@@ -183,8 +176,7 @@ mod tests {
         assert!(!data.board.see(m, -150));
 
         let data = SearchData {
-            board: Board::from_fen("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - 0 1")
-                .unwrap(),
+            board: Board::from_fen("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - 0 1").unwrap(),
             ..Default::default()
         };
 
@@ -200,8 +192,7 @@ mod tests {
         assert!(data.board.see(m, -150));
 
         let data = SearchData {
-            board: Board::from_fen("1k1r3q/1pp4p/pn3b2/4p3/P7/3N2P1/1PP1R1BP/2K1Q3 w - - 1 2")
-                .unwrap(),
+            board: Board::from_fen("1k1r3q/1pp4p/pn3b2/4p3/P7/3N2P1/1PP1R1BP/2K1Q3 w - - 1 2").unwrap(),
             ..Default::default()
         };
 
@@ -225,10 +216,7 @@ mod tests {
         assert!(data.board.see(m, -150));
 
         let data = SearchData {
-            board: Board::from_fen(
-                "r1bqk2r/ppp1p1pp/3p2n1/3P4/4PN2/5b2/PPPP2Pp/RNBQK1R1 b Qkq - 0 1",
-            )
-            .unwrap(),
+            board: Board::from_fen("r1bqk2r/ppp1p1pp/3p2n1/3P4/4PN2/5b2/PPPP2Pp/RNBQK1R1 b Qkq - 0 1").unwrap(),
             ..Default::default()
         };
 

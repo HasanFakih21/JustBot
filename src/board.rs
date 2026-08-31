@@ -133,21 +133,16 @@ impl Board {
             } else {
                 self.state.checking_squares[Piece::Pawn] = pawn_attacks(king_square, stm.other());
                 self.state.checking_squares[Piece::Knight] = knight_attacks(king_square);
-                self.state.checking_squares[Piece::Bishop] =
-                    bishop_attacks(king_square, self.all_occupancy());
-                self.state.checking_squares[Piece::Rook] =
-                    rook_attacks(king_square, self.all_occupancy());
-                self.state.checking_squares[Piece::Queen] = self.state.checking_squares
-                    [Piece::Rook]
-                    | self.state.checking_squares[Piece::Bishop];
+                self.state.checking_squares[Piece::Bishop] = bishop_attacks(king_square, self.all_occupancy());
+                self.state.checking_squares[Piece::Rook] = rook_attacks(king_square, self.all_occupancy());
+                self.state.checking_squares[Piece::Queen] =
+                    self.state.checking_squares[Piece::Rook] | self.state.checking_squares[Piece::Bishop];
             }
 
             let opp_occ = self.state.occupancies[side.other()];
-            let diagonal = (self.piece_bb(side.other(), Piece::Bishop)
-                | self.piece_bb(side.other(), Piece::Queen))
+            let diagonal = (self.piece_bb(side.other(), Piece::Bishop) | self.piece_bb(side.other(), Piece::Queen))
                 & bishop_attacks(king_square, opp_occ);
-            let orthogonal = (self.piece_bb(side.other(), Piece::Rook)
-                | self.piece_bb(side.other(), Piece::Queen))
+            let orthogonal = (self.piece_bb(side.other(), Piece::Rook) | self.piece_bb(side.other(), Piece::Queen))
                 & rook_attacks(king_square, opp_occ);
 
             for square in diagonal | orthogonal {
@@ -341,10 +336,7 @@ mod tests {
     #[test]
     fn test_pawn_attacks_setwise() {
         let data = SearchData {
-            board: Board::from_fen(
-                "rnbqkb1r/pp3p2/4pnpp/1p1p2N1/1Q1P4/BP2P3/P1PN1PPP/R3K2R b KQkq - 0 1",
-            )
-            .unwrap(),
+            board: Board::from_fen("rnbqkb1r/pp3p2/4pnpp/1p1p2N1/1Q1P4/BP2P3/P1PN1PPP/R3K2R b KQkq - 0 1").unwrap(),
             ..Default::default()
         };
 
@@ -356,10 +348,7 @@ mod tests {
     #[test]
     fn test_knight_attacks_setwise() {
         let data = SearchData {
-            board: Board::from_fen(
-                "rnbqkb1r/pp3p2/4pnpp/1p1p2N1/1Q1P4/BP2P3/P1PN1PPP/R3K2R b KQkq - 0 1",
-            )
-            .unwrap(),
+            board: Board::from_fen("rnbqkb1r/pp3p2/4pnpp/1p1p2N1/1Q1P4/BP2P3/P1PN1PPP/R3K2R b KQkq - 0 1").unwrap(),
             ..Default::default()
         };
 
@@ -392,10 +381,7 @@ mod tests {
     #[test]
     fn test_checking_squares() {
         let data = SearchData {
-            board: Board::from_fen(
-                "rnbqk2r/pp3p2/4pnpp/1p1p2N1/1b1P4/BP2P2P/P1PN1PP1/R3K2R b KQkq - 0 2",
-            )
-            .unwrap(),
+            board: Board::from_fen("rnbqk2r/pp3p2/4pnpp/1p1p2N1/1b1P4/BP2P2P/P1PN1PP1/R3K2R b KQkq - 0 2").unwrap(),
             ..Default::default()
         };
 

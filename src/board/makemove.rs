@@ -31,8 +31,7 @@ impl Board {
         }
 
         if let Piece::Rook = piece {
-            if self.state.castling_rights.can_king_side(side)
-                && from == self.castling_rooks[side][Castling::KING_SIDE]
+            if self.state.castling_rights.can_king_side(side) && from == self.castling_rooks[side][Castling::KING_SIDE]
             {
                 self.state.castling_rights.clear_king_side(side);
             } else if self.state.castling_rights.can_queen_side(side)
@@ -44,9 +43,7 @@ impl Board {
 
         if kind == MoveKind::DoublePawn {
             self.state.enpassant = Some(Square::from(to as usize ^ 8));
-            self.state
-                .keys
-                .toggle_en_passant(Square::from(to as usize ^ 8));
+            self.state.keys.toggle_en_passant(Square::from(to as usize ^ 8));
         }
 
         if let Some(castle_kind) = m.castle_direction() {
@@ -104,19 +101,17 @@ impl Board {
 
             // Update occupancy as if enpassant pawn was taken for each possible ep taker
             let occupancies = self.all_occupancy() ^ enpassant.to_bb() ^ pawn_square.to_bb();
-            let possible_takers =
-                pawn_attacks(enpassant, stm.other()) & self.piece_bb(stm, Piece::Pawn);
+            let possible_takers = pawn_attacks(enpassant, stm.other()) & self.piece_bb(stm, Piece::Pawn);
 
             debug_assert!(possible_takers.count_bits() <= 2);
 
             for taker in possible_takers {
                 let new_occ = occupancies ^ taker.to_bb();
-                let bishop_queens = self.piece_bb(stm.other(), Piece::Bishop)
-                    | self.piece_bb(stm.other(), Piece::Queen);
+                let bishop_queens =
+                    self.piece_bb(stm.other(), Piece::Bishop) | self.piece_bb(stm.other(), Piece::Queen);
                 let bishop_queen_checkers = bishop_attacks(king_square, new_occ) & bishop_queens;
 
-                let rook_queens = self.piece_bb(stm.other(), Piece::Rook)
-                    | self.piece_bb(stm.other(), Piece::Queen);
+                let rook_queens = self.piece_bb(stm.other(), Piece::Rook) | self.piece_bb(stm.other(), Piece::Queen);
                 let rook_queen_checkers = rook_attacks(king_square, new_occ) & rook_queens;
                 let checkers = bishop_queen_checkers | rook_queen_checkers;
 

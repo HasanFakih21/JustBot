@@ -4,33 +4,23 @@ use crate::{board::Board, search::data::RootMove};
 #[test]
 fn test_order_moves() {
     let data = SearchData {
-        board: Board::from_fen(
-            "rnbqkb1r/pp3p2/4pnpp/1p1p2N1/1Q1P4/BP2P3/P1PN1PPP/R3K2R b KQkq - 0 1",
-        )
-        .unwrap(),
+        board: Board::from_fen("rnbqkb1r/pp3p2/4pnpp/1p1p2N1/1Q1P4/BP2P3/P1PN1PPP/R3K2R b KQkq - 0 1").unwrap(),
         ..Default::default()
     };
 
     let mut move_picker = MovePicker::new(None);
     let first_move = move_picker.next(&data, false, 0).unwrap();
 
-    assert_eq!(
-        first_move,
-        Move::new(Square::F8, Square::B4, MoveKind::Capture)
-    );
+    assert_eq!(first_move, Move::new(Square::F8, Square::B4, MoveKind::Capture));
 
     let data = SearchData {
-        board: Board::from_fen("rnbq1rk1/pN1p1ppp/4n2b/2p1p3/N1BP3R/2P2Q2/PP3PPP/2B1K2R w K - 0 1")
-            .unwrap(),
+        board: Board::from_fen("rnbq1rk1/pN1p1ppp/4n2b/2p1p3/N1BP3R/2P2Q2/PP3PPP/2B1K2R w K - 0 1").unwrap(),
         ..Default::default()
     };
     let mut move_picker = MovePicker::new(None);
     let first_move = move_picker.next(&data, false, 0).unwrap();
 
-    assert_eq!(
-        first_move,
-        Move::new(Square::B7, Square::D8, MoveKind::Capture)
-    );
+    assert_eq!(first_move, Move::new(Square::B7, Square::D8, MoveKind::Capture));
 }
 
 #[test]
@@ -55,10 +45,7 @@ fn test_mate_in_four() {
     let best_move = data.best_move.unwrap();
 
     println!("Best Move: {}", best_move.to_uci(&data.board));
-    assert_eq!(
-        Move::new(Square::F6, Square::G4, MoveKind::QuietMove),
-        best_move
-    );
+    assert_eq!(Move::new(Square::F6, Square::G4, MoveKind::QuietMove), best_move);
 }
 
 #[test]
@@ -110,10 +97,7 @@ fn test_pv_line() {
 
     assert_eq!(ver_pv, pv_display);
 
-    assert_eq!(
-        Move::new(Square::F6, Square::G4, MoveKind::QuietMove),
-        best_move
-    );
+    assert_eq!(Move::new(Square::F6, Square::G4, MoveKind::QuietMove), best_move);
 }
 
 #[test]

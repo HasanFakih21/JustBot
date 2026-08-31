@@ -19,9 +19,7 @@ pub struct MoveListError;
 
 impl MoveList {
     pub fn new() -> Self {
-        MoveList {
-            inner: StackVec::new(),
-        }
+        MoveList { inner: StackVec::new() }
     }
 
     pub fn push(&mut self, m: Move) {
@@ -107,11 +105,7 @@ impl Move {
     }
 
     pub const fn capture_square(&self) -> Square {
-        if self.is_en_passant() {
-            Square::from(self.to() as usize ^ 8)
-        } else {
-            self.to()
-        }
+        if self.is_en_passant() { Square::from(self.to() as usize ^ 8) } else { self.to() }
     }
 
     pub const fn from(&self) -> Square {

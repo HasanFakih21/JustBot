@@ -31,9 +31,7 @@ struct SearchParams {
 
 impl SearchThreads {
     pub fn new(shared: Arc<SharedData>, count: usize) -> Self {
-        let workers = (0..count)
-            .map(|id| create_worker(Arc::clone(&shared), id))
-            .collect();
+        let workers = (0..count).map(|id| create_worker(Arc::clone(&shared), id)).collect();
 
         SearchThreads { workers, shared }
     }

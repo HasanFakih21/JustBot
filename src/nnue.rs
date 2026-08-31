@@ -119,16 +119,12 @@ impl Network {
                     // Update all the not yet updated accumulators
                     let king_square = board.king_square(pov);
                     for index in last_accurate..self.index {
-                        if let Some((prev, [current, ..])) =
-                            self.stack.split_at_mut_checked(index + 1)
-                        {
+                        if let Some((prev, [current, ..])) = self.stack.split_at_mut_checked(index + 1) {
                             current.update(&prev[index], board, pov, king_square, self.parameters);
                         }
                     }
                 }
-                None => {
-                    self.stack[self.index].refresh(board, pov, self.parameters, &mut self.cache)
-                }
+                None => self.stack[self.index].refresh(board, pov, self.parameters, &mut self.cache),
             }
         }
 
@@ -282,8 +278,7 @@ mod tests {
     #[test]
     fn test_nnue_make_unmake() {
         let mut data = SearchData {
-            board: Board::from_fen("rnbq1rk1/pp3p2/4pnpp/1p1p2N1/3P4/1P2P3/PBPbKPPP/R6R w - - 2 4")
-                .unwrap(),
+            board: Board::from_fen("rnbq1rk1/pp3p2/4pnpp/1p1p2N1/3P4/1P2P3/PBPbKPPP/R6R w - - 2 4").unwrap(),
             ..Default::default()
         };
 

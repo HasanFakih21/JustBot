@@ -1,11 +1,7 @@
 use crate::{
-    attacks::{
-        BISHOP_ATTACKS, BISHOP_MASKS, KING_ATTACKS, KNIGHT_ATTACKS, PAWN_ATTACKS, ROOK_ATTACKS,
-        ROOK_MASKS,
-    },
+    attacks::{BISHOP_ATTACKS, BISHOP_MASKS, KING_ATTACKS, KNIGHT_ATTACKS, PAWN_ATTACKS, ROOK_ATTACKS, ROOK_MASKS},
     tools::magics::{
-        BISHOP_MAGIC_NUMBERS, BISHOP_OCCUPANCY_BIT_COUNTS, ROOK_MAGIC_NUMBERS,
-        ROOK_OCCUPANCY_BIT_COUNTS, magic_index,
+        BISHOP_MAGIC_NUMBERS, BISHOP_OCCUPANCY_BIT_COUNTS, ROOK_MAGIC_NUMBERS, ROOK_OCCUPANCY_BIT_COUNTS, magic_index,
     },
     types::{BitBoard, Piece, Side, Square},
 };
@@ -22,11 +18,7 @@ pub fn attacks(side: Side, square: Square, piece: Piece, occupancies: BitBoard) 
 }
 
 pub fn pawn_attacks(square: Square, side: Side) -> BitBoard {
-    unsafe {
-        *PAWN_ATTACKS
-            .get_unchecked(side as usize)
-            .get_unchecked(square as usize)
-    }
+    unsafe { *PAWN_ATTACKS.get_unchecked(side as usize).get_unchecked(square as usize) }
 }
 
 pub fn knight_attacks(square: Square) -> BitBoard {

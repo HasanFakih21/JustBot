@@ -8,8 +8,8 @@ use crate::search::time::{TimeManager, TimeSettings};
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory,
-    PawnHistory, STARTING_FEN, Score, Side, is_decisive,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory,
+    STARTING_FEN, Score, Side, is_decisive,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -46,10 +46,9 @@ struct AlignedAtomicU64(AtomicU64);
 
 impl SharedData {
     pub fn increment_nodes(&self, id: usize) {
-        self.nodes[id].0.store(
-            self.nodes[id].0.load(Ordering::Relaxed) + 1,
-            Ordering::Relaxed,
-        );
+        self.nodes[id]
+            .0
+            .store(self.nodes[id].0.load(Ordering::Relaxed) + 1, Ordering::Relaxed);
     }
 
     pub fn node_count(&self, id: usize) -> u64 {
@@ -172,19 +171,9 @@ impl SearchData {
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32, ply: isize) {
         let stm = self.board.state.side_to_move;
         let bonus = (148 * depth * diff / 121).clamp(-4612, 2530);
-        self.corrhistory
-            .pawn
-            .update(stm, self.board.state.keys.pawn, bonus);
-        self.corrhistory.non_pawn[Side::White].update(
-            stm,
-            self.board.state.keys.non_pawn[Side::White],
-            bonus,
-        );
-        self.corrhistory.non_pawn[Side::Black].update(
-            stm,
-            self.board.state.keys.non_pawn[Side::Black],
-            bonus,
-        );
+        self.corrhistory.pawn.update(stm, self.board.state.keys.pawn, bonus);
+        self.corrhistory.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
+        self.corrhistory.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
 
         unsafe {
             if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
@@ -210,10 +199,8 @@ impl SearchData {
     pub fn correction(&self, ply: isize) -> i32 {
         let stm = self.board.state.side_to_move;
         (self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
-            + self.corrhistory.non_pawn[Side::White]
-                .get(stm, self.board.state.keys.non_pawn[Side::White])
-            + self.corrhistory.non_pawn[Side::Black]
-                .get(stm, self.board.state.keys.non_pawn[Side::Black])
+            + self.corrhistory.non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
+            + self.corrhistory.non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black])
             + unsafe {
                 if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
                     self.contcorrhistory.get(

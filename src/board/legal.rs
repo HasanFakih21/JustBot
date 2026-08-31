@@ -3,8 +3,7 @@ use crate::{
     board::Board,
     lookup::{attacks, bishop_attacks, king_attacks, pawn_attacks, rook_attacks},
     types::{
-        BitBoard, Castling, KING_TO, Move, MoveKind, NORTH, OptionPiece, Piece, RANK_1, RANK_8,
-        ROOK_TO, SOUTH, Side,
+        BitBoard, Castling, KING_TO, Move, MoveKind, NORTH, OptionPiece, Piece, RANK_1, RANK_8, ROOK_TO, SOUTH, Side,
     },
 };
 
@@ -32,10 +31,8 @@ impl Board {
                 let rook_square = self.castling_rooks[stm][dir];
 
                 // Needs to be empty
-                let mut between = BETWEEN[king_square][king_to]
-                    | BETWEEN[rook_square][rook_to]
-                    | rook_to.to_bb()
-                    | king_to.to_bb();
+                let mut between =
+                    BETWEEN[king_square][king_to] | BETWEEN[rook_square][rook_to] | rook_to.to_bb() | king_to.to_bb();
                 between &= !king_square.to_bb();
                 between &= !rook_square.to_bb();
 
@@ -71,17 +68,13 @@ impl Board {
                     return false;
                 };
 
-                let occupancies =
-                    self.all_occupancy() ^ from.to_bb() ^ to.to_bb() ^ (to ^ 8).to_bb();
-                let bishop_queens = self.piece_bb(stm.other(), Piece::Bishop)
-                    | self.piece_bb(stm.other(), Piece::Queen);
-                let rook_queens = self.piece_bb(stm.other(), Piece::Rook)
-                    | self.piece_bb(stm.other(), Piece::Queen);
+                let occupancies = self.all_occupancy() ^ from.to_bb() ^ to.to_bb() ^ (to ^ 8).to_bb();
+                let bishop_queens =
+                    self.piece_bb(stm.other(), Piece::Bishop) | self.piece_bb(stm.other(), Piece::Queen);
+                let rook_queens = self.piece_bb(stm.other(), Piece::Rook) | self.piece_bb(stm.other(), Piece::Queen);
                 let diagonal = bishop_attacks(king_square, occupancies) & bishop_queens;
                 let orthogonal = rook_attacks(king_square, occupancies) & rook_queens;
-                return to == ep_square
-                    && pawn_attacks(from, stm).contains(to)
-                    && (orthogonal | diagonal).is_empty();
+                return to == ep_square && pawn_attacks(from, stm).contains(to) && (orthogonal | diagonal).is_empty();
             }
 
             if m.is_promotion() {
@@ -96,8 +89,7 @@ impl Board {
             }
 
             if m.is_capture() {
-                return pawn_attacks(from, stm).contains(to)
-                    && self.state.occupancies[stm.other()].contains(to);
+                return pawn_attacks(from, stm).contains(to) && self.state.occupancies[stm.other()].contains(to);
             }
 
             let offset = match stm {
@@ -117,9 +109,7 @@ impl Board {
                     && !self.all_occupancy().contains(to);
             }
 
-            return !m.is_castling()
-                && from.shift(offset) == to
-                && !self.all_occupancy().contains(to);
+            return !m.is_castling() && from.shift(offset) == to && !self.all_occupancy().contains(to);
         }
 
         matches!(m.kind(), MoveKind::Capture | MoveKind::QuietMove)

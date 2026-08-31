@@ -57,9 +57,7 @@ impl<T: Copy, const SIZE: usize> StackVec<T, SIZE> {
     }
 
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
-        unsafe {
-            std::slice::from_raw_parts_mut(self.inner.as_mut_ptr().cast(), self.len).iter_mut()
-        }
+        unsafe { std::slice::from_raw_parts_mut(self.inner.as_mut_ptr().cast(), self.len).iter_mut() }
     }
 }
 

@@ -30,11 +30,7 @@ impl Board {
                     continue;
                 }
 
-                let side = if p.is_ascii_uppercase() {
-                    Side::White
-                } else {
-                    Side::Black
-                };
+                let side = if p.is_ascii_uppercase() { Side::White } else { Side::Black };
                 let piece = Piece::from_char(p)?;
                 let square = Square::from_rank_and_file(rank, file);
                 board.place_piece(side, piece, square);
@@ -75,10 +71,7 @@ impl Board {
             board.state.keys.toggle_side();
         }
 
-        board
-            .state
-            .keys
-            .toggle_castling(board.state.castling_rights);
+        board.state.keys.toggle_castling(board.state.castling_rights);
         if let Some(square) = board.state.enpassant {
             board.state.keys.toggle_en_passant(square);
         }
@@ -105,9 +98,10 @@ impl Board {
         }
 
         let move_list = self.generate_moves(MoveGenKind::All);
-        if let Some(m) = move_list.iter().find(|e| {
-            e.mv.from() == from && e.mv.to() == to && e.mv.promoted_piece() == promotion_piece
-        }) {
+        if let Some(m) = move_list
+            .iter()
+            .find(|e| e.mv.from() == from && e.mv.to() == to && e.mv.promoted_piece() == promotion_piece)
+        {
             Ok(m.mv)
         } else {
             Err("Invalid move string")
@@ -117,21 +111,11 @@ impl Board {
     fn parse_castling(&mut self, castling_rights: &str) {
         for c in castling_rights.chars() {
             if matches!(c.to_ascii_uppercase(), 'A'..='H') {
-                let side = if c.is_ascii_uppercase() {
-                    Side::White
-                } else {
-                    Side::Black
-                };
+                let side = if c.is_ascii_uppercase() { Side::White } else { Side::Black };
                 let file = File::from(c.to_ascii_uppercase() as u8 - b'A');
-                let rook_square = (file.to_bb() & HOME_RANK[side].to_bb())
-                    .least_sig_bit()
-                    .unwrap();
+                let rook_square = (file.to_bb() & HOME_RANK[side].to_bb()).least_sig_bit().unwrap();
                 let king_square = self.king_square(side);
-                let dir = if rook_square > king_square {
-                    Castling::KING_SIDE
-                } else {
-                    Castling::QUEEN_SIDE
-                };
+                let dir = if rook_square > king_square { Castling::KING_SIDE } else { Castling::QUEEN_SIDE };
                 self.castling_rooks[side][dir] = rook_square;
                 let mask = Castling::KINDS[side][dir] as u8;
                 self.state.castling_rights.set(mask);
@@ -201,29 +185,19 @@ mod tests {
         let board = Board::from_fen(STARTING_FEN).unwrap();
         println!("{board}");
 
-        let board3 =
-            Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
-                .unwrap();
+        let board3 = Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1").unwrap();
         println!("{board3}");
 
-        let board4 =
-            Board::from_fen("rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1")
-                .unwrap();
+        let board4 = Board::from_fen("rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1").unwrap();
         println!("{board4}");
 
-        let board5 =
-            Board::from_fen("r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9")
-                .unwrap();
+        let board5 = Board::from_fen("r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9").unwrap();
         println!("{board5}");
 
-        let board5 =
-            Board::from_fen("rnbqkbnr/pp3ppp/4p3/2pp4/3P4/2P2N2/PP2PPPP/RNBQKB1R w KQkq c6 0 4")
-                .unwrap();
+        let board5 = Board::from_fen("rnbqkbnr/pp3ppp/4p3/2pp4/3P4/2P2N2/PP2PPPP/RNBQKB1R w KQkq c6 0 4").unwrap();
         println!("{board5}");
 
-        let board6 =
-            Board::from_fen("rnb1kbnr/pp1q1pp1/4p2p/2p1N3/3Pp3/2P5/PP2BPPP/RNBQK1R1 b Qkq - 1 7")
-                .unwrap();
+        let board6 = Board::from_fen("rnb1kbnr/pp1q1pp1/4p2p/2p1N3/3Pp3/2P5/PP2BPPP/RNBQK1R1 b Qkq - 1 7").unwrap();
         println!("{board6}");
         println!("Half move: {}", board6.state.half_move_clock);
         println!("Full move: {}", board6.state.full_move);
@@ -234,9 +208,7 @@ mod tests {
         let board = Board::from_fen(STARTING_FEN).unwrap();
         assert_eq!(STARTING_FEN, board.to_fen());
 
-        let board =
-            Board::from_fen("r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9")
-                .unwrap();
+        let board = Board::from_fen("r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9").unwrap();
         assert_eq!(
             "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9",
             board.to_fen()
@@ -248,8 +220,7 @@ mod tests {
 
     #[test]
     fn test_frc_fen() {
-        let board =
-            Board::from_fen("qrkbbnnr/pppppppp/8/8/8/8/PPPPPPPP/RKRQNNBB w CAhb - 0 1").unwrap();
+        let board = Board::from_fen("qrkbbnnr/pppppppp/8/8/8/8/PPPPPPPP/RKRQNNBB w CAhb - 0 1").unwrap();
         println!("{:?}", board.castling_rooks);
     }
 }

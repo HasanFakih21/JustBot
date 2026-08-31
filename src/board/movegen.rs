@@ -106,11 +106,7 @@ impl Board {
             let right_captures = right_pawns.shift(right) & target;
             let right_promos = right_captures & promotion_rank;
             move_list.push_promotion_captures_setwise(right, right_promos);
-            move_list.push_pawn_moves_setwise(
-                right,
-                right_captures ^ right_promos,
-                MoveKind::Capture,
-            );
+            move_list.push_pawn_moves_setwise(right, right_captures ^ right_promos, MoveKind::Capture);
             if let Some(en_passant) = self.state.enpassant {
                 if left_pawns.contains(en_passant.shift(-left)) {
                     let from = en_passant.shift(-left);
@@ -139,10 +135,8 @@ impl Board {
             let rook_to = ROOK_TO[stm][dir];
 
             // Needs to be empty
-            let mut between = BETWEEN[king_square][king_to]
-                | BETWEEN[rook_square][rook_to]
-                | rook_to.to_bb()
-                | king_to.to_bb();
+            let mut between =
+                BETWEEN[king_square][king_to] | BETWEEN[rook_square][rook_to] | rook_to.to_bb() | king_to.to_bb();
             between &= !king_square.to_bb();
             between &= !rook_square.to_bb();
 
@@ -193,9 +187,7 @@ impl Board {
         if kind.is_noisy() {
             move_list.push_setwise(
                 king_square,
-                king_attacks(king_square)
-                    & self.state.occupancies[stm.other()]
-                    & !self.state.threats,
+                king_attacks(king_square) & self.state.occupancies[stm.other()] & !self.state.threats,
                 MoveKind::Capture,
             );
         }
@@ -360,8 +352,7 @@ mod tests {
         assert_eq!(move_list.len(), 20);
 
         let data = SearchData {
-            board: Board::from_fen("rnb1kbnr/pp1ppppp/2p5/q7/8/3P4/PPPBPPPP/RN1QKBNR w KQkq - 2 3")
-                .unwrap(),
+            board: Board::from_fen("rnb1kbnr/pp1ppppp/2p5/q7/8/3P4/PPPBPPPP/RN1QKBNR w KQkq - 2 3").unwrap(),
             ..Default::default()
         };
 

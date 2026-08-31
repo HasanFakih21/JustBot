@@ -34,38 +34,21 @@ impl DualAccumulators {
         }
     }
 
-    pub fn update(
-        &mut self,
-        prev: &Self,
-        board: &Board,
-        pov: Side,
-        king_square: Square,
-        parameters: &Parameters,
-    ) {
+    pub fn update(&mut self, prev: &Self, board: &Board, pov: Side, king_square: Square, parameters: &Parameters) {
         let Some(delta) = &self.delta else { return };
 
         let from = delta.m.from();
         let to = delta.m.to();
         let stm = delta.stm;
         let moving_piece = delta.piece;
-        let resulting_piece = if delta.m.is_promotion() {
-            delta.m.promoted_piece().unwrap()
-        } else {
-            moving_piece
-        };
+        let resulting_piece = if delta.m.is_promotion() { delta.m.promoted_piece().unwrap() } else { moving_piece };
 
         let add1 = feature_index(stm, resulting_piece, to, king_square, pov);
         let sub1 = feature_index(stm, moving_piece, from, king_square, pov);
 
         if let Some(captured_piece) = delta.captured {
             let capture_square = delta.m.capture_square();
-            let sub2 = feature_index(
-                stm.other(),
-                captured_piece,
-                capture_square,
-                king_square,
-                pov,
-            );
+            let sub2 = feature_index(stm.other(), captured_piece, capture_square, king_square, pov);
             self.apply_updates(prev, [add1], [sub1, sub2], pov, parameters);
         } else if let Some(castle_kind) = delta.m.castle_direction() {
             let rook_square = board.castling_rooks[stm][castle_kind];
@@ -121,13 +104,7 @@ impl DualAccumulators {
         }
     }
 
-    pub fn refresh(
-        &mut self,
-        board: &Board,
-        pov: Side,
-        parameters: &Parameters,
-        cache: &mut AccumulatorCache,
-    ) {
+    pub fn refresh(&mut self, board: &Board, pov: Side, parameters: &Parameters, cache: &mut AccumulatorCache) {
         let king_square = board.king_square(pov);
         let (input_bucket, hm) = input_context(king_square ^ (56 * pov as u8));
         let cache_data = cache.get_mut(pov, hm, input_bucket);
@@ -184,10 +161,7 @@ pub fn update_from_cache(
             }
 
             for &add in adds.iter() {
-                let weights = parameters.feature_weights[add as usize]
-                    .vals
-                    .as_ptr()
-                    .add(i);
+                let weights = parameters.feature_weights[add as usize].vals.as_ptr().add(i);
 
                 for (r_idx, r) in registers.iter_mut().enumerate() {
                     *r = simd::add_i16(*r, *weights.add(r_idx * simd::I16_CHUNK).cast());
@@ -195,10 +169,7 @@ pub fn update_from_cache(
             }
 
             for &sub in subs.iter() {
-                let weights = parameters.feature_weights[sub as usize]
-                    .vals
-                    .as_ptr()
-                    .add(i);
+                let weights = parameters.feature_weights[sub as usize].vals.as_ptr().add(i);
                 for (r_idx, r) in registers.iter_mut().enumerate() {
                     *r = simd::sub_i16(*r, *weights.add(r_idx * simd::I16_CHUNK).cast());
                 }
@@ -257,13 +228,7 @@ impl Accumulator {
 }
 
 #[inline]
-pub fn feature_index(
-    side: Side,
-    piece: Piece,
-    square: Square,
-    king_square: Square,
-    pov: Side,
-) -> FeatureIndex {
+pub fn feature_index(side: Side, piece: Piece, square: Square, king_square: Square, pov: Side) -> FeatureIndex {
     let square = square ^ (56 * pov as u8);
     let king_square = king_square ^ (56 * pov as u8);
 

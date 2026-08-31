@@ -81,11 +81,7 @@ impl ContinuationHistory {
         Self(zeroed_box())
     }
 
-    pub fn subtable(
-        &mut self,
-        piece: OptionPiece<SidedPiece>,
-        to: Square,
-    ) -> *mut PieceToHistory<i16> {
+    pub fn subtable(&mut self, piece: OptionPiece<SidedPiece>, to: Square) -> *mut PieceToHistory<i16> {
         &raw mut self.0[piece][to]
     }
 
@@ -104,12 +100,7 @@ impl ContinuationHistory {
 
     /// # Safety
     /// 'subtable' needs to point to a valid subtable owned by the history
-    pub unsafe fn get(
-        &self,
-        subtable: *mut PieceToHistory<i16>,
-        piece: OptionPiece<SidedPiece>,
-        to: Square,
-    ) -> i32 {
+    pub unsafe fn get(&self, subtable: *mut PieceToHistory<i16>, piece: OptionPiece<SidedPiece>, to: Square) -> i32 {
         (unsafe { &*subtable }[piece][to]) as i32
     }
 }
@@ -125,11 +116,7 @@ impl ContinuationCorrectionHistory {
         Self(zeroed_box())
     }
 
-    pub fn subtable(
-        &mut self,
-        piece: OptionPiece<SidedPiece>,
-        to: Square,
-    ) -> *mut PieceToHistory<i16> {
+    pub fn subtable(&mut self, piece: OptionPiece<SidedPiece>, to: Square) -> *mut PieceToHistory<i16> {
         &raw mut self.0[piece][to]
     }
 
@@ -148,12 +135,7 @@ impl ContinuationCorrectionHistory {
 
     /// # Safety
     /// 'subtable' needs to point to a valid subtable owned by the history
-    pub unsafe fn get(
-        &self,
-        subtable: *mut PieceToHistory<i16>,
-        piece: OptionPiece<SidedPiece>,
-        to: Square,
-    ) -> i32 {
+    pub unsafe fn get(&self, subtable: *mut PieceToHistory<i16>, piece: OptionPiece<SidedPiece>, to: Square) -> i32 {
         (unsafe { &*subtable }[piece][to]) as i32
     }
 }

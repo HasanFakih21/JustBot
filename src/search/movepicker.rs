@@ -28,11 +28,7 @@ impl MovePicker {
         Self {
             moves: MoveList::new(),
             tt_move,
-            status: if tt_move.is_some() {
-                Stage::HashMove
-            } else {
-                Stage::FirstNoisy
-            },
+            status: if tt_move.is_some() { Stage::HashMove } else { Stage::FirstNoisy },
             bad_noisy: StackVec::new(),
             bad_index: 0,
             noisy_count: 0,
@@ -110,10 +106,7 @@ impl MovePicker {
 
             let piece = data.board.piece_at_square(mv.from());
             let to = mv.to();
-            let captured = data
-                .board
-                .piece_at_square(mv.capture_square())
-                .map(|e| e.kind());
+            let captured = data.board.piece_at_square(mv.capture_square()).map(|e| e.kind());
             if let OptionPiece::Some(p) = captured {
                 score += see::value(p)
             }
@@ -132,11 +125,10 @@ impl MovePicker {
             let piece = data.board.piece_at_square(mv.from());
             let to = mv.to();
 
-            let conthistory_score =
-                1000 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
-                    + 1595 * data.conthistory(mv, ply, 1) / 1024
-                    + 1050 * data.conthistory(mv, ply, 2) / 1024
-                    + 1000 * data.conthistory(mv, ply, 4) / 1024;
+            let conthistory_score = 1000 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
+                + 1595 * data.conthistory(mv, ply, 1) / 1024
+                + 1050 * data.conthistory(mv, ply, 2) / 1024
+                + 1000 * data.conthistory(mv, ply, 4) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score
