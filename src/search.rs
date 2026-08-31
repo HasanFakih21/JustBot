@@ -271,16 +271,22 @@ pub fn search<Node: NodeType>(
 
     let improving = improvement > 0;
 
-    // Hindsight Reduction
-    if !Node::ROOT
-        && !in_check
-        && !excluded
-        && depth >= 2
-        && data.stack[ply - 1].eval != Score::NONE
-        && data.stack[ply - 1].reduction >= 2048
-        && static_eval + data.stack[ply - 1].eval >= 200
-    {
-        depth -= 1;
+    if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
+        // Hindsight Extension
+        if depth < MAX_PLY as i32
+            && data.stack[ply - 1].reduction >= 3072
+            && static_eval + data.stack[ply - 1].eval <= 0
+        {
+            depth += 1;
+        }
+
+        // Hindsight Reduction
+        if depth >= 2
+            && data.stack[ply - 1].reduction >= 2048
+            && static_eval + data.stack[ply - 1].eval >= 200
+        {
+            depth -= 1;
+        }
     }
 
     // Razoring
