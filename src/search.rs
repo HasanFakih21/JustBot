@@ -221,6 +221,14 @@ pub fn search<Node: NodeType>(
             Bound::None => false,
         })
     {
+        if let Some(tt_move) = tt_move
+            && tt_score >= beta
+            && tt_move.kind().is_quiet()
+        {
+            let bonus = (200 * depth - 50).min(1200);
+            data.quiet_history.update(data.board.state.threats, stm, tt_move, bonus);
+        }
+
         return tt_score;
     }
 
