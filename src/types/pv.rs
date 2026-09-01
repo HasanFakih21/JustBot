@@ -9,7 +9,7 @@ pub struct PVTable {
 impl PVTable {
     pub fn new() -> Self {
         PVTable {
-            inner: Box::new([[Move::default(); MAX_PLY + 1]; MAX_PLY + 1]),
+            inner: Box::new([[Move::NONE; MAX_PLY + 1]; MAX_PLY + 1]),
             len: [0; MAX_PLY + 1],
         }
     }

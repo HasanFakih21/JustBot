@@ -248,7 +248,7 @@ pub fn search<Node: NodeType>(
     data.stack[ply].eval = static_eval;
     if !excluded && tt_entry.is_none() {
         data.shared.tt.add_entry(
-            Move::default(),
+            Move::NONE,
             Score::NONE,
             raw_eval,
             Bound::None,
@@ -320,7 +320,7 @@ pub fn search<Node: NodeType>(
         let r = 6 + depth * 132 / 637;
         data.stack[ply].conthistory = data.stack.sentinel();
         data.stack[ply].contcorrhistory = data.stack.sentinel();
-        data.stack[ply].m = Move::default();
+        data.stack[ply].m = Move::NONE;
         data.stack[ply].piece = OptionPiece::None;
 
         data.board.make_null_move();
@@ -353,10 +353,10 @@ pub fn search<Node: NodeType>(
         let singular_beta = tt_score - (depth + depth);
 
         data.stack[ply].excluded = tt_move;
-        data.stack[ply].m = Move::default();
+        data.stack[ply].m = Move::NONE;
         // Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
         let singular_score = search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply, cutnode);
-        data.stack[ply].excluded = Move::default();
+        data.stack[ply].excluded = Move::NONE;
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;
@@ -618,7 +618,7 @@ pub fn search<Node: NodeType>(
 
     if !excluded {
         data.shared.tt.add_entry(
-            best_move.unwrap_or_default(),
+            best_move.unwrap_or(Move::NONE),
             best_score,
             raw_eval,
             bound,
@@ -715,7 +715,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
     if tt_entry.is_none() {
         data.shared.tt.add_entry(
-            Move::default(),
+            Move::NONE,
             Score::NONE,
             raw_eval,
             Bound::None,
@@ -730,7 +730,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
     if best_score >= beta {
         if tt_entry.is_none() {
             data.shared.tt.add_entry(
-                Move::default(),
+                Move::NONE,
                 best_score,
                 raw_eval,
                 Bound::Lower,
@@ -817,7 +817,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
     }
 
     data.shared.tt.add_entry(
-        best_move.unwrap_or_default(),
+        best_move.unwrap_or(Move::NONE),
         best_score,
         raw_eval,
         bound,

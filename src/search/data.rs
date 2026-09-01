@@ -343,7 +343,7 @@ pub struct RootMove {
 impl Default for RootMove {
     fn default() -> Self {
         RootMove {
-            m: Move::default(),
+            m: Move::NONE,
             nodes: 0,
             pv: RootPV::default(),
             score: -Score::INFINITY,

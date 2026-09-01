@@ -96,10 +96,12 @@ impl Default for MoveList {
 }
 
 // 12 bits for to and from square and 4 bits for move type
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Move(u16);
 
 impl Move {
+    pub const NONE: Self = Self(0);
+
     pub fn new(from: Square, to: Square, kind: MoveKind) -> Self {
         Move(from as u16 | ((to as u16) << 6) | ((kind as u16) << 12))
     }

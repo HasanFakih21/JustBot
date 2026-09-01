@@ -50,12 +50,12 @@ pub struct PlyData {
 impl Default for PlyData {
     fn default() -> Self {
         PlyData {
-            m: Move::default(),
+            m: Move::NONE,
             piece: OptionPiece::None,
             conthistory: std::ptr::null_mut(),
             contcorrhistory: std::ptr::null_mut(),
             eval: Score::NONE,
-            excluded: Move::default(),
+            excluded: Move::NONE,
             reduction: 0,
             threats: BitBoard(0),
         }
