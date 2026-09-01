@@ -460,7 +460,7 @@ pub fn search<Node: NodeType>(
             r -= 449 * history / 4096;
 
             let reduction = r / 1024;
-            let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
+            let reduced_depth = (new_depth - reduction).max(1) + 2 * Node::PV as i32;
 
             data.stack[ply].reduction = r;
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, true);
