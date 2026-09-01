@@ -312,6 +312,7 @@ pub fn search<Node: NodeType>(
         && depth >= 3
         && !excluded
         && !in_check
+        && ply as i32 >= data.nmp_min_ply
         && !data.board.only_king_and_pawns()
         && tt_bound.is_none_or(|b| b != Bound::Upper)
         && static_eval >= beta + (200 - 1250 * depth / 128 - 63 * improving as i32).max(0)
@@ -326,14 +327,29 @@ pub fn search<Node: NodeType>(
         data.board.make_null_move();
         data.shared.tt.prefetch(data.board.hash());
 
-        let null_move_score = -search::<NonPV>(data, depth - r, -beta, -beta + 1, ply + 1, false);
+        let score = -search::<NonPV>(data, depth - r, -beta, -beta + 1, ply + 1, false);
         data.board.unmake_move();
-        if null_move_score >= beta {
-            return null_move_score;
-        }
 
         if data.shared.status.get() == Status::STOPPED {
             return Score::TIMEOUT;
+        }
+
+        if score >= beta && !is_win(score) && !is_loss(score) {
+            if depth <= 14 || data.nmp_min_ply > 0 {
+                return score;
+            }
+
+            data.nmp_min_ply = ply as i32 + (depth - r) * 3 / 4;
+            let verified_score = search::<NonPV>(data, depth - r, beta - 1, beta, ply, true);
+            data.nmp_min_ply = 0;
+
+            if data.shared.status.get() == Status::STOPPED {
+                return Score::TIMEOUT;
+            }
+
+            if verified_score >= beta {
+                return verified_score;
+            }
         }
     }
 
