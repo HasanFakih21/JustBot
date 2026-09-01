@@ -728,6 +728,19 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
     // Stand Pat
     if best_score >= beta {
+        if tt_entry.is_none() {
+            data.shared.tt.add_entry(
+                Move::default(),
+                best_score,
+                raw_eval,
+                Bound::Lower,
+                data.board.hash(),
+                0,
+                ply,
+                Node::PV,
+            );
+        }
+
         return best_score;
     }
 
