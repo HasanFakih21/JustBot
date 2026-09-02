@@ -438,7 +438,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && !is_win(beta)
                 && is_quiet
-                && move_count as i32 >= (3011 + 1493 * depth * depth) / (1024 * (2 - improving as i32))
+                && move_count as i32 > (3011 + 1493 * depth * depth) / (1024 * (2 - improving as i32))
             {
                 skip_quiets = true;
                 continue;
