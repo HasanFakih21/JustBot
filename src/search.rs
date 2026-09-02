@@ -393,6 +393,10 @@ pub fn search<Node: NodeType>(
                 + (singular_score < singular_beta - double_margin) as i32
                 + (singular_score < singular_beta - triple_margin) as i32;
         }
+        // Multi-Cut
+        else if singular_beta >= beta {
+            return singular_beta;
+        }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
             extension -= 3;
