@@ -8,13 +8,13 @@ use std::{
 };
 
 use crate::{
-    board::Board,
+    board::{Board, movegen::MoveGenKind},
     search::{
         data::{Report, RootMove, SearchData, SharedData},
         search_runner,
         time::TimeManager,
     },
-    types::{Move, Score},
+    types::{Move, Score, is_decisive, is_loss, is_win},
 };
 
 pub struct SearchThreads {
@@ -46,7 +46,7 @@ impl SearchThreads {
         self.shared.status.run();
 
         let root_moves: Vec<RootMove> = board
-            .generate_moves(crate::board::movegen::MoveGenKind::All)
+            .generate_moves(MoveGenKind::All)
             .iter()
             .map(|e| RootMove {
                 m: e.mv,
@@ -82,15 +82,19 @@ impl SearchThreads {
         }
 
         if threads.is_empty() {
-            return None;
+            let move_list = board.generate_moves(MoveGenKind::All);
+            if move_list.is_empty() { return None } else { return Some(move_list.get(0).mv) }
         }
 
         let lowest_score = threads.iter().map(|result| result.best_move.score).min().unwrap();
         let mut votes: HashMap<&Move, i64> = HashMap::new();
 
+        let thread_weight = |result: &SearchResult| {
+            (result.best_move.score as i64 - lowest_score as i64 + 10) * result.searched_depth as i64
+        };
+
         for result in threads.iter() {
-            *votes.entry(&result.best_move.m).or_default() +=
-                (result.best_move.score as i64 - lowest_score as i64 + 10) * result.searched_depth as i64;
+            *votes.entry(&result.best_move.m).or_default() += thread_weight(result);
         }
 
         let mut best_index = 0;
@@ -99,12 +103,38 @@ impl SearchThreads {
             let best = &threads[best_index].best_move;
             let current = &threads[current_index].best_move;
 
-            if votes[&best.m] < votes[&current.m] {
+            if is_win(best.score) {
+                if current.score > best.score {
+                    best_index = current_index;
+                }
+                continue;
+            }
+
+            if is_loss(best.score) {
+                if is_loss(current.score) && current.score < best.score {
+                    best_index = current_index;
+                }
+                continue;
+            }
+
+            if is_decisive(current.score) {
+                best_index = current_index;
+                continue;
+            }
+
+            if votes[&current.m] > votes[&best.m] {
+                best_index = current_index;
+                continue;
+            }
+
+            if votes[&current.m] == votes[&best.m]
+                && thread_weight(&threads[current_index]) > thread_weight(&threads[best_index])
+            {
                 best_index = current_index;
             }
         }
 
-        if report != Report::None {
+        if report != Report::None && threads[best_index].id != 0 {
             self.workers[threads[best_index].id]
                 .comm
                 .send(Command::PrintUCI)

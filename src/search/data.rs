@@ -241,8 +241,6 @@ impl SearchData {
     }
 
     pub fn print_uci_info(&self) {
-        debug_assert!(self.report != Report::None);
-
         let Some(root_move) = &self.best_move else {
             return;
         };
