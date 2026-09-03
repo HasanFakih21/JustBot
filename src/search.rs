@@ -93,6 +93,7 @@ pub fn search_runner(data: &mut SearchData) {
             continue;
         }
 
+        data.completed_depth = depth;
         data.sel_depth = 0;
         depth += 1;
 

@@ -98,6 +98,7 @@ pub struct SearchData {
     pub sel_depth: i32,
     pub prev_score: i32,
     pub nmp_min_ply: i32,
+    pub completed_depth: i32,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -125,6 +126,7 @@ impl SearchData {
             sel_depth: 0,
             prev_score: 0,
             nmp_min_ply: 0,
+            completed_depth: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),

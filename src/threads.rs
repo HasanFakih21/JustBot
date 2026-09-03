@@ -77,10 +77,15 @@ impl SearchThreads {
         let mut results: HashMap<&Move, i32> = HashMap::new();
 
         for result in threads.iter() {
-            *results.entry(&result.best_move).or_default() += result.score - lowest_score + 10 * result.searched_depth;
+            *results.entry(&result.best_move).or_default() +=
+                (result.score - lowest_score + 10) * result.searched_depth;
         }
 
-        results.iter().max_by_key(|&(_, score)| score).map(|(m, _)| **m)
+        results
+            .iter()
+            .filter(|&(m, _)| !m.is_null())
+            .max_by_key(|&(_, score)| score)
+            .map(|(m, _)| **m)
     }
 
     pub fn count(&self) -> usize {
@@ -124,7 +129,7 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
                     if result_tx
                         .send(SearchResult {
                             best_move: data.best_move,
-                            searched_depth: data.root_depth,
+                            searched_depth: data.completed_depth,
                             score: data.prev_score,
                         })
                         .is_err()
