@@ -7,7 +7,7 @@ use crate::{
 
 impl Board {
     pub fn see(&self, m: Move, threshold: i32) -> bool {
-        if m.is_promotion() && !m.is_capture() {
+        if (m.is_promotion() && !m.is_capture()) || m.is_castling() {
             return true;
         }
 
