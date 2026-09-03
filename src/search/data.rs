@@ -36,6 +36,7 @@ impl Status {
 #[derive(Debug)]
 pub struct SharedData {
     pub tt: TranspositionTable,
+    pub history: Arc<SharedCorrectionHistories>,
     pub status: Status,
     nodes: Box<[AlignedAtomicU64; 512]>,
 }
@@ -69,6 +70,7 @@ impl SharedData {
 impl Default for SharedData {
     fn default() -> Self {
         Self {
+            history: Arc::new(SharedCorrectionHistories::default()),
             tt: TranspositionTable::default(),
             status: Status(AtomicBool::new(Status::RUNNING)),
             nodes: Box::new(array::from_fn(|_| AlignedAtomicU64(AtomicU64::new(0)))),
@@ -104,7 +106,6 @@ pub struct SearchData {
     pub noisy_history: NoisyHistory,
     pub pawn_history: PawnHistory,
     pub conthistory: ContinuationHistory,
-    pub corrhistory: CorrectionHistories,
     pub contcorrhistory: ContinuationCorrectionHistory,
 
     pub network: Network,
@@ -132,11 +133,14 @@ impl SearchData {
             noisy_history: NoisyHistory::new(),
             pawn_history: PawnHistory::new(),
             conthistory: ContinuationHistory::new(),
-            corrhistory: CorrectionHistories::default(),
             contcorrhistory: ContinuationCorrectionHistory::new(),
 
             network: Network::new(),
         }
+    }
+
+    pub fn corrhistory(&self) -> &SharedCorrectionHistories {
+        &self.shared.history
     }
 
     pub fn start_time(&mut self) {
@@ -175,9 +179,9 @@ impl SearchData {
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32, ply: isize) {
         let stm = self.board.state.side_to_move;
         let bonus = (148 * depth * diff / 121).clamp(-4612, 2530);
-        self.corrhistory.pawn.update(stm, self.board.state.keys.pawn, bonus);
-        self.corrhistory.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
-        self.corrhistory.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
+        self.corrhistory().pawn.update(stm, self.board.state.keys.pawn, bonus);
+        self.corrhistory().non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
+        self.corrhistory().non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
 
         unsafe {
             if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
@@ -202,9 +206,9 @@ impl SearchData {
 
     pub fn correction(&self, ply: isize) -> i32 {
         let stm = self.board.state.side_to_move;
-        (self.corrhistory.pawn.get(stm, self.board.state.keys.pawn)
-            + self.corrhistory.non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
-            + self.corrhistory.non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black])
+        (self.corrhistory().pawn.get(stm, self.board.state.keys.pawn)
+            + self.corrhistory().non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
+            + self.corrhistory().non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black])
             + unsafe {
                 if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
                     self.contcorrhistory.get(
@@ -326,9 +330,18 @@ impl Default for SearchData {
 }
 
 #[derive(Debug, Default)]
-pub struct CorrectionHistories {
+pub struct SharedCorrectionHistories {
     pub pawn: CorrectionHistory,
     pub non_pawn: [CorrectionHistory; 2],
+}
+
+impl SharedCorrectionHistories {
+    pub fn clear(&self) {
+        self.pawn.clear();
+        for history in self.non_pawn.iter() {
+            history.clear();
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
