@@ -14,7 +14,7 @@ use crate::{
         search_runner,
         time::TimeManager,
     },
-    types::Move,
+    types::{Move, Score},
 };
 
 pub struct SearchThreads {
@@ -72,17 +72,25 @@ impl SearchThreads {
             let Response::Search(search_result) = w.result.recv().expect("Worker not found") else {
                 panic!("Should have recieved a search response here");
             };
-            if !search_result.best_move.m.is_null() && search_result.searched_depth > 0 {
+
+            if !search_result.best_move.m.is_null()
+                && search_result.searched_depth > 0
+                && search_result.best_move.score != Score::NONE
+            {
                 threads.push(search_result);
             }
         }
 
+        if threads.is_empty() {
+            return None;
+        }
+
         let lowest_score = threads.iter().map(|result| result.best_move.score).min().unwrap();
-        let mut votes: HashMap<&Move, i32> = HashMap::new();
+        let mut votes: HashMap<&Move, i64> = HashMap::new();
 
         for result in threads.iter() {
             *votes.entry(&result.best_move.m).or_default() +=
-                (result.best_move.score - lowest_score + 10) * result.searched_depth;
+                (result.best_move.score as i64 - lowest_score as i64 + 10) * result.searched_depth as i64;
         }
 
         let mut best_index = 0;
@@ -91,7 +99,7 @@ impl SearchThreads {
             let best = &threads[best_index].best_move;
             let current = &threads[current_index].best_move;
 
-            if votes[&best.m] > votes[&current.m] {
+            if votes[&best.m] < votes[&current.m] {
                 best_index = current_index;
             }
         }
