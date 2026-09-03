@@ -86,7 +86,7 @@ pub enum Report {
 
 pub struct SearchData {
     pub id: usize,
-    pub best_move: Option<Move>,
+    pub best_move: Option<RootMove>,
     pub shared: Arc<SharedData>,
     pub pv: PVTable,
     pub board: Board,
@@ -98,6 +98,7 @@ pub struct SearchData {
     pub sel_depth: i32,
     pub prev_score: i32,
     pub nmp_min_ply: i32,
+    pub completed_depth: i32,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -125,6 +126,7 @@ impl SearchData {
             sel_depth: 0,
             prev_score: 0,
             nmp_min_ply: 0,
+            completed_depth: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -239,8 +241,9 @@ impl SearchData {
     }
 
     pub fn print_uci_info(&self) {
-        debug_assert!(self.report != Report::None);
-        let root_move = &self.root_moves[0];
+        let Some(root_move) = &self.best_move else {
+            return;
+        };
 
         let mut upperbound = root_move.upperbound;
         let mut lowerbound = root_move.lowerbound;

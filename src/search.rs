@@ -1,8 +1,9 @@
-use crate::search::data::{Report, SearchData, Status};
-use crate::search::movepicker::MovePicker;
-use crate::types::stack::Stack;
-use crate::types::stackvec::StackVec;
+use crate::search::{
+    data::{Report, SearchData, Status},
+    movepicker::MovePicker,
+};
 use crate::types::*;
+use crate::types::{stack::Stack, stackvec::StackVec};
 
 pub mod data;
 pub mod movepicker;
@@ -45,13 +46,13 @@ pub fn search_runner(data: &mut SearchData) {
     let mut beta = Score::INFINITY;
 
     let mut depth = 1;
-    let mut best_move = None;
     let mut best_score = 0;
+    data.best_move = None;
+    data.completed_depth = 0;
     data.root_depth = 0;
     data.sel_depth = 0;
 
     if data.root_moves.is_empty() {
-        data.best_move = None;
         return;
     }
 
@@ -93,12 +94,13 @@ pub fn search_runner(data: &mut SearchData) {
             continue;
         }
 
+        data.completed_depth = depth;
         data.sel_depth = 0;
         depth += 1;
 
         data.root_moves.sort_by_key(|rm| std::cmp::Reverse(rm.score));
         data.root_moves.iter_mut().for_each(|rm| rm.previous_score = rm.score);
-        best_move = Some(data.root_moves[0].m);
+        data.best_move = Some(data.root_moves[0].clone());
         best_score = data.root_moves[0].score;
 
         if data.report == Report::Full {
@@ -130,7 +132,6 @@ pub fn search_runner(data: &mut SearchData) {
     }
 
     data.prev_score = best_score;
-    data.best_move = best_move;
 }
 
 pub fn search<Node: NodeType>(

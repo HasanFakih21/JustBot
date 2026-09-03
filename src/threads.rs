@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     sync::{
         Arc,
         mpsc::{Receiver, Sender},
@@ -7,13 +8,13 @@ use std::{
 };
 
 use crate::{
-    board::Board,
+    board::{Board, movegen::MoveGenKind},
     search::{
         data::{Report, RootMove, SearchData, SharedData},
         search_runner,
         time::TimeManager,
     },
-    types::Move,
+    types::{Move, Score, is_decisive, is_loss, is_win},
 };
 
 pub struct SearchThreads {
@@ -45,7 +46,7 @@ impl SearchThreads {
         self.shared.status.run();
 
         let root_moves: Vec<RootMove> = board
-            .generate_moves(crate::board::movegen::MoveGenKind::All)
+            .generate_moves(MoveGenKind::All)
             .iter()
             .map(|e| RootMove {
                 m: e.mv,
@@ -66,15 +67,89 @@ impl SearchThreads {
                 .expect("Worker not found");
         }
 
-        let mut result = None;
-        for (id, w) in self.workers.iter().enumerate() {
-            let r = w.result.recv().expect("Worker not found");
-            if id == 0 {
-                result = r;
+        let mut threads = Vec::new();
+        for w in self.workers.iter() {
+            let Response::Search(search_result) = w.result.recv().expect("Worker not found") else {
+                panic!("Should have recieved a search response here");
+            };
+
+            if !search_result.best_move.m.is_null()
+                && search_result.searched_depth > 0
+                && search_result.best_move.score != Score::NONE
+            {
+                threads.push(search_result);
             }
         }
 
-        result
+        if threads.is_empty() {
+            let move_list = board.generate_moves(MoveGenKind::All);
+            if move_list.is_empty() { return None } else { return Some(move_list.get(0).mv) }
+        }
+
+        let lowest_score = threads.iter().map(|result| result.best_move.score).min().unwrap();
+        let mut votes: HashMap<&Move, i64> = HashMap::new();
+
+        let thread_weight = |result: &SearchResult| {
+            (result.best_move.score as i64 - lowest_score as i64 + 10) * result.searched_depth as i64
+        };
+
+        for result in threads.iter() {
+            *votes.entry(&result.best_move.m).or_default() += thread_weight(result);
+        }
+
+        let mut best_index = 0;
+
+        for current_index in 0..threads.len() {
+            let best = &threads[best_index].best_move;
+            let current = &threads[current_index].best_move;
+
+            if is_win(best.score) {
+                if current.score > best.score {
+                    best_index = current_index;
+                }
+                continue;
+            }
+
+            if is_loss(best.score) {
+                if is_loss(current.score) && current.score < best.score {
+                    best_index = current_index;
+                }
+                continue;
+            }
+
+            if is_decisive(current.score) {
+                best_index = current_index;
+                continue;
+            }
+
+            if votes[&current.m] > votes[&best.m] {
+                best_index = current_index;
+                continue;
+            }
+
+            if votes[&current.m] == votes[&best.m]
+                && thread_weight(&threads[current_index]) > thread_weight(&threads[best_index])
+            {
+                best_index = current_index;
+            }
+        }
+
+        if report != Report::None && threads[best_index].id != 0 {
+            self.workers[threads[best_index].id]
+                .comm
+                .send(Command::PrintUCI)
+                .expect("Worker {id} was supposed to print uci but couldn't");
+
+            let Response::PrintUCI = self.workers[threads[best_index].id]
+                .result
+                .recv()
+                .expect("Printing worker didn't respond!")
+            else {
+                unreachable!();
+            };
+        }
+
+        Some(threads[best_index].best_move.m)
     }
 
     pub fn count(&self) -> usize {
@@ -115,11 +190,24 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
                     }
 
                     search_runner(&mut data);
-                    if result_tx.send(data.best_move).is_err() {
+                    if result_tx
+                        .send(Response::Search(SearchResult {
+                            id: data.id,
+                            best_move: data.best_move.clone().unwrap_or_default(),
+                            searched_depth: data.completed_depth,
+                        }))
+                        .is_err()
+                    {
                         break;
                     };
                 }
                 Command::Quit => break,
+                Command::PrintUCI => {
+                    data.print_uci_info();
+                    if result_tx.send(Response::PrintUCI).is_err() {
+                        break;
+                    }
+                }
             }
         }
     });
@@ -131,15 +219,27 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
     }
 }
 
+struct SearchResult {
+    id: usize,
+    best_move: RootMove,
+    searched_depth: i32,
+}
+
+enum Response {
+    Search(SearchResult),
+    PrintUCI,
+}
+
 enum Command {
     Search(Box<SearchParams>),
+    PrintUCI,
     Quit,
 }
 
 struct Worker {
     handle: JoinHandle<()>,
     comm: Sender<Command>,
-    result: Receiver<Option<Move>>,
+    result: Receiver<Response>,
 }
 
 #[cfg(test)]

@@ -44,8 +44,8 @@ fn test_mate_in_four() {
     search_runner(&mut data);
     let best_move = data.best_move.unwrap();
 
-    println!("Best Move: {}", best_move.to_uci(&data.board));
-    assert_eq!(Move::new(Square::F6, Square::G4, MoveKind::QuietMove), best_move);
+    println!("Best Move: {}", best_move.m.to_uci(&data.board));
+    assert_eq!(Move::new(Square::F6, Square::G4, MoveKind::QuietMove), best_move.m);
 }
 
 #[test]
@@ -97,7 +97,7 @@ fn test_pv_line() {
 
     assert_eq!(ver_pv, pv_display);
 
-    assert_eq!(Move::new(Square::F6, Square::G4, MoveKind::QuietMove), best_move);
+    assert_eq!(Move::new(Square::F6, Square::G4, MoveKind::QuietMove), best_move.m);
 }
 
 #[test]
