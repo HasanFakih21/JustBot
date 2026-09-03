@@ -157,9 +157,10 @@ impl CorrectionHistory {
     }
 
     pub fn update(&self, stm: Side, key: u64, bonus: i32) {
-        let entry = &mut self.0[stm][key as usize & Self::MASK].load(Ordering::Relaxed);
-        let updated = (bonus - (*entry as i32) * bonus.abs() / Self::MAX_HISTORY) as i16;
-        self.0[stm][key as usize & Self::MASK].store(updated, Ordering::Relaxed);
+        let entry = &self.0[stm][key as usize & Self::MASK];
+        let mut value = entry.load(Ordering::Relaxed);
+        update_entry::<{ Self::MAX_HISTORY }>(bonus, &mut value);
+        entry.store(value, Ordering::Relaxed);
     }
 
     pub fn get(&self, stm: Side, key: u64) -> i32 {
