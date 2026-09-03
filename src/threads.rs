@@ -69,7 +69,9 @@ impl SearchThreads {
 
         let mut threads = Vec::new();
         for w in self.workers.iter() {
-            let search_result = w.result.recv().expect("Worker not found");
+            let Response::Search(search_result) = w.result.recv().expect("Worker not found") else {
+                panic!("Should have recieved a search response here");
+            };
             if !search_result.best_move.m.is_null() && search_result.searched_depth > 0 {
                 threads.push(search_result);
             }
@@ -94,10 +96,20 @@ impl SearchThreads {
             }
         }
 
-        self.workers[threads[best_index].id]
-            .comm
-            .send(Command::PrintUCI)
-            .expect("Worker {id} was supposed to print uci but couldn't");
+        if report != Report::None {
+            self.workers[threads[best_index].id]
+                .comm
+                .send(Command::PrintUCI)
+                .expect("Worker {id} was supposed to print uci but couldn't");
+
+            let Response::PrintUCI = self.workers[threads[best_index].id]
+                .result
+                .recv()
+                .expect("Printing worker didn't respond!")
+            else {
+                unreachable!();
+            };
+        }
 
         Some(threads[best_index].best_move.m)
     }
@@ -141,18 +153,23 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
 
                     search_runner(&mut data);
                     if result_tx
-                        .send(SearchResult {
+                        .send(Response::Search(SearchResult {
                             id: data.id,
-                            best_move: data.best_move.take().unwrap_or_default(),
+                            best_move: data.best_move.clone().unwrap_or_default(),
                             searched_depth: data.completed_depth,
-                        })
+                        }))
                         .is_err()
                     {
                         break;
                     };
                 }
                 Command::Quit => break,
-                Command::PrintUCI => data.print_uci_info(),
+                Command::PrintUCI => {
+                    data.print_uci_info();
+                    if result_tx.send(Response::PrintUCI).is_err() {
+                        break;
+                    }
+                }
             }
         }
     });
@@ -170,6 +187,11 @@ struct SearchResult {
     searched_depth: i32,
 }
 
+enum Response {
+    Search(SearchResult),
+    PrintUCI,
+}
+
 enum Command {
     Search(Box<SearchParams>),
     PrintUCI,
@@ -179,7 +201,7 @@ enum Command {
 struct Worker {
     handle: JoinHandle<()>,
     comm: Sender<Command>,
-    result: Receiver<SearchResult>,
+    result: Receiver<Response>,
 }
 
 #[cfg(test)]
