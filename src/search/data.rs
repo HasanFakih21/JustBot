@@ -86,7 +86,7 @@ pub enum Report {
 
 pub struct SearchData {
     pub id: usize,
-    pub best_move: Move,
+    pub best_move: Option<RootMove>,
     pub shared: Arc<SharedData>,
     pub pv: PVTable,
     pub board: Board,
@@ -114,7 +114,7 @@ impl SearchData {
     pub fn new(shared: Arc<SharedData>, id: usize) -> Self {
         SearchData {
             id,
-            best_move: Move::NONE,
+            best_move: None,
             shared,
             pv: PVTable::new(),
             board: Board::from_fen(STARTING_FEN).unwrap(),
@@ -242,7 +242,10 @@ impl SearchData {
 
     pub fn print_uci_info(&self) {
         debug_assert!(self.report != Report::None);
-        let root_move = &self.root_moves[0];
+
+        let Some(root_move) = &self.best_move else {
+            return;
+        };
 
         let mut upperbound = root_move.upperbound;
         let mut lowerbound = root_move.lowerbound;

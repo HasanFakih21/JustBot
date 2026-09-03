@@ -70,22 +70,36 @@ impl SearchThreads {
         let mut threads = Vec::new();
         for w in self.workers.iter() {
             let search_result = w.result.recv().expect("Worker not found");
-            threads.push(search_result);
+            if !search_result.best_move.m.is_null() && search_result.searched_depth > 0 {
+                threads.push(search_result);
+            }
         }
 
-        let lowest_score = threads.iter().map(|result| result.score).min().unwrap();
-        let mut results: HashMap<&Move, i32> = HashMap::new();
+        let lowest_score = threads.iter().map(|result| result.best_move.score).min().unwrap();
+        let mut votes: HashMap<&Move, i32> = HashMap::new();
 
         for result in threads.iter() {
-            *results.entry(&result.best_move).or_default() +=
-                (result.score - lowest_score + 10) * result.searched_depth;
+            *votes.entry(&result.best_move.m).or_default() +=
+                (result.best_move.score - lowest_score + 10) * result.searched_depth;
         }
 
-        results
-            .iter()
-            .filter(|&(m, _)| !m.is_null())
-            .max_by_key(|&(_, score)| score)
-            .map(|(m, _)| **m)
+        let mut best_index = 0;
+
+        for current_index in 0..threads.len() {
+            let best = &threads[best_index].best_move;
+            let current = &threads[current_index].best_move;
+
+            if votes[&best.m] > votes[&current.m] {
+                best_index = current_index;
+            }
+        }
+
+        self.workers[threads[best_index].id]
+            .comm
+            .send(Command::PrintUCI)
+            .expect("Worker {id} was supposed to print uci but couldn't");
+
+        Some(threads[best_index].best_move.m)
     }
 
     pub fn count(&self) -> usize {
@@ -128,9 +142,9 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
                     search_runner(&mut data);
                     if result_tx
                         .send(SearchResult {
-                            best_move: data.best_move,
+                            id: data.id,
+                            best_move: data.best_move.take().unwrap_or_default(),
                             searched_depth: data.completed_depth,
-                            score: data.prev_score,
                         })
                         .is_err()
                     {
@@ -138,6 +152,7 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
                     };
                 }
                 Command::Quit => break,
+                Command::PrintUCI => data.print_uci_info(),
             }
         }
     });
@@ -150,13 +165,14 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
 }
 
 struct SearchResult {
-    best_move: Move,
+    id: usize,
+    best_move: RootMove,
     searched_depth: i32,
-    score: i32,
 }
 
 enum Command {
     Search(Box<SearchParams>),
+    PrintUCI,
     Quit,
 }
 
