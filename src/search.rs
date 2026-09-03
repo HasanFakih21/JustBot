@@ -45,13 +45,13 @@ pub fn search_runner(data: &mut SearchData) {
     let mut beta = Score::INFINITY;
 
     let mut depth = 1;
-    let mut best_move = None;
+    let mut best_move = Move::NONE;
     let mut best_score = 0;
     data.root_depth = 0;
     data.sel_depth = 0;
 
     if data.root_moves.is_empty() {
-        data.best_move = None;
+        data.best_move = Move::NONE;
         return;
     }
 
@@ -98,7 +98,7 @@ pub fn search_runner(data: &mut SearchData) {
 
         data.root_moves.sort_by_key(|rm| std::cmp::Reverse(rm.score));
         data.root_moves.iter_mut().for_each(|rm| rm.previous_score = rm.score);
-        best_move = Some(data.root_moves[0].m);
+        best_move = data.root_moves[0].m;
         best_score = data.root_moves[0].score;
 
         if data.report == Report::Full {

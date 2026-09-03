@@ -86,7 +86,7 @@ pub enum Report {
 
 pub struct SearchData {
     pub id: usize,
-    pub best_move: Option<Move>,
+    pub best_move: Move,
     pub shared: Arc<SharedData>,
     pub pv: PVTable,
     pub board: Board,
@@ -113,7 +113,7 @@ impl SearchData {
     pub fn new(shared: Arc<SharedData>, id: usize) -> Self {
         SearchData {
             id,
-            best_move: None,
+            best_move: Move::NONE,
             shared,
             pv: PVTable::new(),
             board: Board::from_fen(STARTING_FEN).unwrap(),

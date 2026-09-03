@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     sync::{
         Arc,
         mpsc::{Receiver, Sender},
@@ -66,15 +67,20 @@ impl SearchThreads {
                 .expect("Worker not found");
         }
 
-        let mut result = None;
-        for (id, w) in self.workers.iter().enumerate() {
-            let r = w.result.recv().expect("Worker not found");
-            if id == 0 {
-                result = r;
-            }
+        let mut threads = Vec::new();
+        for w in self.workers.iter() {
+            let search_result = w.result.recv().expect("Worker not found");
+            threads.push(search_result);
         }
 
-        result
+        let lowest_score = threads.iter().map(|result| result.score).min().unwrap();
+        let mut results: HashMap<&Move, i32> = HashMap::new();
+
+        for result in threads.iter() {
+            *results.entry(&result.best_move).or_default() += result.score - lowest_score + 10 * result.searched_depth;
+        }
+
+        results.iter().max_by_key(|&(_, score)| score).map(|(m, _)| **m)
     }
 
     pub fn count(&self) -> usize {
@@ -115,7 +121,14 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
                     }
 
                     search_runner(&mut data);
-                    if result_tx.send(data.best_move).is_err() {
+                    if result_tx
+                        .send(SearchResult {
+                            best_move: data.best_move,
+                            searched_depth: data.root_depth,
+                            score: data.prev_score,
+                        })
+                        .is_err()
+                    {
                         break;
                     };
                 }
@@ -131,6 +144,12 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
     }
 }
 
+struct SearchResult {
+    best_move: Move,
+    searched_depth: i32,
+    score: i32,
+}
+
 enum Command {
     Search(Box<SearchParams>),
     Quit,
@@ -139,7 +158,7 @@ enum Command {
 struct Worker {
     handle: JoinHandle<()>,
     comm: Sender<Command>,
-    result: Receiver<Option<Move>>,
+    result: Receiver<SearchResult>,
 }
 
 #[cfg(test)]
