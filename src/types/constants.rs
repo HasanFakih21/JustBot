@@ -69,11 +69,15 @@ pub static LMR_TABLE: LazyLock<Box<[[[i32; 64]; 128]; 2]>> = {
 
         for depth in 1..128 {
             for move_count in 1..64 {
-                let numerator = 0.7851 + (move_count as f32).ln() * (depth as f32).ln();
+                let quiet_base = 3.85000
+                    + (0.25000 * (depth as f32).log2() - 0.03125) * (0.47350 * (move_count as f32).log2() + 0.04250);
+                let noisy_base = 3.16500
+                    + (0.22500 * (depth as f32).log2() - 0.08105) * (0.35500 * (move_count as f32).log2() - 0.14000);
+
                 // Quiet Moves
-                table[1][depth][move_count] = ((numerator / 2.4482) * 1024.0) as i32;
+                table[1][depth][move_count] = (quiet_base * 1024.0) as i32;
                 // Noisy Moves
-                table[0][depth][move_count] = ((numerator / 3.0040) * 1024.0) as i32;
+                table[0][depth][move_count] = (noisy_base * 1024.0) as i32;
             }
         }
 
