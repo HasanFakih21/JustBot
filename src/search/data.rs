@@ -36,7 +36,7 @@ impl Status {
 #[derive(Debug)]
 pub struct SharedData {
     pub tt: TranspositionTable,
-    pub history: Arc<SharedCorrectionHistories>,
+    pub history: SharedCorrectionHistories,
     pub status: Status,
     nodes: Box<[AlignedAtomicU64; 512]>,
 }
@@ -70,7 +70,7 @@ impl SharedData {
 impl Default for SharedData {
     fn default() -> Self {
         Self {
-            history: Arc::new(SharedCorrectionHistories::default()),
+            history: SharedCorrectionHistories::default(),
             tt: TranspositionTable::default(),
             status: Status(AtomicBool::new(Status::RUNNING)),
             nodes: Box::new(array::from_fn(|_| AlignedAtomicU64(AtomicU64::new(0)))),
