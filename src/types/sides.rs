@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Index, IndexMut},
+    ops::{Index, IndexMut, Not},
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -13,13 +13,6 @@ pub enum Side {
 impl Side {
     pub const NUM: usize = 2;
     pub const ALL: [Self; Self::NUM] = [Self::White, Self::Black];
-
-    pub const fn other(&self) -> Self {
-        match self {
-            Self::White => Self::Black,
-            Self::Black => Self::White,
-        }
-    }
 }
 
 impl Display for Side {
@@ -42,5 +35,16 @@ impl<T> Index<Side> for [T; Side::NUM] {
 impl<T> IndexMut<Side> for [T; Side::NUM] {
     fn index_mut(&mut self, index: Side) -> &mut Self::Output {
         unsafe { self.get_unchecked_mut(index as usize) }
+    }
+}
+
+impl Not for Side {
+    type Output = Side;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Self::White => Self::Black,
+            Self::Black => Self::White,
+        }
     }
 }

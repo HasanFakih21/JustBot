@@ -227,7 +227,7 @@ pub fn search<Node: NodeType>(
             && tt_move.kind().is_quiet()
         {
             let bonus = (200 * depth - 50).min(1200);
-            data.quiet_history.update(data.board.state.threats, stm, tt_move, bonus);
+            data.quiet_history.update(data.board.threats(), stm, tt_move, bonus);
         }
 
         return tt_score;
@@ -420,7 +420,7 @@ pub fn search<Node: NodeType>(
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.kind().is_quiet();
         let history = if is_quiet {
-            data.quiet_history.get(data.board.state.threats, stm, m)
+            data.quiet_history.get(data.board.threats(), stm, m)
                 + data.conthistory(m, ply, 1)
                 + data.conthistory(m, ply, 2)
         } else {
@@ -429,7 +429,7 @@ pub fn search<Node: NodeType>(
                 data.board.piece_at_square(m.from()),
                 m.to(),
                 captured,
-                data.board.state.threats,
+                data.board.threats(),
             )
         };
 
@@ -595,7 +595,7 @@ pub fn search<Node: NodeType>(
         let cont_bonus = (315 * depth).min(1044) - 194;
         let cont_malus = (303 * depth).min(1079) - 271;
 
-        let threats = data.board.state.threats;
+        let threats = data.board.threats();
 
         if is_quiet {
             let piece = data.board.piece_at_square(m.from());
@@ -638,7 +638,7 @@ pub fn search<Node: NodeType>(
     if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.kind().is_quiet() {
         let bonus = (120 * depth - 75).min(1200);
         data.quiet_history
-            .update(data.stack[ply - 1].threats, stm.other(), data.stack[ply - 1].m, bonus);
+            .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
     }
 
     if !excluded {
@@ -838,7 +838,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         let to = m.to();
         let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
         data.noisy_history
-            .update(piece, to, captured, data.board.state.threats, 103);
+            .update(piece, to, captured, data.board.threats(), 103);
     }
 
     data.shared.tt.add_entry(

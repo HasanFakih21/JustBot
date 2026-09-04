@@ -31,7 +31,7 @@ impl Board {
         }
 
         let mut attackers = self.attackers_to(m.to(), occupancies) & occupancies;
-        let mut stm = self.state.side_to_move.other();
+        let mut stm = !self.state.side_to_move;
 
         let diagonals = self.state.pieces[Piece::Bishop] | self.state.pieces[Piece::Queen];
         let orthogonals = self.state.pieces[Piece::Rook] | self.state.pieces[Piece::Queen];
@@ -42,8 +42,8 @@ impl Board {
         ];
 
         loop {
-            let mut our_attackers = attackers & self.state.occupancies[stm];
-            if !((self.state.pinners[stm.other()] & occupancies).is_empty()) {
+            let mut our_attackers = attackers & self.occ(stm);
+            if !((self.state.pinners[!stm] & occupancies).is_empty()) {
                 our_attackers &= !(self.state.pinned[stm] & !king_rays[stm]);
             }
 
@@ -54,13 +54,13 @@ impl Board {
             let attacker = self.least_valuable_attacker(our_attackers);
 
             // Makes sure the king can't capture a defended piece
-            if attacker == Piece::King && !(attackers & self.state.occupancies[stm.other()]).is_empty() {
+            if attacker == Piece::King && !(attackers & self.occ(!stm)).is_empty() {
                 break;
             }
 
             occupancies.clear_bit((self.state.pieces[attacker] & our_attackers).least_sig_bit().unwrap());
 
-            stm = stm.other();
+            stm = !stm;
             balance = -balance - 1 - attacker.value();
 
             if balance >= 0 {
