@@ -254,7 +254,7 @@ mod tests {
     fn test_is_attacked() {
         let mut board = Board::from_fen("7k/8/8/3p4/8/8/5N2/K7 w - - 0 1").unwrap();
         board.update_all_threats();
-        board.state.threats.print_board();
+        board.threats().print_board();
 
         assert!(board.is_attacked(C4));
         assert!(board.is_attacked(E4));
@@ -262,7 +262,7 @@ mod tests {
 
         let mut board2 = Board::from_fen("6Q1/8/2R5/8/5b2/kq6/8/6K1 w - - 0 1").unwrap();
         board2.update_all_threats();
-        let threats = board2.state.threats;
+        let threats = board2.threats();
         threats.print_board();
 
         assert!(board2.is_attacked(C3));
@@ -294,7 +294,7 @@ mod tests {
             ..Default::default()
         };
 
-        data.board.state.threats.print_board();
+        data.board.threats().print_board();
         let mut move_list = MoveList::new();
         data.board.append_moves(MoveGenKind::All, &mut move_list);
         RAYS[Square::D2][Square::E1].print_board();

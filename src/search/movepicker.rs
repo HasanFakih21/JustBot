@@ -94,7 +94,7 @@ impl MovePicker {
     }
 
     fn score_noisy_moves(&mut self, data: &SearchData) {
-        let threats = data.board.state.threats;
+        let threats = data.board.threats();
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;
             let mut score = 0;
@@ -118,7 +118,7 @@ impl MovePicker {
 
     fn score_quiet_moves(&mut self, data: &SearchData, ply: isize) {
         let side = data.board.state.side_to_move;
-        let threats = data.board.state.threats;
+        let threats = data.board.threats();
 
         for entry in self.moves.iter_mut() {
             let mv = entry.mv;

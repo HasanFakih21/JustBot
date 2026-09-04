@@ -168,7 +168,7 @@ impl Board {
     }
 
     pub fn piece_bb(&self, side: Side, piece: Piece) -> BitBoard {
-        BitBoard(self.state.pieces[piece].0 & self.occ(side).0)
+        self.state.pieces[piece] & self.occ(side)
     }
 
     pub fn piece_at_square(&self, square: Square) -> OptionPiece<SidedPiece> {

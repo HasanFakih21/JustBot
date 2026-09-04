@@ -69,8 +69,7 @@ impl Board {
                 };
 
                 let occupancies = self.all_occupancy() ^ from.to_bb() ^ to.to_bb() ^ (to ^ 8).to_bb();
-                let bishop_queens =
-                    self.piece_bb(!stm, Piece::Bishop) | self.piece_bb(!stm, Piece::Queen);
+                let bishop_queens = self.piece_bb(!stm, Piece::Bishop) | self.piece_bb(!stm, Piece::Queen);
                 let rook_queens = self.piece_bb(!stm, Piece::Rook) | self.piece_bb(!stm, Piece::Queen);
                 let diagonal = bishop_attacks(king_square, occupancies) & bishop_queens;
                 let orthogonal = rook_attacks(king_square, occupancies) & rook_queens;

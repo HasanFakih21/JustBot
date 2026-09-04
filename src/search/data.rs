@@ -311,7 +311,7 @@ impl SearchData {
         self.stack[ply].piece = piece;
         self.stack[ply].conthistory = self.conthistory.subtable(piece, to);
         self.stack[ply].contcorrhistory = self.contcorrhistory.subtable(piece, to);
-        self.stack[ply].threats = self.board.state.threats;
+        self.stack[ply].threats = self.board.threats();
 
         self.board.make_move(m);
         self.shared.tt.prefetch(self.board.hash());
