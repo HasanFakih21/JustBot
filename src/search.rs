@@ -228,6 +228,7 @@ pub fn search<Node: NodeType>(
         {
             let bonus = (200 * depth - 50).min(1200);
             data.quiet_history.update(data.board.threats(), stm, tt_move, bonus);
+            data.update_conthistories(tt_move, ply, bonus);
         }
 
         return tt_score;
