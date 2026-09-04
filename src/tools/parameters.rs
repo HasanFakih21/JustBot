@@ -5,6 +5,7 @@
 #[macro_export]
 macro_rules! tunable_params {
     ($($name:ident = $val:expr, $min:literal ..= $max:literal, $spsa:expr;)*) => {
+        #[allow(unused)]
         use std::sync::atomic::Ordering;
 
         pub fn list_params() {
@@ -19,6 +20,7 @@ macro_rules! tunable_params {
             )*
         }
 
+        #[allow(unused)]
         pub fn set_param(name: &str, val: i32) {
             match name {
                 $(
@@ -45,6 +47,7 @@ macro_rules! tunable_params {
         }
 
         mod vals {
+            #[allow(unused)]
             use std::sync::atomic::AtomicI32;
             $(
             #[allow(non_upper_case_globals)]
@@ -60,3 +63,6 @@ macro_rules! tunable_params {
         )*
     };
 }
+
+#[cfg(feature = "tuning")]
+tunable_params! {}
