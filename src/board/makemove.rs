@@ -85,7 +85,7 @@ impl Board {
             self.state.full_move += 1
         }
 
-        self.state.side_to_move = self.state.side_to_move.other();
+        self.state.side_to_move = !self.state.side_to_move;
         self.state.keys.toggle_side();
         self.state.keys.toggle_castling(self.state.castling_rights);
         self.update_all_threats();
@@ -101,17 +101,16 @@ impl Board {
 
             // Update occupancy as if enpassant pawn was taken for each possible ep taker
             let occupancies = self.all_occupancy() ^ enpassant.to_bb() ^ pawn_square.to_bb();
-            let possible_takers = pawn_attacks(enpassant, stm.other()) & self.piece_bb(stm, Piece::Pawn);
+            let possible_takers = pawn_attacks(enpassant, !stm) & self.piece_bb(stm, Piece::Pawn);
 
             debug_assert!(possible_takers.count_bits() <= 2);
 
             for taker in possible_takers {
                 let new_occ = occupancies ^ taker.to_bb();
-                let bishop_queens =
-                    self.piece_bb(stm.other(), Piece::Bishop) | self.piece_bb(stm.other(), Piece::Queen);
+                let bishop_queens = self.piece_bb(!stm, Piece::Bishop) | self.piece_bb(!stm, Piece::Queen);
                 let bishop_queen_checkers = bishop_attacks(king_square, new_occ) & bishop_queens;
 
-                let rook_queens = self.piece_bb(stm.other(), Piece::Rook) | self.piece_bb(stm.other(), Piece::Queen);
+                let rook_queens = self.piece_bb(!stm, Piece::Rook) | self.piece_bb(!stm, Piece::Queen);
                 let rook_queen_checkers = rook_attacks(king_square, new_occ) & rook_queens;
                 let checkers = bishop_queen_checkers | rook_queen_checkers;
 
@@ -157,7 +156,7 @@ impl Board {
             self.state.full_move += 1
         }
 
-        self.state.side_to_move = self.state.side_to_move.other();
+        self.state.side_to_move = !self.state.side_to_move;
         self.state.keys.toggle_side();
         self.game_history.push(self.state.keys.full);
         self.update_all_threats();

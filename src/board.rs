@@ -86,6 +86,14 @@ impl Board {
         }
     }
 
+    pub fn threats(&self) -> BitBoard {
+        self.state.threats
+    }
+
+    pub fn occ(&self, side: Side) -> BitBoard {
+        self.state.occupancies[side]
+    }
+
     pub fn halfmove_bucket(&self) -> usize {
         (self.state.half_move_clock.saturating_sub(8) as usize / 8).min(15)
     }
@@ -95,7 +103,7 @@ impl Board {
     }
 
     pub fn is_attacked(&self, square: Square) -> bool {
-        let threats = self.state.threats;
+        let threats = self.threats();
         threats.contains(square)
     }
 
@@ -113,12 +121,12 @@ impl Board {
         let stm = self.state.side_to_move;
         let occ_bb = self.all_occupancy() ^ self.piece_bb(stm, Piece::King);
 
-        self.state.threats = self.pawn_attacks_setwise(stm.other())
-            | self.knight_attacks_setwise(stm.other())
-            | self.bishop_attacks_setwise(stm.other(), occ_bb)
-            | self.rook_attacks_setwise(stm.other(), occ_bb)
-            | self.queen_attacks_setwise(stm.other(), occ_bb)
-            | king_attacks(self.king_square(stm.other()));
+        self.state.threats = self.pawn_attacks_setwise(!stm)
+            | self.knight_attacks_setwise(!stm)
+            | self.bishop_attacks_setwise(!stm, occ_bb)
+            | self.rook_attacks_setwise(!stm, occ_bb)
+            | self.queen_attacks_setwise(!stm, occ_bb)
+            | king_attacks(self.king_square(!stm));
 
         self.state.pinned = [BitBoard(0); 2];
         self.state.pinners = [BitBoard(0); 2];
@@ -126,12 +134,12 @@ impl Board {
         for side in [Side::White, Side::Black] {
             let king_square = self.king_square(side);
             if side == stm {
-                let pawn_attackers = self.piece_bb(stm.other(), Piece::Pawn);
-                let knight_attackers = self.piece_bb(stm.other(), Piece::Knight);
+                let pawn_attackers = self.piece_bb(!stm, Piece::Pawn);
+                let knight_attackers = self.piece_bb(!stm, Piece::Knight);
                 self.state.checkers = (pawn_attacks(king_square, stm) & pawn_attackers)
                     | (knight_attacks(king_square) & knight_attackers);
             } else {
-                self.state.checking_squares[Piece::Pawn] = pawn_attacks(king_square, stm.other());
+                self.state.checking_squares[Piece::Pawn] = pawn_attacks(king_square, !stm);
                 self.state.checking_squares[Piece::Knight] = knight_attacks(king_square);
                 self.state.checking_squares[Piece::Bishop] = bishop_attacks(king_square, self.all_occupancy());
                 self.state.checking_squares[Piece::Rook] = rook_attacks(king_square, self.all_occupancy());
@@ -139,19 +147,19 @@ impl Board {
                     self.state.checking_squares[Piece::Rook] | self.state.checking_squares[Piece::Bishop];
             }
 
-            let opp_occ = self.state.occupancies[side.other()];
-            let diagonal = (self.piece_bb(side.other(), Piece::Bishop) | self.piece_bb(side.other(), Piece::Queen))
+            let opp_occ = self.occ(!side);
+            let diagonal = (self.piece_bb(!side, Piece::Bishop) | self.piece_bb(!side, Piece::Queen))
                 & bishop_attacks(king_square, opp_occ);
-            let orthogonal = (self.piece_bb(side.other(), Piece::Rook) | self.piece_bb(side.other(), Piece::Queen))
+            let orthogonal = (self.piece_bb(!side, Piece::Rook) | self.piece_bb(!side, Piece::Queen))
                 & rook_attacks(king_square, opp_occ);
 
             for square in diagonal | orthogonal {
-                let blockers = BETWEEN[square][king_square] & self.state.occupancies[side];
+                let blockers = BETWEEN[square][king_square] & self.occ(side);
 
                 let pieces_betweeen = blockers.count_bits();
                 if pieces_betweeen == 1 {
                     self.state.pinned[side] |= blockers;
-                    self.state.pinners[side.other()].set_bit(square);
+                    self.state.pinners[!side].set_bit(square);
                 } else if pieces_betweeen == 0 {
                     self.state.checkers.set_bit(square);
                 }
@@ -160,7 +168,7 @@ impl Board {
     }
 
     pub fn piece_bb(&self, side: Side, piece: Piece) -> BitBoard {
-        BitBoard(self.state.pieces[piece].0 & self.state.occupancies[side].0)
+        BitBoard(self.state.pieces[piece].0 & self.occ(side).0)
     }
 
     pub fn piece_at_square(&self, square: Square) -> OptionPiece<SidedPiece> {
@@ -247,7 +255,7 @@ impl Board {
     }
 
     pub fn all_occupancy(&self) -> BitBoard {
-        self.state.occupancies[Side::White] | self.state.occupancies[Side::Black]
+        self.occ(Side::White) | self.occ(Side::Black)
     }
 }
 

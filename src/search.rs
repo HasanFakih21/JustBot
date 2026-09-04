@@ -638,7 +638,7 @@ pub fn search<Node: NodeType>(
     if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.kind().is_quiet() {
         let bonus = (120 * depth - 75).min(1200);
         data.quiet_history
-            .update(data.stack[ply - 1].threats, stm.other(), data.stack[ply - 1].m, bonus);
+            .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
     }
 
     if !excluded {

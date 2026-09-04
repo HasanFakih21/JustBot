@@ -85,7 +85,7 @@ impl Board {
             }
 
             // Captures
-            let target = target & self.state.occupancies[stm.other()];
+            let target = target & self.occ(!stm);
 
             let left_pawns = (pawns & (!pinned | DIAGONALS[1][king_square]))
                 & match stm {
@@ -144,7 +144,7 @@ impl Board {
             let king_path = BETWEEN[king_square][king_to] | king_square.to_bb() | king_to.to_bb();
             if self.state.castling_rights.can(Castling::KINDS[stm][dir])
                 && (between & occupancies).is_empty()
-                && (king_path & self.state.threats).is_empty()
+                && (king_path & self.threats()).is_empty()
                 && !self.state.pinned[stm].contains(rook_square)
             {
                 move_list.push(Move::new(king_square, king_to, kinds[dir]));
@@ -152,7 +152,7 @@ impl Board {
         }
     }
 
-    pub fn gen_sliding_moves<F: Fn(Square) -> BitBoard>(
+    pub fn generator<F: Fn(Square) -> BitBoard>(
         &self,
         move_list: &mut MoveList,
         kind: MoveKind,
@@ -177,28 +177,22 @@ impl Board {
         move_list
     }
 
-    pub fn append_moves(&self, kind: MoveGenKind, move_list: &mut MoveList) {
+    pub fn append_moves(&self, gen_kind: MoveGenKind, list: &mut MoveList) {
         let stm = self.state.side_to_move;
-        let king_square = self.king_square(stm);
-        let occupancies = self.all_occupancy();
+        let king = self.king_square(stm);
+        let occ = self.all_occupancy();
         let pinned = self.state.pinned[stm];
 
         // Noisy King Moves
-        if kind.is_noisy() {
-            move_list.push_setwise(
-                king_square,
-                king_attacks(king_square) & self.state.occupancies[stm.other()] & !self.state.threats,
-                MoveKind::Capture,
-            );
+        if gen_kind.is_noisy() {
+            let kind = MoveKind::Capture;
+            list.push_setwise(king, king_attacks(king) & self.occ(!stm) & !self.threats(), kind);
         }
 
         // Quiet King Moves
-        if kind.is_quiet() {
-            move_list.push_setwise(
-                king_square,
-                king_attacks(king_square) & !occupancies & !self.state.threats,
-                MoveKind::QuietMove,
-            );
+        if gen_kind.is_quiet() {
+            let kind = MoveKind::QuietMove;
+            list.push_setwise(king, king_attacks(king) & !occ & !self.threats(), kind);
         }
 
         if self.state.checkers.count_bits() > 1 {
@@ -206,13 +200,13 @@ impl Board {
         }
 
         // Pawn Moves
-        self.gen_pawn_moves(move_list, kind);
+        self.gen_pawn_moves(list, gen_kind);
 
         let target = if self.king_in_check() {
             debug_assert!(self.state.checkers.count_bits() == 1);
             // Only moves that can block the check
             let checking_piece_square = self.state.checkers.least_sig_bit().unwrap();
-            BETWEEN[king_square][checking_piece_square] | self.state.checkers
+            BETWEEN[king][checking_piece_square] | self.state.checkers
         } else {
             !BitBoard(0)
         };
@@ -222,83 +216,27 @@ impl Board {
         let rooks = self.piece_bb(stm, Piece::Rook);
         let queens = self.piece_bb(stm, Piece::Queen);
 
-        if kind.is_noisy() {
-            let target = target & self.state.occupancies[stm.other()];
-            // Noisy Knight Moves
+        if gen_kind.is_noisy() {
+            let kind = MoveKind::Capture;
+            let target = target & self.occ(!stm);
             for from in knights & !pinned {
-                move_list.push_setwise(from, knight_attacks(from) & target, MoveKind::Capture);
+                list.push_setwise(from, knight_attacks(from) & target, kind);
             }
-
-            // Noisy Bishop Moves
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::Capture,
-                bishops,
-                |square| bishop_attacks(square, occupancies),
-                target,
-                pinned,
-            );
-
-            // Noisy Rook Moves
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::Capture,
-                rooks,
-                |square| rook_attacks(square, occupancies),
-                target,
-                pinned,
-            );
-
-            // Noisy Queen Moves
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::Capture,
-                queens,
-                |square| queen_attacks(square, occupancies),
-                target,
-                pinned,
-            );
+            self.generator(list, kind, bishops, |sq| bishop_attacks(sq, occ), target, pinned);
+            self.generator(list, kind, rooks, |sq| rook_attacks(sq, occ), target, pinned);
+            self.generator(list, kind, queens, |sq| queen_attacks(sq, occ), target, pinned);
         }
 
-        if kind.is_quiet() {
-            let target = target & !occupancies;
-            // Quiet Knight Moves
+        if gen_kind.is_quiet() {
+            let kind = MoveKind::QuietMove;
+            let target = target & !occ;
             for from in knights & !pinned {
-                move_list.push_setwise(from, knight_attacks(from) & target, MoveKind::QuietMove);
+                list.push_setwise(from, knight_attacks(from) & target, kind);
             }
-
-            // Quiet Bishop Moves
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::QuietMove,
-                bishops,
-                |square| bishop_attacks(square, occupancies),
-                target,
-                pinned,
-            );
-
-            // Quiet Rook Moves
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::QuietMove,
-                rooks,
-                |square| rook_attacks(square, occupancies),
-                target,
-                pinned,
-            );
-
-            // Quiet Queen Moves
-            self.gen_sliding_moves(
-                move_list,
-                MoveKind::QuietMove,
-                queens,
-                |square| queen_attacks(square, occupancies),
-                target,
-                pinned,
-            );
-
-            // Castling Moves
-            self.gen_castling_moves(move_list)
+            self.generator(list, kind, bishops, |sq| bishop_attacks(sq, occ), target, pinned);
+            self.generator(list, kind, rooks, |sq| rook_attacks(sq, occ), target, pinned);
+            self.generator(list, kind, queens, |sq| queen_attacks(sq, occ), target, pinned);
+            self.gen_castling_moves(list)
         }
     }
 }

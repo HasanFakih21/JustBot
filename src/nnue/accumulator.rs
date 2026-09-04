@@ -48,7 +48,7 @@ impl DualAccumulators {
 
         if let Some(captured_piece) = delta.captured {
             let capture_square = delta.m.capture_square();
-            let sub2 = feature_index(stm.other(), captured_piece, capture_square, king_square, pov);
+            let sub2 = feature_index(!stm, captured_piece, capture_square, king_square, pov);
             self.apply_updates(prev, [add1], [sub1, sub2], pov, parameters);
         } else if let Some(castle_kind) = delta.m.castle_direction() {
             let rook_square = board.castling_rooks[stm][castle_kind];

@@ -41,17 +41,17 @@ impl Board {
 
                 return self.state.castling_rights.can(Castling::KINDS[stm][dir])
                     && (between & self.all_occupancy()).is_empty()
-                    && (king_path & self.state.threats).is_empty()
+                    && (king_path & self.threats()).is_empty()
                     && !self.state.pinned[stm].contains(rook_square);
             }
 
             return matches!(m.kind(), MoveKind::Capture | MoveKind::QuietMove)
-                && !self.state.occupancies[stm].contains(to)
-                && m.is_capture() == self.state.occupancies[stm.other()].contains(to)
-                && (king_attacks(from) & !self.state.threats).contains(to);
+                && !self.occ(stm).contains(to)
+                && m.is_capture() == self.occ(!stm).contains(to)
+                && (king_attacks(from) & !self.threats()).contains(to);
         }
 
-        if self.state.occupancies[stm].contains(to) // If to square has piece of the same side
+        if self.occ(stm).contains(to) // If to square has piece of the same side
             || self.state.pinned[stm].contains(from) && !RAYS[from][king_square].contains(to) // If piece is pinned and the to square isn't on the same ray as the king
             || self.king_in_check()
                 && (self.state.checkers.count_bits() > 1 // If there's multiple checkers then the king has to move 
@@ -70,8 +70,8 @@ impl Board {
 
                 let occupancies = self.all_occupancy() ^ from.to_bb() ^ to.to_bb() ^ (to ^ 8).to_bb();
                 let bishop_queens =
-                    self.piece_bb(stm.other(), Piece::Bishop) | self.piece_bb(stm.other(), Piece::Queen);
-                let rook_queens = self.piece_bb(stm.other(), Piece::Rook) | self.piece_bb(stm.other(), Piece::Queen);
+                    self.piece_bb(!stm, Piece::Bishop) | self.piece_bb(!stm, Piece::Queen);
+                let rook_queens = self.piece_bb(!stm, Piece::Rook) | self.piece_bb(!stm, Piece::Queen);
                 let diagonal = bishop_attacks(king_square, occupancies) & bishop_queens;
                 let orthogonal = rook_attacks(king_square, occupancies) & rook_queens;
                 return to == ep_square && pawn_attacks(from, stm).contains(to) && (orthogonal | diagonal).is_empty();
@@ -89,7 +89,7 @@ impl Board {
             }
 
             if m.is_capture() {
-                return pawn_attacks(from, stm).contains(to) && self.state.occupancies[stm.other()].contains(to);
+                return pawn_attacks(from, stm).contains(to) && self.occ(!stm).contains(to);
             }
 
             let offset = match stm {
@@ -113,7 +113,7 @@ impl Board {
         }
 
         matches!(m.kind(), MoveKind::Capture | MoveKind::QuietMove)
-            && m.is_capture() == self.state.occupancies[stm.other()].contains(to)
+            && m.is_capture() == self.occ(!stm).contains(to)
             && attacks(stm, from, moving_piece, self.all_occupancy()).contains(to)
     }
 }
