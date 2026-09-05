@@ -34,7 +34,7 @@ macro_rules! tunable_params {
             $(
                 if $spsa {
                     let c_end = (($max - $min) as f32 / 20.0);
-                    let r_end = 0.002 / c_end.min(0.5) / 0.5;
+                    let r_end = 0.002 / (c_end.min(0.5) / 0.5);
                     println!(
                         "{}, int, {}.0, {}.0, {}.0, {}, {}",
                         stringify!($name),
