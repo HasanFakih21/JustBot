@@ -33,8 +33,8 @@ macro_rules! tunable_params {
         pub fn print_params_ob() {
             $(
                 if $spsa {
-                    let c_end = (($max - $min) / 20).max(1);
-                    let r_end = 0.002 / f32::min(0.5, c_end as f32) / 0.5;
+                    let c_end = (($max - $min) as f32 / 20.0);
+                    let r_end = 0.002 / c_end.min(0.5) / 0.5;
                     println!(
                         "{}, int, {}.0, {}.0, {}.0, {}, {}",
                         stringify!($name),
@@ -72,7 +72,6 @@ tunable_params! {
     init_delta = 25, 5..=50, true;
     fail_low_delta = 25, 5..=50, true;
     fail_high_delta = 25, 5..=50, true;
-    reset_delta = 25, 5..=50, true;
 
     // TT Cutoffs
     tt_cutoff_quiet_scale = 200, 50..=500, true;

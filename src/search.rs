@@ -4,9 +4,9 @@ use crate::tools::parameters::*;
 use crate::tools::parameters::{
     fail_high_delta, fail_low_delta, fp_history, fp_offset, fp_scale, hindight_ext_reduction, hindight_red_reduction,
     hindsight_red_eval, hp_scale, lmp_base1, lmp_base2, lmp_improivng, main_see_max, main_see_offset, main_see_scale,
-    main_see_scale2, nmp_improving, nmp_offset, nmp_r_scale, nmp_scale, razoring_offset, razoring_scale, reset_delta,
-    rfp_improving, rfp_scale_1, rfp_scale_2, rfp_t, se_double_base, se_double_new_pv, se_double_pv, se_triple_base,
-    se_triple_new_pv, se_triple_pv, tt_cutoff_quiet_max, tt_cutoff_quiet_offset, tt_cutoff_quiet_scale,
+    main_see_scale2, nmp_improving, nmp_offset, nmp_r_scale, nmp_scale, razoring_offset, razoring_scale, rfp_improving,
+    rfp_scale_1, rfp_scale_2, rfp_t, se_double_base, se_double_new_pv, se_double_pv, se_triple_base, se_triple_new_pv,
+    se_triple_pv, tt_cutoff_quiet_max, tt_cutoff_quiet_offset, tt_cutoff_quiet_scale,
 };
 use crate::types::*;
 
@@ -128,7 +128,7 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
-        delta = reset_delta();
+        delta = init_delta();
         alpha = (score - delta).max(-Score::INFINITY);
         beta = (score + delta).min(Score::INFINITY);
     }
@@ -492,7 +492,7 @@ pub fn search<Node: NodeType>(
         // Late Move Reductions (LMR)
         if depth >= 2 && move_count > 1 {
             let mut r = data.lmr_table.base[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
-            r += lmr_history() * !improving as i32;
+            r += lmr_improving() * !improving as i32;
             r -= lmr_ttpv() * tt_pv as i32;
             r += lmr_tt_score() * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += lmr_tt_depth() * (tt_depth.is_some_and(|d| d < depth)) as i32;
