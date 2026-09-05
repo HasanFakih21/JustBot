@@ -151,10 +151,10 @@ impl Board {
 pub fn value(piece: Piece) -> i32 {
     match piece {
         Piece::Pawn => 88,
-        Piece::Knight => 428,
-        Piece::Bishop => 458,
-        Piece::Rook => 659,
-        Piece::Queen => 1289,
+        Piece::Knight => 429,
+        Piece::Bishop => 454,
+        Piece::Rook => 654,
+        Piece::Queen => 1293,
         Piece::King => 0,
     }
 }
