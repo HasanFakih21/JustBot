@@ -301,6 +301,7 @@ pub fn search<Node: NodeType>(
         && tt_bound.is_none_or(|b| b != Bound::Lower)
         && static_eval < alpha - 242 - 254 * depth * depth
         && alpha < 2000
+        && tt_move.is_none_or(|m| !m.kind().is_quiet())
     {
         return quiesce::<Node>(data, alpha, beta, ply);
     }
