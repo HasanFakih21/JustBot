@@ -60,7 +60,7 @@ pub const fn to_file_bb(square: Square) -> BitBoard {
     BitBoard(A_FILE).shift(EAST * file as i8)
 }
 
-/// `[Is Quiet][Depth][Move Count]`
+// `[Is Quiet][Depth][Move Count]`
 // pub static LMR_TABLE: LazyLock<Box<[[[i32; 64]; 128]; 2]>> = {
 //     LazyLock::new(|| {
 //         let mut table: Box<[[[i32; 64]; 128]; 2]> = zeroed_box();

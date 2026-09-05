@@ -25,5 +25,7 @@ pub use pieces::*;
 pub use score::*;
 pub use sides::*;
 pub use squares::*;
+pub use stack::*;
+pub use stackvec::*;
 pub use transposition::*;
 pub use zobrist::*;
