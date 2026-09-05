@@ -492,11 +492,11 @@ pub fn search<Node: NodeType>(
         // Late Move Reductions (LMR)
         if depth >= 2 && move_count > 1 {
             let mut r = data.lmr_table.base[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
-            r += 217 * !improving as i32;
-            r -= 197 * tt_pv as i32;
-            r += 447 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
-            r += 296 * (tt_depth.is_some_and(|d| d < depth)) as i32;
-            r -= 449 * history / 4096;
+            r += lmr_history() * !improving as i32;
+            r -= lmr_ttpv() * tt_pv as i32;
+            r += lmr_tt_score() * (tt_score.is_some_and(|s| s <= alpha)) as i32;
+            r += lmr_tt_depth() * (tt_depth.is_some_and(|d| d < depth)) as i32;
+            r -= lmr_history() * history / 4096;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
@@ -598,48 +598,39 @@ pub fn search<Node: NodeType>(
     }
 
     if let Some(m) = best_move {
-        let is_quiet = m.kind().is_quiet();
+        let quiet_bonus = (hist_quiet_bonus_mult() * depth).min(hist_quiet_bonus_max()) - hist_quiet_bonus_base();
+        let quiet_malus = (hist_quiet_malus_mult() * depth).min(hist_quiet_malus_max()) - hist_quiet_malus_base();
 
-        let quiet_bonus = (321 * depth).min(935) - 228;
-        let quiet_malus = (289 * depth).min(948) - 232;
+        let noisy_bonus = (hist_noisy_bonus_mult() * depth).min(hist_noisy_bonus_max()) - hist_noisy_bonus_base();
+        let noisy_malus = (hist_noisy_malus_mult() * depth).min(hist_noisy_malus_max()) - hist_noisy_malus_base();
 
-        let noisy_bonus = (257 * depth).min(1058) - 196;
-        let noisy_malus = (302 * depth).min(937) - 273;
-
-        let cont_bonus = (315 * depth).min(1044) - 194;
-        let cont_malus = (303 * depth).min(1079) - 271;
+        let cont_bonus = (hist_cont_bonus_mult() * depth).min(hist_cont_bonus_max()) - hist_cont_bonus_base();
+        let cont_malus = (hist_cont_malus_mult() * depth).min(hist_cont_malus_max()) - hist_cont_malus_base();
 
         let threats = data.board.threats();
+        let is_quiet = m.kind().is_quiet();
 
         if is_quiet {
             let piece = data.board.piece_at_square(m.from());
             let to = m.to();
             let pawn_key = data.board.state.keys.pawn;
-            // Pawn History Bonus
             data.pawn_history.update(pawn_key, piece, to, quiet_bonus);
-            // Quiet History Bonus
             data.quiet_history.update(threats, stm, m, quiet_bonus);
-            // Conthistory Bonus
             data.update_conthistories(m, ply, cont_bonus);
             for quiet_move in quiets_searched.iter() {
                 let piece = data.board.piece_at_square(quiet_move.from());
                 let to = quiet_move.to();
-                // Pawn History Malus
                 data.pawn_history.update(pawn_key, piece, to, -quiet_malus);
-                // Quiet History Malus
                 data.quiet_history.update(threats, stm, *quiet_move, -quiet_malus);
-                // Conthistory Malus
                 data.update_conthistories(*quiet_move, ply, -cont_malus);
             }
         } else {
-            // Noisy History Bonus
             let piece = data.board.piece_at_square(m.from());
             let to = m.to();
             let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
             data.noisy_history.update(piece, to, captured, threats, noisy_bonus);
         }
 
-        // Noisy History Malus
         for m in noisies_searched.iter() {
             let piece = data.board.piece_at_square(m.from());
             let to = m.to();
@@ -650,7 +641,7 @@ pub fn search<Node: NodeType>(
 
     // Prior Countermove Bonus
     if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.kind().is_quiet() {
-        let bonus = (120 * depth - 75).min(1200);
+        let bonus = (pcm_scale() * depth - pcm_offset()).min(pcm_max());
         data.quiet_history
             .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
     }
@@ -805,7 +796,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
             }
 
             // Static Exchange Evaluation Pruning (SEE Pruning)
-            if !data.board.see(m, -129) {
+            if !data.board.see(m, qsearch_see()) {
                 continue;
             }
         }
@@ -852,7 +843,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         let to = m.to();
         let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
         data.noisy_history
-            .update(piece, to, captured, data.board.threats(), 103);
+            .update(piece, to, captured, data.board.threats(), qsearch_hist_bonus());
     }
 
     data.shared.tt.add_entry(

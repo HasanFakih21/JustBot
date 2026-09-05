@@ -2,8 +2,11 @@ use crate::{
     attacks::RAYS,
     board::Board,
     lookup::{bishop_attacks, king_attacks, knight_attacks, pawn_attacks, rook_attacks},
+    tools::parameters::see_pawn,
     types::{BitBoard, Move, OptionPiece, Piece, Side, Square},
 };
+
+use crate::tools::parameters::*;
 
 impl Board {
     pub fn see(&self, m: Move, threshold: i32) -> bool {
@@ -150,11 +153,11 @@ impl Board {
 
 pub fn value(piece: Piece) -> i32 {
     match piece {
-        Piece::Pawn => 88,
-        Piece::Knight => 428,
-        Piece::Bishop => 458,
-        Piece::Rook => 659,
-        Piece::Queen => 1289,
+        Piece::Pawn => see_pawn(),
+        Piece::Knight => see_knight(),
+        Piece::Bishop => see_bishop(),
+        Piece::Rook => see_rook(),
+        Piece::Queen => see_queen(),
         Piece::King => 0,
     }
 }

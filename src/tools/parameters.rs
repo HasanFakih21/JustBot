@@ -128,15 +128,96 @@ tunable_params! {
     main_see_max = -34, -100..=0, true;
 
     // LMR
-    lmr_quiet_base = 5551, 2550..=8550, true;
-    lmr_noisy_base = 1051, -3050..=4050, true;
+    lmr_quiet_base = 5595, 2550..=8550, true;
+    lmr_noisy_base = 1079, -3050..=4050, true;
 
-    lmr_quiet_div = 24482, 20000..=28500, true;
-    lmr_noisy_div = 30004, 25000..=35000, true;
+    lmr_quiet_div = 24581, 20000..=28500, true;
+    lmr_noisy_div = 30121, 25000..=35000, true;
 
-    lmr_improving = 217, 100..=400, true;
-    lmr_ttpv = 197, 100..=400, true;
-    lmr_tt_score = 447, 250..=600, true;
-    lmr_tt_depth = 296, 150..=500, true;
-    lmr_history = 449, 300..=800, true;
+    lmr_improving = 218, 100..=400, true;
+    lmr_ttpv = 192, 100..=400, true;
+    lmr_tt_score = 446, 250..=600, true;
+    lmr_tt_depth = 292, 150..=500, true;
+    lmr_history = 436, 300..=800, true;
+
+    // Quiet History
+    hist_quiet_bonus_mult = 321, 150..=500,   true;
+    hist_quiet_bonus_max  = 935, 800..=1400,  true;
+    hist_quiet_bonus_base = 228, 150..=400,   true;
+    hist_quiet_malus_mult = 289, 150..=500,   true;
+    hist_quiet_malus_max  = 948, 800..=1400,  true;
+    hist_quiet_malus_base = 232, 150..=400,   true;
+
+    // Noisy History
+    hist_noisy_bonus_mult = 257, 150..=500,   true;
+    hist_noisy_bonus_max  = 1058, 800..=1400, true;
+    hist_noisy_bonus_base = 196, 150..=400,   true;
+    hist_noisy_malus_mult = 302, 150..=500,   true;
+    hist_noisy_malus_max  = 937, 800..=1400,  true;
+    hist_noisy_malus_base = 273, 150..=400,   true;
+
+    // Continuation History
+    hist_cont_bonus_mult = 315, 150..=500,    true;
+    hist_cont_bonus_max  = 1044, 800..=1400,  true;
+    hist_cont_bonus_base = 194, 150..=400,    true;
+    hist_cont_malus_mult = 303, 150..=500,    true;
+    hist_cont_malus_max  = 1079, 800..=1400,  true;
+    hist_cont_malus_base = 271, 150..=400,    true;
+
+    // Prior Counter Move
+    pcm_scale = 120, 80..=300, true;
+    pcm_offset = 75, 45..=120, true;
+    pcm_max = 1200, 800..=1600, true;
+
+    // Correction History
+    corr_hist_base = 148, 50..=400,        true;
+    corr_hist_min  = -4612, -6000..=-2000, true;
+    corr_hist_max  = 2530, 1000..=5000,    true;
+
+    // Qsearch
+    qsearch_see        = -129, -400..=150, true;
+    qsearch_hist_bonus =  103,   50..=300,  true;
+
+    // SEE
+    see_pawn   = 88,   50..=150,    true;
+    see_knight = 428,  350..=450,   true;
+    see_bishop = 458,  400..=550,   true;
+    see_rook   = 659,  600..=800,   true;
+    see_queen  = 1289, 1000..=1500, true;
+
+    // Move Picker
+    mp_see_base = 64, 40..=100, true;
+
+    // Score Noisy
+    score_queen_promo = 5000, 2500..=10000, true;
+
+    // Score Quiet
+    score_quiet_pawn   = 1000, 500..=1500,   true;
+    score_quiet_cont1  = 1595, 1200..=2000,  true;
+    score_quiet_cont2  = 1050, 800..=1600,   true;
+    score_quiet_cont4  = 1050, 600..=1600,   true;
+    direct_check_bonus = 9808, 9000..=12000, true;
+
+    // Max Histories
+    max_quiet_history    = 8128,  7500..=15000,  true;
+    max_noisy_history    = 8209,  7500..=15000,  true;
+    max_cont_history     = 7813,  7500..=15000,  true;
+    max_contcorr_history = 12000, 7500..=15000,  true;
+    max_corr_history     = 11972, 7500..=15000,  true;
+    max_pawn_history     = 8000,  7500..=15000,  true;
+
+    // Material Scaling
+    mat_scale_pawn   = 50,    50..=150,       true;
+    mat_scale_knight = 420,   350..=450,      true;
+    mat_scale_bishop = 458,   400..=550,      true;
+    mat_scale_rook   = 650,   600..=800,      true;
+    mat_scale_queen  = 1200,  1000..=1500,    true;
+    mat_scale_base   = 26000, 10000..=40000, true;
+
+    // Piece Values
+    value_pawn   = 100,    50..=150,     true;
+    value_knight = 320,   250..=325,     true;
+    value_bishop = 330,   325..=450,     true;
+    value_rook   = 500,   460..=800,     true;
+    value_queen  = 900,   850..=1500,    true;
 }

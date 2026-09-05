@@ -1,6 +1,10 @@
 use crate::{
     board::{movegen::MoveGenKind, see},
     search::data::SearchData,
+    tools::parameters::{
+        direct_check_bonus, mp_see_base, score_queen_promo, score_quiet_cont1, score_quiet_cont2, score_quiet_cont4,
+        score_quiet_pawn,
+    },
     types::{Move, MoveEntry, MoveList, OptionPiece, stackvec::StackVec},
 };
 
@@ -55,7 +59,7 @@ impl MovePicker {
         if self.status == Stage::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
-                let threshold = -best_entry.score / 4 + 64;
+                let threshold = -best_entry.score / 4 + mp_see_base();
                 if !data.board.see(best_entry.mv, threshold) {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
@@ -101,7 +105,7 @@ impl MovePicker {
 
             // Bonus for promotions
             if mv.kind().is_queen_promotion() {
-                score += 5000;
+                score += score_queen_promo();
             }
 
             let piece = data.board.piece_at_square(mv.from());
@@ -125,14 +129,15 @@ impl MovePicker {
             let piece = data.board.piece_at_square(mv.from());
             let to = mv.to();
 
-            let conthistory_score = 1000 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
-                + 1595 * data.conthistory(mv, ply, 1) / 1024
-                + 1050 * data.conthistory(mv, ply, 2) / 1024
-                + 1000 * data.conthistory(mv, ply, 4) / 1024;
+            let conthistory_score = score_quiet_pawn() * data.pawn_history.get(data.board.state.keys.pawn, piece, to)
+                / 1024
+                + score_quiet_cont1() * data.conthistory(mv, ply, 1) / 1024
+                + score_quiet_cont2() * data.conthistory(mv, ply, 2) / 1024
+                + score_quiet_cont4() * data.conthistory(mv, ply, 4) / 1024;
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + conthistory_score
-                + (9808 * data.board.is_direct_check(mv) as i32);
+                + (direct_check_bonus() * data.board.is_direct_check(mv) as i32);
         }
     }
 

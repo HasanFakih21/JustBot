@@ -3,7 +3,10 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-use crate::types::Side;
+use crate::{
+    tools::parameters::{value_bishop, value_knight, value_pawn, value_queen, value_rook},
+    types::Side,
+};
 
 #[derive(Debug)]
 pub struct InvalidPiece;
@@ -58,13 +61,13 @@ impl Piece {
         }
     }
 
-    pub const fn value(&self) -> i32 {
+    pub fn value(&self) -> i32 {
         match self {
-            Self::Pawn => 100,
-            Self::Knight => 320,
-            Self::Bishop => 330,
-            Self::Rook => 500,
-            Self::Queen => 900,
+            Self::Pawn => value_pawn(),
+            Self::Knight => value_knight(),
+            Self::Bishop => value_bishop(),
+            Self::Rook => value_rook(),
+            Self::Queen => value_queen(),
             Self::King => 0,
         }
     }

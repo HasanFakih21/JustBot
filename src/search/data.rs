@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use crate::board::Board;
 use crate::nnue::Network;
 use crate::search::time::{TimeManager, TimeSettings};
+use crate::tools::parameters::{corr_hist_base, corr_hist_max, corr_hist_min};
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
@@ -180,7 +181,7 @@ impl SearchData {
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32, ply: isize) {
         let stm = self.board.state.side_to_move;
-        let bonus = (148 * depth * diff / 121).clamp(-4612, 2530);
+        let bonus = (corr_hist_base() * depth * diff / 128).clamp(corr_hist_min(), corr_hist_max());
         self.corrhistory().pawn.update(stm, self.board.state.keys.pawn, bonus);
         self.corrhistory().non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
         self.corrhistory().non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
