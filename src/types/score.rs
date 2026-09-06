@@ -11,7 +11,7 @@ impl Score {
     pub const DRAW: i32 = 0;
 
     pub fn draw(data: &SearchData) -> i32 {
-        Score::DRAW - 1 + (data.nodes() & 0x2) as i32
+        (data.nodes() % 5) as i32 - 2
     }
 }
 
