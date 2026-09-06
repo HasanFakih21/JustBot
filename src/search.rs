@@ -167,13 +167,13 @@ pub fn search<Node: NodeType>(
     if !Node::ROOT {
         // Check for draws
         if data.board.is_draw() {
-            return Score::DRAW;
+            return Score::draw(data);
         }
 
         // Prevent from going too deep
         if ply >= MAX_PLY as isize - 1 {
             if in_check {
-                return Score::DRAW;
+                return Score::draw(data);
             } else {
                 return data.network.evaluate(&data.board);
             }
@@ -579,7 +579,7 @@ pub fn search<Node: NodeType>(
         if in_check {
             return -Score::MATE + ply as i32;
         } else {
-            return Score::DRAW;
+            return Score::draw(data);
         }
     }
 
@@ -668,7 +668,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
     }
 
     if data.board.is_draw() {
-        return Score::DRAW;
+        return Score::draw(data);
     }
 
     if (data.time.hard_limit(data)
@@ -703,7 +703,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
     if ply >= MAX_PLY as isize - 1 {
         if in_check {
-            return Score::DRAW;
+            return Score::draw(data);
         } else {
             return data.network.evaluate(&data.board);
         }
