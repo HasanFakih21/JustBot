@@ -478,8 +478,10 @@ pub fn search<Node: NodeType>(
         // Late Move Reductions (LMR)
         if depth >= 2 && move_count > 1 {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            r += 1200 * cutnode as i32;
+            r -= 1200 * tt_pv as i32;
+            r -= 800 * is_direct_check as i32;
             r += 215 * !improving as i32;
-            r -= 193 * tt_pv as i32;
             r += 454 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 303 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 439 * history / 4096;
