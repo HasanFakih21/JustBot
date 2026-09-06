@@ -125,13 +125,11 @@ impl MovePicker {
             let piece = data.board.piece_at_square(mv.from());
             let to = mv.to();
 
-            let conthistory_score = 1006 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
+            entry.score = 1600 * data.quiet_history.get(threats, side, mv) / 1024
+                + 1006 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
                 + 1602 * data.conthistory(mv, ply, 1) / 1024
                 + 1059 * data.conthistory(mv, ply, 2) / 1024
-                + 1066 * data.conthistory(mv, ply, 4) / 1024;
-
-            entry.score = data.quiet_history.get(threats, side, mv)
-                + conthistory_score
+                + 1066 * data.conthistory(mv, ply, 4) / 1024
                 + (9779 * data.board.is_direct_check(mv) as i32);
         }
     }
