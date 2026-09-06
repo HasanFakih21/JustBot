@@ -315,6 +315,7 @@ impl SearchData {
 
         self.board.make_move(m);
         self.shared.tt.prefetch(self.board.hash());
+        self.shared.increment_nodes(self.id);
     }
 
     pub fn unmake_move(&mut self) {

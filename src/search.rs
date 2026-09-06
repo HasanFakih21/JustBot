@@ -158,8 +158,6 @@ pub fn search<Node: NodeType>(
         return quiesce::<Node>(data, alpha, beta, ply);
     }
 
-    data.shared.increment_nodes(data.id);
-
     let stm = data.board.state.side_to_move;
     let in_check = data.board.king_in_check();
     let excluded = !data.stack[ply].excluded.is_null();
@@ -417,6 +415,7 @@ pub fn search<Node: NodeType>(
         }
 
         move_count += 1;
+
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.kind().is_quiet();
         let history = if is_quiet {
@@ -662,8 +661,6 @@ pub fn search<Node: NodeType>(
 }
 
 pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32, ply: isize) -> i32 {
-    data.shared.increment_nodes(data.id);
-
     if Node::PV {
         data.pv.clear(ply);
         data.sel_depth = data.sel_depth.max(ply as i32);
