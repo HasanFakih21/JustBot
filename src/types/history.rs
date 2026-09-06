@@ -10,7 +10,7 @@ pub type PieceToHistory<T> = [[T; 64]; 13];
 pub struct QuietHistory(Box<[[[FromToHistory<i16>; 2]; 2]; 2]>);
 
 impl QuietHistory {
-    const MAX_HISTORY: i32 = 8128;
+    const MAX_HISTORY: i32 = 8062;
 
     pub fn new() -> Self {
         Self(zeroed_box())
@@ -43,7 +43,7 @@ impl QuietHistory {
 pub struct NoisyHistory(Box<PieceToHistory<[[i16; 2]; 7]>>);
 
 impl NoisyHistory {
-    const MAX_HISTORY: i32 = 8209;
+    const MAX_HISTORY: i32 = 8292;
 
     pub fn new() -> Self {
         Self(zeroed_box())
@@ -77,7 +77,7 @@ impl NoisyHistory {
 pub struct ContinuationHistory(Box<PieceToHistory<PieceToHistory<i16>>>);
 
 impl ContinuationHistory {
-    pub const MAX_HISTORY: i32 = 7813;
+    pub const MAX_HISTORY: i32 = 7604;
 
     pub fn new() -> Self {
         Self(zeroed_box())
@@ -112,7 +112,7 @@ impl ContinuationHistory {
 pub struct ContinuationCorrectionHistory(Box<PieceToHistory<PieceToHistory<i16>>>);
 
 impl ContinuationCorrectionHistory {
-    pub const MAX_HISTORY: i32 = 12000;
+    pub const MAX_HISTORY: i32 = 11986;
 
     pub fn new() -> Self {
         Self(zeroed_box())
@@ -147,7 +147,7 @@ impl ContinuationCorrectionHistory {
 pub struct CorrectionHistory(Box<[[AtomicI16; Self::SIZE]; 2]>);
 
 impl CorrectionHistory {
-    const MAX_HISTORY: i32 = 11972;
+    const MAX_HISTORY: i32 = 11983;
 
     const SIZE: usize = 16384;
     const MASK: usize = Self::SIZE - 1;
@@ -181,7 +181,7 @@ impl CorrectionHistory {
 pub struct PawnHistory(Box<[PieceToHistory<i16>; Self::SIZE]>);
 
 impl PawnHistory {
-    const MAX_HISTORY: i32 = 8000;
+    const MAX_HISTORY: i32 = 8038;
 
     const SIZE: usize = 512;
     const MASK: usize = Self::SIZE - 1;
