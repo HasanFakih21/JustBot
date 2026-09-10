@@ -273,8 +273,7 @@ pub fn uci() {
 
 #[cfg(feature = "datagen")]
 pub fn genfens(args: &str) {
-    let lower_case = args.to_ascii_lowercase();
-    let args = lower_case.split_ascii_whitespace().collect::<Vec<_>>();
+    let args = args.split_ascii_whitespace().collect::<Vec<_>>();
     let Some((Ok(amount), args)) = args.split_first().map(|(n, rest)| (n.parse::<usize>(), rest)) else {
         eprintln!("info error: need to provide a valid number for how many positions to generate");
         return;

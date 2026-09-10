@@ -5,7 +5,7 @@ use std::{
     io::{self, BufRead, BufReader},
 };
 
-use rand::{RngExt, SeedableRng, random_range, rngs::StdRng};
+use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 use crate::{
     board::{Board, movegen::MoveGenKind, parser::FenParseError},
@@ -41,7 +41,7 @@ pub fn begin_genfens(amount: usize, seed: u64, book: Option<File>) -> io::Result
 
 fn generate_random_opening(plies: isize, rng: &mut StdRng, book: &[String]) -> Result<Board, BadRandomBoard> {
     let mut data = SearchData {
-        board: Board::from_fen(&book[random_range(0..book.len())])?,
+        board: Board::from_fen(&book[rng.random_range(0..book.len())])?,
         ..Default::default()
     };
     let plies = if rng.random_bool(0.5) { plies } else { plies + 1 };
@@ -62,7 +62,7 @@ fn generate_random_opening(plies: isize, rng: &mut StdRng, book: &[String]) -> R
     validation_search(&mut data, Limit::Nodes(NodeKind::Soft(20_000)));
     let Some(best_move) = data.best_move else { return Err(BadRandomBoard) };
 
-    if best_move.score > 1500 || best_move.score < 200 {
+    if best_move.score.abs() > 1500 || best_move.score.abs() < 200 {
         return Err(BadRandomBoard);
     }
 
