@@ -19,6 +19,11 @@ jobs:
             name: justbot-linux-generic
             rustflags: "-C target-cpu=x86-64"
 
+          - os: ubuntu-24.04-arm
+            name: justbot-linux-aarch64-neon
+            target: aarch64-unknown-linux-musl
+            rustflags: "-C target-cpu=generic -C target-feature=+neon,+crt-static"
+
           - os: ubuntu-latest
             name: justbot-linux-avx2
             rustflags: "-C target-cpu=x86-64-v3"
@@ -54,13 +59,33 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@1.95.0
 
+      - name: Select build target
+        id: target
+        shell: bash
+        env:
+          BUILD_TARGET: ${{ matrix.target }}
+        run: |
+          if [ -z "$BUILD_TARGET" ]; then
+            BUILD_TARGET=$(rustc --print host-tuple)
+          else
+            rustup target add "$BUILD_TARGET"
+          fi
+          echo "triple=$BUILD_TARGET" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
         run: |
           rustup component add llvm-tools
           cargo install cargo-pgo
 
+      - name: Install musl linker
+        if: matrix.target == 'aarch64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc" >> "$GITHUB_ENV"
+
       - name: Setup Intel SDE
-        if: matrix.name != 'justbot-macos' && matrix.name != 'justbot-linux-generic' && matrix.name != 'justbot-windows-generic'
+        if: matrix.sde_flag != ''
         uses: petarpetrovt/setup-sde@v5.0
         with:
           sdeVersion: "9.58.0"
@@ -68,14 +93,14 @@ jobs:
 
       - name: Instrument build for PGO
         run: |
-          cargo pgo instrument
+          cargo pgo instrument -- --target ${{ steps.target.outputs.triple }}
         env:
           RUSTFLAGS: "${{ matrix.rustflags }}"
 
       - name: Run PGO profiling benchmarks
         if: matrix.name == 'justbot-linux-avx2' || matrix.name == 'justbot-linux-avx512'
         run: |
-          "$SDE_PATH/sde64" ${{ matrix.sde_flag }} -- cargo pgo run -- bench
+          "$SDE_PATH/sde64" ${{ matrix.sde_flag }} -- cargo pgo run -- --target ${{ steps.target.outputs.triple }} -- bench
         env:
           RUSTFLAGS: "${{ matrix.rustflags }}"
 
@@ -83,27 +108,27 @@ jobs:
         if: matrix.name == 'justbot-windows-avx2' || matrix.name == 'justbot-windows-avx512'
         shell: cmd
         run: |
-          "%SDE_PATH%\sde.exe" ${{ matrix.sde_flag }} -- cargo pgo run -- bench
+          "%SDE_PATH%\sde.exe" ${{ matrix.sde_flag }} -- cargo pgo run -- --target ${{ steps.target.outputs.triple }} -- bench
         env:
           RUSTFLAGS: "${{ matrix.rustflags }}"
 
       - name: Run PGO profiling benchmarks
-        if: matrix.name == 'justbot-macos' || matrix.name == 'justbot-linux-generic' || matrix.name == 'justbot-windows-generic'
+        if: matrix.sde_flag == ''
         run: |
-          cargo pgo run -- bench
+          cargo pgo run -- --target ${{ steps.target.outputs.triple }} -- bench
         env:
           RUSTFLAGS: "${{ matrix.rustflags }}"
 
       - name: Optimize build with PGO
         run: |
-          cargo pgo optimize
+          cargo pgo optimize -- --target ${{ steps.target.outputs.triple }}
         env:
           RUSTFLAGS: "${{ matrix.rustflags }}"
 
       - name: Rename binary with platform suffix
         shell: bash
         run: |
-          tuple=$(rustc --print host-tuple)
+          tuple="${{ steps.target.outputs.triple }}"
           if [ "${{ runner.os }}" = "Windows" ]; then
             mv target\\$tuple\\release\\justbot.exe ${{ matrix.name }}.exe
           else
