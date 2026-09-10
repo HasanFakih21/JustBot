@@ -288,7 +288,10 @@ pub fn genfens(args: &str) {
                 "seed" if let Some(value) = value.parse::<u64>().ok() => seed = Some(value),
                 "seed" => eprintln!("info error: enter a valid seed!"),
                 "book" if let Ok(file) = std::fs::File::open(value) => book = Some(file),
-                "book" => eprintln!("info error: book not found!"),
+                "book" => {
+                    eprintln!("info error: book not found!");
+                    return;
+                }
                 _ => continue,
             }
         }

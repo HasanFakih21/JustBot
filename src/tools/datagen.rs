@@ -17,11 +17,18 @@ use crate::{
 };
 
 pub fn begin_genfens(amount: usize, seed: u64, book: Option<File>) -> io::Result<()> {
-    let (lines, plies) = if let Some(file) = book {
-        (BufReader::new(file).lines().collect::<io::Result<_>>()?, 4)
+    let lines = if let Some(file) = book {
+        BufReader::new(file).lines().collect::<io::Result<_>>()?
     } else {
-        (vec![STARTING_FEN.to_string()], 7)
+        Vec::new()
     };
+
+    assert!(
+        !lines.iter().any(|fen| Board::from_fen(fen).is_err()),
+        "info error: illegal fen entered"
+    );
+    println!("info string found {} book lines", lines.len());
+    let plies = if lines.is_empty() { 7 } else { 5 };
 
     let mut rng = StdRng::seed_from_u64(seed);
 
@@ -40,8 +47,9 @@ pub fn begin_genfens(amount: usize, seed: u64, book: Option<File>) -> io::Result
 }
 
 fn generate_random_opening(plies: isize, rng: &mut StdRng, book: &[String]) -> Result<Board, BadRandomBoard> {
+    let fen = if book.is_empty() { STARTING_FEN } else { &book[rng.random_range(0..book.len())] };
     let mut data = SearchData {
-        board: Board::from_fen(&book[rng.random_range(0..book.len())])?,
+        board: Board::from_fen(fen)?,
         ..Default::default()
     };
     let plies = if rng.random_bool(0.5) { plies } else { plies + 1 };
