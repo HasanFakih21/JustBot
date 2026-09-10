@@ -74,7 +74,7 @@ fn generate_random_opening(
     validation_search(data, Limit::Nodes(NodeKind::Soft(20_000)));
     let Some(best_move) = data.best_move.as_ref() else { return Err(BadRandomBoard) };
 
-    if best_move.score.abs() > 1500 || best_move.score.abs() < 200 {
+    if best_move.score.abs() > 400 || best_move.score.abs() < 25 {
         return Err(BadRandomBoard);
     }
 
