@@ -1,43 +1,47 @@
-use std::sync::Mutex;
-
-use crate::{
-    board::{Board, movegen::MoveGenKind},
-    search::data::SearchData,
-    types::pseudo_rand,
+use std::{
+    error::Error,
+    fmt::Display,
+    fs::File,
+    io::{self, BufRead, BufReader},
 };
 
-#[derive(Debug)]
-pub struct BadRandomBoard;
+use rand::{RngExt, SeedableRng, random_range, rngs::StdRng};
 
-static SEED: Mutex<u64> = Mutex::new(0);
+use crate::{
+    board::{Board, movegen::MoveGenKind, parser::FenParseError},
+    search::data::SearchData,
+    types::STARTING_FEN,
+};
 
-pub fn generate_random_openings(amount: usize, plies: isize, seed: Option<u64>) {
-    if let Some(seed) = seed {
-        *SEED.lock().unwrap() = seed;
+pub fn begin_genfens(amount: usize, seed: u64, book: Option<File>) -> io::Result<()> {
+    let (lines, plies) = if let Some(file) = book {
+        (BufReader::new(file).lines().collect::<io::Result<_>>()?, 5)
     } else {
-        *SEED.lock().unwrap() = rand::random();
-    }
+        (vec![STARTING_FEN.to_string()], 8)
+    };
+
+    let mut rng = StdRng::seed_from_u64(seed);
 
     for _ in 0..amount {
-        let mut random_number = pseudo_rand(&mut SEED.lock().unwrap());
-        let mut random_board = randomize_from_startpos(plies, random_number);
+        let mut random_board = generate_random_opening(plies, &mut rng, &lines);
 
         // Regenerate imbalanced positions
         while random_board.is_err() {
-            random_number = pseudo_rand(&mut SEED.lock().unwrap());
-            random_board = randomize_from_startpos(plies, random_number);
+            random_board = generate_random_opening(plies, &mut rng, &lines);
         }
 
         println!("info string genfens {}", random_board.unwrap().to_fen());
     }
+
+    Ok(())
 }
 
-pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board, BadRandomBoard> {
+pub fn generate_random_opening(plies: isize, rng: &mut StdRng, book: &[String]) -> Result<Board, BadRandomBoard> {
     let mut data = SearchData::default();
-    let mut state = random_number;
     data.network.full_refresh(&data.board);
+    data.board = Board::from_fen(&book[random_range(0..book.len())])?;
 
-    let plies = if rand::random_bool(0.5) { plies } else { plies + 1 };
+    let plies = if rng.random_bool(0.5) { plies } else { plies + 1 };
 
     for ply in 0..plies {
         let move_list = data.board.generate_moves(MoveGenKind::All);
@@ -46,8 +50,8 @@ pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board
             return Err(BadRandomBoard);
         }
 
-        let index = pseudo_rand(&mut state) % move_list.len() as u64;
-        let random_move = move_list.get(index as usize).mv;
+        let index = rng.random_range(0..move_list.len());
+        let random_move = move_list.get(index).mv;
         data.make_move(random_move, ply);
     }
 
@@ -59,12 +63,19 @@ pub fn randomize_from_startpos(plies: isize, random_number: u64) -> Result<Board
     Ok(data.board)
 }
 
-#[cfg(test)]
-pub mod tests {
-    use crate::tools::datagen::generate_random_openings;
+#[derive(Debug)]
+pub struct BadRandomBoard;
 
-    #[test]
-    fn test_fengen() {
-        generate_random_openings(1, 8, Some(3493));
+impl Error for BadRandomBoard {}
+
+impl From<FenParseError> for BadRandomBoard {
+    fn from(_: FenParseError) -> Self {
+        Self
+    }
+}
+
+impl Display for BadRandomBoard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "bad random board")
     }
 }

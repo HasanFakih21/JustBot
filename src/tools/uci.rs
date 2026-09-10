@@ -8,8 +8,6 @@ use crate::search::data::{Report, SharedData};
 use crate::search::time::{Limit, NodeKind, TimeManager};
 use crate::threads::SearchThreads;
 use crate::tools::bench::bench;
-#[cfg(feature = "datagen")]
-use crate::tools::datagen::generate_random_openings;
 #[cfg(feature = "tuning")]
 use crate::tools::parameters::{list_params, print_params_ob, set_param};
 use crate::types::*;
@@ -283,16 +281,26 @@ pub fn genfens(args: &str) {
     };
 
     let mut seed = None;
+    let mut book = None;
+
     for chunk in args.chunks(2) {
         if let [arg, value] = *chunk {
             match arg {
                 "seed" if let Some(value) = value.parse::<u64>().ok() => seed = Some(value),
+                "seed" => eprintln!("info error: enter a valid seed!"),
+                "book" if let Ok(file) = std::fs::File::open(value) => book = Some(file),
+                "book" => eprintln!("info error: book not found!"),
                 _ => continue,
             }
         }
     }
 
-    generate_random_openings(amount, 8, seed);
+    let Some(seed) = seed else {
+        eprintln!("info error: need to enter a seed!");
+        return;
+    };
+
+    crate::tools::datagen::begin_genfens(amount, seed, book).unwrap_or_else(|_| eprintln!("info error: genfens failed"))
 }
 
 #[cfg(test)]
