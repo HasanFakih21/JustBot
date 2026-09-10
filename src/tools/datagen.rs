@@ -31,30 +31,34 @@ pub fn begin_genfens(amount: usize, seed: u64, book: Option<File>) -> io::Result
     let plies = if lines.is_empty() { 7 } else { 5 };
 
     let mut rng = StdRng::seed_from_u64(seed);
+    let mut data = SearchData::default();
 
     for _ in 0..amount {
-        let mut random_board = generate_random_opening(plies, &mut rng, &lines);
+        let mut random_board = generate_random_opening(&mut data, plies, &mut rng, &lines);
 
         // Regenerate imbalanced positions
         while random_board.is_err() {
-            random_board = generate_random_opening(plies, &mut rng, &lines);
+            random_board = generate_random_opening(&mut data, plies, &mut rng, &lines);
         }
 
-        println!("info string genfens {}", random_board.unwrap().to_fen());
+        println!("info string genfens {}", random_board.unwrap());
     }
 
     Ok(())
 }
 
-fn generate_random_opening(plies: isize, rng: &mut StdRng, book: &[String]) -> Result<Board, BadRandomBoard> {
+fn generate_random_opening(
+    data: &mut SearchData,
+    plies: isize,
+    rng: &mut StdRng,
+    book: &[String],
+) -> Result<String, BadRandomBoard> {
     let fen = if book.is_empty() { STARTING_FEN } else { &book[rng.random_range(0..book.len())] };
-    let mut data = SearchData {
-        board: Board::from_fen(fen)?,
-        ..Default::default()
-    };
+    data.board = Board::from_fen(fen)?;
+
     let plies = if rng.random_bool(0.5) { plies } else { plies + 1 };
 
-    for ply in 0..plies {
+    for _ in 0..plies {
         let move_list = data.board.generate_moves(MoveGenKind::All);
         // Check if there's atleast one legal move first
         if move_list.is_empty() {
@@ -63,18 +67,18 @@ fn generate_random_opening(plies: isize, rng: &mut StdRng, book: &[String]) -> R
 
         let index = rng.random_range(0..move_list.len());
         let random_move = move_list.get(index).mv;
-        data.make_move(random_move, ply);
+        data.board.make_move(random_move);
     }
 
     // Check if eval is not too uneven
-    validation_search(&mut data, Limit::Nodes(NodeKind::Soft(20_000)));
-    let Some(best_move) = data.best_move else { return Err(BadRandomBoard) };
+    validation_search(data, Limit::Nodes(NodeKind::Soft(20_000)));
+    let Some(best_move) = data.best_move.as_ref() else { return Err(BadRandomBoard) };
 
     if best_move.score.abs() > 1500 || best_move.score.abs() < 200 {
         return Err(BadRandomBoard);
     }
 
-    Ok(data.board)
+    Ok(data.board.to_fen())
 }
 
 fn validation_search(data: &mut SearchData, limit: Limit) {
