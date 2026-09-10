@@ -215,10 +215,10 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
 pub fn go(args: &str, pool: &mut SearchThreads, board: &mut Board, uci_settings: &UCISettings) -> Option<Move> {
     let args = args.to_ascii_lowercase();
     let args: Vec<&str> = args.split_ascii_whitespace().collect();
-    let settings = parse_limit(board.state.side_to_move, args.as_slice(), uci_settings.soft_nodes);
-    let time = TimeManager::new(settings, board.state.full_move);
+    let limit = parse_limit(board.state.side_to_move, args.as_slice(), uci_settings.soft_nodes);
+    let time = TimeManager::new(limit, board.state.full_move);
 
-    pool.start(board, time.clone(), uci_settings.report)
+    pool.start(board, time, uci_settings.report)
 }
 
 fn parse_limit(stm: Side, args: &[&str], soft_node: bool) -> Limit {
