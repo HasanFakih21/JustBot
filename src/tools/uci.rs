@@ -8,8 +8,6 @@ use crate::search::data::{Report, SharedData};
 use crate::search::time::{Limit, NodeKind, TimeManager};
 use crate::threads::SearchThreads;
 use crate::tools::bench::bench;
-#[cfg(feature = "datagen")]
-use crate::tools::datagen::generate_random_openings;
 #[cfg(feature = "tuning")]
 use crate::tools::parameters::{list_params, print_params_ob, set_param};
 use crate::types::*;
@@ -217,10 +215,10 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
 pub fn go(args: &str, pool: &mut SearchThreads, board: &mut Board, uci_settings: &UCISettings) -> Option<Move> {
     let args = args.to_ascii_lowercase();
     let args: Vec<&str> = args.split_ascii_whitespace().collect();
-    let settings = parse_limit(board.state.side_to_move, args.as_slice(), uci_settings.soft_nodes);
-    let time = TimeManager::new(settings, board.state.full_move);
+    let limit = parse_limit(board.state.side_to_move, args.as_slice(), uci_settings.soft_nodes);
+    let time = TimeManager::new(limit, board.state.full_move);
 
-    pool.start(board, time.clone(), uci_settings.report)
+    pool.start(board, time, uci_settings.report)
 }
 
 fn parse_limit(stm: Side, args: &[&str], soft_node: bool) -> Limit {
@@ -275,23 +273,37 @@ pub fn uci() {
 
 #[cfg(feature = "datagen")]
 pub fn genfens(args: &str) {
-    let args = args.to_ascii_lowercase();
-    let args: Vec<&str> = args.split_ascii_whitespace().collect();
-    let mut amount = 0;
-    let mut seed = 0;
+    let args = args.split_ascii_whitespace().collect::<Vec<_>>();
+    let Some((Ok(amount), args)) = args.split_first().map(|(n, rest)| (n.parse::<usize>(), rest)) else {
+        eprintln!("info error: need to provide a valid number for how many positions to generate");
+        return;
+    };
 
-    match args.as_slice() {
-        [n, "seed", s, ..] => {
-            amount = n.parse::<usize>().unwrap_or(0);
-            seed = s.parse::<u64>().unwrap_or(0);
+    let mut seed = None;
+    let mut book = None;
+
+    for chunk in args.chunks(2) {
+        if let [arg, value] = *chunk {
+            match arg {
+                "seed" if let Some(value) = value.parse::<u64>().ok() => seed = Some(value),
+                "seed" => eprintln!("info error: enter a valid seed!"),
+                "book" if value == "None" => continue,
+                "book" if let Ok(file) = std::fs::File::open(value) => book = Some(file),
+                "book" => {
+                    eprintln!("info error: book not found!");
+                    return;
+                }
+                _ => continue,
+            }
         }
-        [n, ..] => {
-            amount = n.parse::<usize>().unwrap_or(0);
-        }
-        _ => (),
     }
 
-    generate_random_openings(amount, 8, seed);
+    let Some(seed) = seed else {
+        eprintln!("info error: need to enter a seed!");
+        return;
+    };
+
+    crate::tools::datagen::begin_genfens(amount, seed, book).unwrap_or_else(|_| eprintln!("info error: genfens failed"))
 }
 
 #[cfg(test)]
