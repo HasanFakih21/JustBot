@@ -76,5 +76,7 @@ pub fn bench() -> (u64, u64) {
     }
 
     let nps = (total_node_count as f64 / time.elapsed().as_secs_f64()) as u64;
+    #[cfg(feature = "stats")]
+    crate::tools::stats::dump_and_plot();
     (total_node_count, nps)
 }

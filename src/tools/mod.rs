@@ -4,4 +4,6 @@ pub mod datagen;
 pub mod magics;
 pub mod parameters;
 pub mod perft;
+#[cfg(feature = "stats")]
+pub mod stats;
 pub mod uci;

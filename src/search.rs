@@ -1,10 +1,13 @@
-use crate::search::{
-    data::{Report, SearchData, Status},
-    movepicker::MovePicker,
-    time::Limit,
-};
 use crate::types::*;
 use crate::types::{stack::Stack, stackvec::StackVec};
+use crate::{
+    search::{
+        data::{Report, SearchData, Status},
+        movepicker::MovePicker,
+        time::Limit,
+    },
+    track,
+};
 
 pub mod data;
 pub mod movepicker;
@@ -505,6 +508,7 @@ pub fn search<Node: NodeType>(
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
+            track!(reduction);
 
             data.stack[ply].reduction = r;
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, true);

@@ -89,6 +89,9 @@ pub fn input_loop(cli_args: String) {
 
         input.clear();
     }
+
+    #[cfg(feature = "stats")]
+    crate::tools::stats::dump_and_plot();
 }
 
 pub fn listen(shared: Arc<SharedData>) -> Receiver<String> {
