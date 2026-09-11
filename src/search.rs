@@ -48,6 +48,8 @@ pub fn search_runner(data: &mut SearchData) {
 
     let mut depth = 1;
     let mut best_score = 0;
+    let mut reduction = 0;
+
     data.best_move = None;
     data.completed_depth = 0;
     data.root_depth = 0;
@@ -75,7 +77,7 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
-        let score = search::<Root>(data, depth, alpha, beta, 0, false);
+        let score = search::<Root>(data, (depth - reduction).max(1), alpha, beta, 0, false);
 
         if data.shared.status.get() == Status::STOPPED {
             break;
@@ -87,12 +89,14 @@ pub fn search_runner(data: &mut SearchData) {
             alpha = (score - delta).max(-Score::INFINITY);
             beta = (alpha + delta).min(beta);
             delta += 24 * delta / 128;
+            reduction = 0;
             continue;
         } else if score >= beta {
             // Failed High
             alpha = (beta - delta).max(alpha);
             beta = (score + delta).min(Score::INFINITY);
             delta += 25 * delta / 128;
+            reduction = (reduction + 1).min(3);
             continue;
         }
 
@@ -139,6 +143,7 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
+        reduction = 0;
         delta = 25;
         alpha = (score - delta).max(-Score::INFINITY);
         beta = (score + delta).min(Score::INFINITY);
