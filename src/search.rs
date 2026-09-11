@@ -92,7 +92,7 @@ pub fn search_runner(data: &mut SearchData) {
             // Failed High
             alpha = (beta - delta).max(alpha);
             beta = (score + delta).min(Score::INFINITY);
-            delta += 25 * delta / 128;
+            delta += 64 * delta / 128;
             continue;
         }
 
