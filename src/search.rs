@@ -84,8 +84,8 @@ pub fn search_runner(data: &mut SearchData) {
         // Aspiration Window
         if score <= alpha {
             // Failed Low
+            beta = alpha;
             alpha = (score - delta).max(-Score::INFINITY);
-            beta = (alpha + delta).min(beta);
             delta += 24 * delta / 128;
             continue;
         } else if score >= beta {
