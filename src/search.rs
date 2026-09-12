@@ -489,7 +489,7 @@ pub fn search<Node: NodeType>(
 
         // Make Move
         data.make_move(m, ply);
-        let new_depth = (depth - 1) + ((move_count == 1) as i32 * extension);
+        let new_depth = (depth - 1) + if move_count == 1 { extension } else { 0 };
         let mut score = -Score::INFINITY;
 
         // Late Move Reductions (LMR)
@@ -502,6 +502,7 @@ pub fn search<Node: NodeType>(
             r += 454 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 303 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 439 * history / 4096;
+            r -= 650 * in_check as i32;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
