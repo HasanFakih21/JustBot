@@ -500,13 +500,8 @@ pub fn search<Node: NodeType>(
             r += 215 * !improving as i32;
             r += 454 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 303 * (tt_depth.is_some_and(|d| d < depth)) as i32;
-            if is_quiet {
-                r += 2500;
-                r -= 150 * history / 1024;
-            } else {
-                r += 1500;
-                r -= 150 * history / 1024;
-            }
+            r += (2500 - 150 * history / 1024) * is_quiet as i32;
+            r += (1500 - 150 * history / 1024) * !is_quiet as i32;
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
