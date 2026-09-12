@@ -74,10 +74,10 @@ pub fn input_loop(cli_args: String) {
                 println!("{} nodes {} nps", total_node_count, nps);
                 break;
             }
+            #[cfg(feature = "stats")]
+            "plot" => crate::tools::stats::dump_and_plot(),
             #[cfg(feature = "datagen")]
-            "genfens" => {
-                genfens(args);
-            }
+            "genfens" => genfens(args),
             #[cfg(feature = "tuning")]
             "params" => print_params_ob(),
             _ => (),
@@ -89,9 +89,6 @@ pub fn input_loop(cli_args: String) {
 
         input.clear();
     }
-
-    #[cfg(feature = "stats")]
-    crate::tools::stats::dump_and_plot();
 }
 
 pub fn listen(shared: Arc<SharedData>) -> Receiver<String> {
