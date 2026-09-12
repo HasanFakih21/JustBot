@@ -3,10 +3,8 @@ TARGET := $(shell rustc --print host-tuple)
 
 ifeq ($(OS),Windows_NT)
 	NAME := $(EXE).exe
-	PGO  := move /Y "target\$(TARGET)\release\$(EXE).exe" "$(NAME)"
 else
 	NAME := $(EXE)
-	PGO  := mv "target/$(TARGET)/release/$(EXE)" "$(NAME)"
 endif
 
 RUSTFLAGS ?= -C target-cpu=native
@@ -21,7 +19,7 @@ pgo:
 	cargo pgo instrument
 	cargo pgo run -- bench
 	cargo pgo optimize
-	$(PGO)
+	mv "target/$(TARGET)/release/$(NAME)" "$(NAME)"
 
 check-all:
 	RUSTFLAGS="-C target-cpu=x86-64" cargo check
