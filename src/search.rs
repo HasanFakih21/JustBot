@@ -312,6 +312,7 @@ pub fn search<Node: NodeType>(
 
     // Razoring
     if !Node::PV
+        && !excluded
         && !in_check
         && tt_bound.is_none_or(|b| b != Bound::Lower)
         && static_eval < alpha - 242 - 254 * depth * depth
