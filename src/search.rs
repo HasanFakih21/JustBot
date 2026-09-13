@@ -1,6 +1,6 @@
 use crate::search::{
     data::{Report, SearchData, Status},
-    movepicker::MovePicker,
+    movepicker::{MovePicker, Stage},
     time::Limit,
 };
 use crate::types::*;
@@ -476,6 +476,11 @@ pub fn search<Node: NodeType>(
             // History Pruning (HP)
             if !in_check && is_quiet && depth <= 6 && history < -1481 * depth {
                 continue;
+            }
+
+            // Bad Noisy Futility Pruning (BNFP)
+            if !in_check && depth < 8 && move_picker.stage() == Stage::BadNoisy && static_eval + 75 * depth <= alpha {
+                break;
             }
 
             // Static Exchange Evaluation Pruning (SEE Pruning)
