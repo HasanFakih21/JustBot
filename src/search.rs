@@ -382,8 +382,13 @@ pub fn search<Node: NodeType>(
     }
 
     // Prob Cut
-    if !tt_pv && depth >= 7 && !is_decisive(beta) && tt_move.is_none_or(|m| !m.kind().is_quiet()) {
-        let probcut_beta = beta + 250;
+    let probcut_beta = beta + 250;
+    if !tt_pv
+        && depth >= 7
+        && !is_decisive(beta)
+        && tt_move.is_none_or(|m| !m.kind().is_quiet())
+        && tt_score.is_none_or(|s| s >= probcut_beta && !is_decisive(s))
+    {
         let threshold = probcut_beta - static_eval;
 
         let mut move_picker = MovePicker::new(tt_move, Some(threshold));
