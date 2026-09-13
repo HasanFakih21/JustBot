@@ -504,7 +504,9 @@ pub fn search<Node: NodeType>(
             r += 454 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 303 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 439 * history / 4096;
+            data.update_lmr_history((depth * 1024) - r, depth);
 
+            r -= data.lmr_correction();
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
 
