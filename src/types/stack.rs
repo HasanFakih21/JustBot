@@ -43,7 +43,7 @@ pub struct PlyData {
     pub contcorrhistory: *mut PieceToHistory<i16>,
     pub eval: i32,
     pub excluded: Move,
-    pub reduction: i32,
+    pub reduction: Option<i32>,
     pub threats: BitBoard,
 }
 
@@ -56,7 +56,7 @@ impl Default for PlyData {
             contcorrhistory: std::ptr::null_mut(),
             eval: Score::NONE,
             excluded: Move::NONE,
-            reduction: 0,
+            reduction: None,
             threats: BitBoard(0),
         }
     }

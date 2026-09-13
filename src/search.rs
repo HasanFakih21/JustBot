@@ -298,14 +298,17 @@ pub fn search<Node: NodeType>(
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
         // Hindsight Extension
         if depth < MAX_PLY as i32
-            && data.stack[ply - 1].reduction >= 3093
+            && data.stack[ply - 1].reduction.is_some_and(|r| r >= 3093)
             && static_eval + data.stack[ply - 1].eval <= 0
         {
             depth += 1;
         }
 
         // Hindsight Reduction
-        if depth >= 2 && data.stack[ply - 1].reduction >= 2078 && static_eval + data.stack[ply - 1].eval >= 211 {
+        if depth >= 2
+            && data.stack[ply - 1].reduction.is_some_and(|r| r >= 2078)
+            && static_eval + data.stack[ply - 1].eval >= 211
+        {
             depth -= 1;
         }
     }
@@ -511,9 +514,9 @@ pub fn search<Node: NodeType>(
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
 
-            data.stack[ply].reduction = r;
+            data.stack[ply].reduction = Some(r);
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, true);
-            data.stack[ply].reduction = 0;
+            data.stack[ply].reduction = None;
 
             if score > alpha && reduced_depth < new_depth {
                 score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
@@ -657,7 +660,9 @@ pub fn search<Node: NodeType>(
             .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
     }
 
-    data.update_lmr_history(average_r - data.stack[ply - 1].reduction, depth);
+    if let Some(r) = data.stack[ply - 1].reduction {
+        data.update_lmr_history(r - average_r, depth);
+    }
 
     if !excluded {
         data.shared.tt.add_entry(
