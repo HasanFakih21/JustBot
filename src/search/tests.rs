@@ -8,7 +8,7 @@ fn test_order_moves() {
         ..Default::default()
     };
 
-    let mut move_picker = MovePicker::new(None);
+    let mut move_picker = MovePicker::new(None, None);
     let first_move = move_picker.next(&data, false, 0).unwrap();
 
     assert_eq!(first_move, Move::new(Square::F8, Square::B4, MoveKind::Capture));
@@ -17,7 +17,7 @@ fn test_order_moves() {
         board: Board::from_fen("rnbq1rk1/pN1p1ppp/4n2b/2p1p3/N1BP3R/2P2Q2/PP3PPP/2B1K2R w K - 0 1").unwrap(),
         ..Default::default()
     };
-    let mut move_picker = MovePicker::new(None);
+    let mut move_picker = MovePicker::new(None, None);
     let first_move = move_picker.next(&data, false, 0).unwrap();
 
     assert_eq!(first_move, Move::new(Square::B7, Square::D8, MoveKind::Capture));

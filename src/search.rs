@@ -1,6 +1,6 @@
 use crate::search::{
     data::{Report, SearchData, Status},
-    movepicker::MovePicker,
+    movepicker::{MovePicker, Stage},
     time::Limit,
 };
 use crate::types::*;
@@ -325,8 +325,8 @@ pub fn search<Node: NodeType>(
     }
 
     // Reverse Futillity Pruning (RFP)
-    if !in_check
-        && !Node::PV
+    if !Node::PV
+        && !in_check
         && !excluded
         && static_eval >= beta + 87 * depth + 6 * depth * depth - 73 * improving as i32
         && !is_decisive(beta)
@@ -381,6 +381,49 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    // Prob Cut
+    if !tt_pv && depth >= 7 && !is_decisive(beta) && tt_move.is_none_or(|m| !m.kind().is_quiet()) {
+        let probcut_beta = beta + 250;
+        let threshold = probcut_beta - static_eval;
+
+        let mut move_picker = MovePicker::new(tt_move, Some(threshold));
+        while let Some(m) = move_picker.next(data, true, ply) {
+            if move_picker.stage() == Stage::BadNoisy {
+                break;
+            }
+
+            if m == data.stack[ply].excluded {
+                continue;
+            }
+
+            data.make_move(m, ply);
+
+            let mut score = -quiesce::<NonPV>(data, -probcut_beta, -probcut_beta + 1, ply + 1);
+            let probcut_depth = (depth - 3).max(1);
+
+            if score >= probcut_beta {
+                score = -search::<NonPV>(
+                    data,
+                    probcut_depth - 1,
+                    -probcut_beta,
+                    -probcut_beta + 1,
+                    ply + 1,
+                    false,
+                )
+            }
+
+            data.unmake_move();
+
+            if score >= probcut_beta {
+                return score;
+            }
+
+            if data.shared.status.get() == Status::STOPPED {
+                return Score::TIMEOUT;
+            }
+        }
+    }
+
     // Singular Extensions (SE)
     let mut extension = 0;
     if !Node::ROOT
@@ -426,7 +469,7 @@ pub fn search<Node: NodeType>(
     let mut bound = Bound::Upper;
     let mut average_r = 0;
 
-    let mut move_picker = MovePicker::new(tt_move);
+    let mut move_picker = MovePicker::new(tt_move, None);
     let mut quiets_searched = StackVec::<Move, 32>::new();
     let mut noisies_searched = StackVec::<Move, 32>::new();
     let mut skip_quiets = false;
@@ -795,7 +838,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
     let tt_move = tt_entry.map(|e| e.best_move()).filter(|m| !m.is_null());
 
-    let mut move_picker = MovePicker::new(tt_move);
+    let mut move_picker = MovePicker::new(tt_move, None);
     let mut move_count = 0;
     let mut bound = Bound::Upper;
     let mut best_move: Option<Move> = None;
