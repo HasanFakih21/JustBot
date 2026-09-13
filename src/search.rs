@@ -507,7 +507,7 @@ pub fn search<Node: NodeType>(
             r -= 439 * history / 4096;
             r -= data.lmr_correction();
 
-            average_r += r / 2;
+            average_r = (average_r + r) / 2;
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
 
