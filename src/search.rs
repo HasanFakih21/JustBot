@@ -648,10 +648,21 @@ pub fn search<Node: NodeType>(
     }
 
     // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.kind().is_quiet() {
-        let bonus = (122 * depth - 76).min(1194);
-        data.quiet_history
-            .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
+    if !Node::ROOT && bound == Bound::Upper {
+        if data.stack[ply - 1].m.kind().is_quiet() {
+            let bonus = (122 * depth - 76).min(1194);
+            data.quiet_history
+                .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
+        } else {
+            let bonus = (122 * depth - 76).min(1194);
+            data.noisy_history.update(
+                data.stack[ply - 1].piece,
+                data.stack[ply - 1].m.to(),
+                data.stack[ply - 1].captured,
+                data.stack[ply - 1].threats,
+                bonus,
+            );
+        }
     }
 
     if !excluded {
