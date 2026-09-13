@@ -660,11 +660,14 @@ pub fn search<Node: NodeType>(
             .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
     }
 
-    if let Some(r) = data.stack[ply - 1].reduction {
-        data.update_lmr_history(r - average_r, depth);
-    }
-
     if !excluded {
+        if depth >= 2
+            && move_count > 3
+            && let Some(r) = data.stack[ply - 1].reduction
+        {
+            data.update_lmr_history(r - average_r, depth);
+        }
+
         data.shared.tt.add_entry(
             best_move.unwrap_or(Move::NONE),
             best_score,
