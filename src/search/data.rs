@@ -178,9 +178,9 @@ impl SearchData {
             / 64
     }
 
-    pub fn update_lmr_history(&mut self, diff: i32, depth: i32) {
+    pub fn update_lmr_history(&mut self, r: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
-        let bonus = (157 * depth * diff / 128).clamp(-4605, 2548);
+        let bonus = (157 * depth * r / 128).clamp(-4605, 2548);
         self.lmr_history.pawn.update(stm, self.board.state.keys.pawn, bonus);
         self.lmr_history.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
         self.lmr_history.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);

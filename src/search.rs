@@ -657,9 +657,7 @@ pub fn search<Node: NodeType>(
             .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
     }
 
-    if depth > 4 {
-        data.update_lmr_history(average_r - data.stack[ply - 1].average_r, depth);
-    }
+    data.update_lmr_history(average_r - data.stack[ply - 1].reduction, depth);
 
     if !excluded {
         data.shared.tt.add_entry(
@@ -684,7 +682,6 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    data.stack[ply - 1].average_r = average_r;
     best_score
 }
 
