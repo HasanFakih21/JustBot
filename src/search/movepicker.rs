@@ -111,7 +111,7 @@ impl MovePicker {
                 score += see::value(p)
             }
 
-            score += data.noisy_history.get(piece, to, captured, threats) / 8;
+            score += data.noisy_history.get(piece, to, captured, threats);
             entry.score = score;
         }
     }
