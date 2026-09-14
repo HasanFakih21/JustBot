@@ -754,10 +754,10 @@ pub fn search<Node: NodeType>(
 
                 if score >= regret_beta {
                     if m.kind().is_quiet() {
-                        let bonus = (122 * depth - 76).min(1194);
+                        let bonus = 200;
                         data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
                     } else {
-                        let bonus = (253 * depth - 190).min(1060);
+                        let bonus = 400;
                         let piece = data.board.piece_at_square(m.from());
                         let to = m.to();
                         let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
