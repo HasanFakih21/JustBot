@@ -419,12 +419,23 @@ pub fn search<Node: NodeType>(
 
             data.unmake_move();
 
-            if score >= probcut_beta {
-                return score;
-            }
-
             if data.shared.status.get() == Status::STOPPED {
                 return Score::TIMEOUT;
+            }
+
+            if score >= probcut_beta {
+                data.shared.tt.add_entry(
+                    m,
+                    score,
+                    raw_eval,
+                    Bound::Lower,
+                    data.board.hash(),
+                    probcut_depth,
+                    ply,
+                    tt_pv,
+                );
+
+                return score;
             }
         }
     }
