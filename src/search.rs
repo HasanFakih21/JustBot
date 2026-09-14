@@ -382,7 +382,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Prob Cut
-    let probcut_beta = beta + 250;
+    let probcut_beta = beta + 250 - 75 * improving as i32;
     if !tt_pv
         && depth >= 7
         && !is_decisive(beta)
