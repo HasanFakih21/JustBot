@@ -474,7 +474,7 @@ pub fn search<Node: NodeType>(
         }
         // Multi Cut
         else if singular_score >= beta && !is_decisive(singular_score) {
-            return singular_score;
+            return ilerp::<1024>(singular_score, beta, 500);
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
