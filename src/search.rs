@@ -757,10 +757,10 @@ pub fn search<Node: NodeType>(
                 }
 
                 if m.kind().is_quiet() {
-                    let bonus = -(i32::from(score >= regret_beta)) * 400;
+                    let bonus = (120 * depth - 75).min(1200) * -((score < regret_beta) as i32);
                     data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
                 } else {
-                    let bonus = -(i32::from(score >= regret_beta)) * 350;
+                    let bonus = (80 * depth - 65).min(1200) * -((score < regret_beta) as i32);
                     let piece = data.board.piece_at_square(m.from());
                     let to = m.to();
                     let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
