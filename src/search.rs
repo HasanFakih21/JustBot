@@ -668,13 +668,12 @@ pub fn search<Node: NodeType>(
                 noisies_searched.push(m);
             }
         }
+    }
 
-        if let Some(m) = pruned_move
-            && pruned_moves.len() < 32
-        {
-            pruned_moves.push(m);
-            pruned_move = None;
-        }
+    if let Some(m) = pruned_move
+        && pruned_moves.len() < 32
+    {
+        pruned_moves.push(m);
     }
 
     if move_count == 0 {
