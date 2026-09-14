@@ -383,8 +383,7 @@ pub fn search<Node: NodeType>(
 
     // Prob Cut
     let probcut_beta = beta + 250;
-    if !tt_pv
-        && depth >= 7
+    if cutnode
         && !is_decisive(beta)
         && tt_move.is_none_or(|m| !m.kind().is_quiet())
         && tt_score.is_none_or(|s| s >= probcut_beta && !is_decisive(s))
