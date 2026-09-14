@@ -745,7 +745,7 @@ pub fn search<Node: NodeType>(
     if !excluded {
         // If no move raised alpha, search through pruned moves to see if one could've caused a cutoff
         if !Node::PV && bound == Bound::Upper {
-            let regret_beta = beta + 85 * depth;
+            let regret_beta = beta + 400;
 
             for m in pruned_moves.iter() {
                 data.make_move(*m, ply);
@@ -757,10 +757,10 @@ pub fn search<Node: NodeType>(
                 }
 
                 if m.kind().is_quiet() {
-                    let bonus = (120 * depth - 75).min(1200) * -((score < regret_beta) as i32);
+                    let bonus = ((625 * depth).min(947) - 225) * -((score < regret_beta) as i32);
                     data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
                 } else {
-                    let bonus = (80 * depth - 65).min(1200) * -((score < regret_beta) as i32);
+                    let bonus = ((253 * depth).min(1060) - 190) * -((score < regret_beta) as i32);
                     let piece = data.board.piece_at_square(m.from());
                     let to = m.to();
                     let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
