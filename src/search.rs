@@ -752,12 +752,16 @@ pub fn search<Node: NodeType>(
                 let score = -quiesce::<NonPV>(data, -regret_beta, -regret_beta + 1, ply + 1);
                 data.unmake_move();
 
+                if data.shared.status.get() == Status::STOPPED {
+                    return Score::TIMEOUT;
+                }
+
                 if score >= regret_beta {
                     if m.kind().is_quiet() {
-                        let bonus = (122 * depth - 76).min(1194) - 100;
+                        let bonus = (122 * depth - 76).min(1194);
                         data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
                     } else {
-                        let bonus = (253 * depth).min(1060) - 190;
+                        let bonus = (253 * depth - 190).min(1060);
                         let piece = data.board.piece_at_square(m.from());
                         let to = m.to();
                         let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
