@@ -756,11 +756,13 @@ pub fn search<Node: NodeType>(
                     return Score::TIMEOUT;
                 }
 
+                let sign = 1 - 2 * ((score < regret_beta) as i32);
+
                 if m.kind().is_quiet() {
-                    let bonus = ((625 * depth).min(947) - 225) * -((score < regret_beta) as i32);
+                    let bonus = ((625 * depth).min(947) - 225) * sign;
                     data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
                 } else {
-                    let bonus = ((253 * depth).min(1060) - 190) * -((score < regret_beta) as i32);
+                    let bonus = ((253 * depth).min(1060) - 190) * sign;
                     let piece = data.board.piece_at_square(m.from());
                     let to = m.to();
                     let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
