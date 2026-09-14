@@ -744,27 +744,26 @@ pub fn search<Node: NodeType>(
 
     if !excluded {
         // If no move raised alpha, search through pruned moves to see if one could've caused a cutoff
-        if !Node::ROOT && bound == Bound::Upper && depth >= 3 {
-            let regret_beta = beta + 200;
+        if !Node::PV && bound == Bound::Upper {
+            let regret_beta = beta + 250;
 
             for m in pruned_moves.iter() {
                 data.make_move(*m, ply);
-
-                let mut score = -quiesce::<NonPV>(data, -regret_beta, -regret_beta + 1, ply + 1);
-                let regret_depth = (depth - 3).max(1);
-
-                if score >= regret_beta {
-                    score = -search::<NonPV>(data, regret_depth - 1, -regret_beta, -regret_beta + 1, ply + 1, false);
-                }
-
+                let score = -quiesce::<NonPV>(data, -regret_beta, -regret_beta + 1, ply + 1);
                 data.unmake_move();
 
-                if score >= probcut_beta {
-                    return score;
-                }
-
-                if data.shared.status.get() == Status::STOPPED {
-                    return Score::TIMEOUT;
+                if score >= regret_beta {
+                    if m.kind().is_quiet() {
+                        let bonus = (122 * depth - 76).min(1194) - 100;
+                        data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
+                    } else {
+                        let bonus = (253 * depth).min(1060) - 190;
+                        let piece = data.board.piece_at_square(m.from());
+                        let to = m.to();
+                        let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
+                        data.noisy_history
+                            .update(piece, to, captured, data.board.state.threats, bonus);
+                    }
                 }
             }
         }
