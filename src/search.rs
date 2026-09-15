@@ -473,7 +473,7 @@ pub fn search<Node: NodeType>(
                 + (singular_score < singular_beta - triple_margin) as i32;
         }
         // Multi Cut
-        else if singular_score >= beta && !is_decisive(singular_score) {
+        else if singular_score >= beta && !is_decisive(singular_score) && depth >= 7 {
             return ilerp::<1024>(singular_score, beta, 500);
         }
         // Negative Extensions
