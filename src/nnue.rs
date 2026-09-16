@@ -27,6 +27,7 @@ mod simd {
 }
 
 const HIDDEN_SIZE: usize = 1024;
+const HMC_INPUTS: usize = 101;
 const SCALE: i32 = 400;
 const NUM_OUTPUT_BUCKETS: usize = 8;
 const QA: i16 = 255;
@@ -146,6 +147,8 @@ impl Network {
 
         let bucket = output_bucket(board);
         let weights = &self.parameters.output_weights[bucket].as_ptr();
+        let hmc_index = (board.state.half_move_clock as usize).min(HMC_INPUTS - 1);
+        let hmc = &self.parameters.hmc_weights[hmc_index].vals.as_ptr();
 
         // Initialise output.
         let mut sums = [simd::zeroed(); CHUNKS];
@@ -155,7 +158,9 @@ impl Network {
             for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
                 let x = us.add(i);
                 let w = weights.add(i);
-                let v = simd::clamp_i16(*x.cast(), simd::zeroed(), simd::splat_i16(QA));
+                let h = hmc.add(i);
+                let hw = simd::add_i16(*x.cast(), *h.cast());
+                let v = simd::clamp_i16(hw, simd::zeroed(), simd::splat_i16(QA));
                 let t = simd::mul_low_i16(v, *w.cast());
                 let p = simd::madd_i16_to_i32(v, t);
                 sums[0] = simd::add_i32(sums[0], p);
@@ -165,7 +170,9 @@ impl Network {
             for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
                 let x = them.add(i);
                 let w = weights.add(HIDDEN_SIZE + i);
-                let v = simd::clamp_i16(*x.cast(), simd::zeroed(), simd::splat_i16(QA));
+                let h = hmc.add(i);
+                let hw = simd::add_i16(*x.cast(), *h.cast());
+                let v = simd::clamp_i16(hw, simd::zeroed(), simd::splat_i16(QA));
                 let t = simd::mul_low_i16(v, *w.cast());
                 let p = simd::madd_i16_to_i32(v, t);
                 sums[CHUNKS - 1] = simd::add_i32(sums[CHUNKS - 1], p);
@@ -190,18 +197,13 @@ impl Network {
         let bucket = output_bucket(board);
         let weights = &self.parameters.output_weights[bucket];
 
-        // Side-To-Move Accumulator -> Output.
-        for (&input, &weight) in us.vals.iter().zip(&weights[..HIDDEN_SIZE]) {
-            let mut y = i32::from(input).clamp(0, i32::from(QA));
-            y *= y;
-            output += y * i32::from(weight);
-        }
+        for i in 0..HIDDEN_SIZE {
+            let us_value = (i32::from(us.vals[i]) + i32::from(hmc[i])).clamp(0, i32::from(QA));
 
-        // Not-Side-To-Move Accumulator -> Output.
-        for (&input, &weight) in them.vals.iter().zip(&weights[HIDDEN_SIZE..]) {
-            let mut y = i32::from(input).clamp(0, i32::from(QA));
-            y *= y;
-            output += y * i32::from(weight);
+            let them_value = (i32::from(them.vals[i]) + i32::from(hmc[i])).clamp(0, i32::from(QA));
+
+            output += us_value * us_value * i32::from(weights[i]);
+            output += them_value * them_value * i32::from(weights[HIDDEN_SIZE + i]);
         }
 
         output /= i32::from(QA);
@@ -228,6 +230,7 @@ impl Default for Network {
 #[repr(C)]
 pub struct Parameters {
     feature_weights: [Accumulator; 768 * NUM_INPUT_BUCKETS],
+    hmc_weights: [Accumulator; HMC_INPUTS],
     feature_bias: Accumulator,
     output_weights: [[i16; 2 * HIDDEN_SIZE]; NUM_OUTPUT_BUCKETS],
     output_bias: [i16; NUM_OUTPUT_BUCKETS],
