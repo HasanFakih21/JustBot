@@ -147,8 +147,7 @@ impl Network {
 
         let bucket = output_bucket(board);
         let weights = &self.parameters.output_weights[bucket].as_ptr();
-        let hmc_bucket = board.halfmove_bucket();
-        let hmc = &self.parameters.hmc_weights[hmc_bucket].vals.as_ptr();
+        let hmc = &self.parameters.hmc_weights[board.halfmove_bucket()].vals.as_ptr();
 
         // Initialise output.
         let mut sums = [simd::zeroed(); CHUNKS];
@@ -196,6 +195,7 @@ impl Network {
 
         let bucket = output_bucket(board);
         let weights = &self.parameters.output_weights[bucket];
+        let hmc = &self.parameters.hmc_weights[board.halfmove_bucket()].vals;
 
         for i in 0..HIDDEN_SIZE {
             let us_value = (i32::from(us.vals[i]) + i32::from(hmc[i])).clamp(0, i32::from(QA));
