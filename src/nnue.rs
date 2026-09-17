@@ -27,7 +27,7 @@ mod simd {
 }
 
 const HIDDEN_SIZE: usize = 1024;
-const HMC_INPUTS: usize = 101;
+const HMC_INPUTS: usize = 16;
 const SCALE: i32 = 400;
 const NUM_OUTPUT_BUCKETS: usize = 8;
 const QA: i16 = 255;
@@ -147,8 +147,8 @@ impl Network {
 
         let bucket = output_bucket(board);
         let weights = &self.parameters.output_weights[bucket].as_ptr();
-        let hmc_index = (board.state.half_move_clock as usize).min(HMC_INPUTS - 1);
-        let hmc = &self.parameters.hmc_weights[hmc_index].vals.as_ptr();
+        let hmc_bucket = board.halfmove_bucket();
+        let hmc = &self.parameters.hmc_weights[hmc_bucket].vals.as_ptr();
 
         // Initialise output.
         let mut sums = [simd::zeroed(); CHUNKS];
