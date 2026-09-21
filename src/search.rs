@@ -520,7 +520,7 @@ pub fn search<Node: NodeType>(
                 && !is_win(beta)
                 && is_quiet
                 && move_count as i32
-                    > (2976 + (1363 + 263 * improving as i32) * depth * depth + 50 * history / 1024) / 1024
+                    > (2976 + (1363 + 263 * improving as i32) * depth * depth + 100 * history / 1024) / 1024
             {
                 skip_quiets = true;
                 continue;
