@@ -32,19 +32,32 @@ fn wdl_params(material: i32) -> (f64, f64) {
     )
 }
 
+fn material(board: &Board) -> i32 {
+    (1 * board.state.pieces[Piece::Pawn].count_bits()
+        + 3 * board.state.pieces[Piece::Knight].count_bits()
+        + 3 * board.state.pieces[Piece::Bishop].count_bits()
+        + 5 * board.state.pieces[Piece::Rook].count_bits()
+        + 9 * board.state.pieces[Piece::Queen].count_bits()) as i32
+}
+
+pub fn wdl_model(score: i32, board: &Board) -> (i32, i32) {
+    let material = material(board);
+    let (a, b) = wdl_params(material);
+    let x = score as f64;
+
+    (
+        (1000.0 / (1.0 + ((a - x) / b).exp())) as i32,
+        (1000.0 / (1.0 + ((a - x) / b).exp())) as i32,
+    )
+}
+
 pub fn normalize_score(score: i32, board: &Board) -> i32 {
     if score == 0 || is_decisive(score) {
         return score;
     }
 
-    let material = 1 * board.state.pieces[Piece::Pawn].count_bits()
-        + 3 * board.state.pieces[Piece::Knight].count_bits()
-        + 3 * board.state.pieces[Piece::Bishop].count_bits()
-        + 5 * board.state.pieces[Piece::Rook].count_bits()
-        + 9 * board.state.pieces[Piece::Queen].count_bits();
+    let material = material(board);
+    let (a, _) = wdl_params(material);
 
-    let (a, _) = wdl_params(material as i32);
-    let normalized = score as f64 / a;
-
-    (100.0 * normalized).round() as i32
+    (score as f64 / a * 100.0).round() as i32
 }

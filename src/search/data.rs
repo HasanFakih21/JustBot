@@ -5,11 +5,12 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use crate::board::Board;
 use crate::nnue::Network;
 use crate::search::time::{Limit, TimeManager};
+use crate::tools::wdl::{self, normalize_score};
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
     ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory,
-    STARTING_FEN, Score, Side, is_decisive,
+    STARTING_FEN, Score, Side, is_decisive, is_loss, is_win,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -78,12 +79,17 @@ impl Default for SharedData {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Report {
-    #[default]
-    Full,
+    Full(bool),
     Minimal,
     None,
+}
+
+impl Default for Report {
+    fn default() -> Self {
+        Self::Full(true)
+    }
 }
 
 pub struct SearchData {
@@ -277,7 +283,7 @@ impl SearchData {
             let mate_in = score.signum() * ((num_plies + 1) / 2);
             format!("mate {}", mate_in)
         } else {
-            format!("cp {}", score)
+            format!("cp {}", normalize_score(score, &self.board))
         };
 
         if upperbound {
@@ -308,6 +314,18 @@ impl SearchData {
             pv_display,
             self.shared.tt.hashfull(),
         );
+
+        if let Report::Full(true) = self.report {
+            if is_win(score) {
+                print!("wdl 1000 0 0");
+            } else if is_loss(score) {
+                print!("wdl 0 0 1000");
+            } else {
+                let (win, loss) = wdl::wdl_model(score, &self.board);
+                let draw = 1000 - win - loss;
+                print!("wdl {} {} {}", win, draw, loss);
+            }
+        }
     }
 
     pub fn make_move(&mut self, m: Move, ply: isize) {

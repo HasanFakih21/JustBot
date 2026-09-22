@@ -12,11 +12,20 @@ use crate::tools::bench::bench;
 use crate::tools::parameters::{list_params, print_params_ob, set_param};
 use crate::types::*;
 
-#[derive(Default)]
 pub struct UCISettings {
     pub soft_nodes: bool,
     pub frc: bool,
     pub report: Report,
+}
+
+impl Default for UCISettings {
+    fn default() -> Self {
+        Self {
+            soft_nodes: false,
+            frc: false,
+            report: Report::Full(true),
+        }
+    }
 }
 
 pub fn input_loop(cli_args: String) {
@@ -169,9 +178,9 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
         ["name", "minimal", "value", v] => {
             let v = v.parse().unwrap_or(false);
             if v {
-                uci_settings.report = Report::Minimal
+                uci_settings.report = Report::Minimal;
             } else {
-                uci_settings.report = Report::Full
+                uci_settings.report = Report::Full(true);
             }
             println!("info string Set Minimal to {v}");
         }
@@ -198,6 +207,14 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
             let v = v.parse().unwrap_or(false);
             uci_settings.soft_nodes = v;
             println!("info string Set SoftNodes to {v}");
+        }
+        ["name", "uci_showwdl", "value", v] => {
+            let v = v.parse().unwrap_or(true);
+            match uci_settings.report {
+                Report::Full(_) => uci_settings.report = Report::Full(v),
+                _ => (),
+            };
+            println!("info string Set UCI_ShowWDL to {v}");
         }
         #[cfg(feature = "tuning")]
         ["name", name, "value", amount] => {
@@ -266,6 +283,7 @@ pub fn uci() {
     println!("option name UCI_Chess960 type check default false");
     println!("option name Minimal type check default false");
     println!("option name SoftNodes type check default false");
+    println!("option name UCI_ShowWDL type check default false");
     #[cfg(feature = "tuning")]
     list_params();
     println!("uciok");
