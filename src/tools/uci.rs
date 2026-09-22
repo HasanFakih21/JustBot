@@ -16,6 +16,7 @@ pub struct UCISettings {
     pub soft_nodes: bool,
     pub frc: bool,
     pub report: Report,
+    pub show_wdl: bool,
 }
 
 impl Default for UCISettings {
@@ -24,6 +25,7 @@ impl Default for UCISettings {
             soft_nodes: false,
             frc: false,
             report: Report::Full(true),
+            show_wdl: true,
         }
     }
 }
@@ -180,7 +182,7 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
             if v {
                 uci_settings.report = Report::Minimal;
             } else {
-                uci_settings.report = Report::Full(true);
+                uci_settings.report = Report::Full(uci_settings.show_wdl);
             }
             println!("info string Set Minimal to {v}");
         }
@@ -210,10 +212,13 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
         }
         ["name", "uci_showwdl", "value", v] => {
             let v = v.parse().unwrap_or(true);
+            uci_settings.show_wdl = v;
+
             match uci_settings.report {
                 Report::Full(_) => uci_settings.report = Report::Full(v),
                 _ => (),
             };
+
             println!("info string Set UCI_ShowWDL to {v}");
         }
         #[cfg(feature = "tuning")]
@@ -283,7 +288,7 @@ pub fn uci() {
     println!("option name UCI_Chess960 type check default false");
     println!("option name Minimal type check default false");
     println!("option name SoftNodes type check default false");
-    println!("option name UCI_ShowWDL type check default false");
+    println!("option name UCI_ShowWDL type check default true");
     #[cfg(feature = "tuning")]
     list_params();
     println!("uciok");

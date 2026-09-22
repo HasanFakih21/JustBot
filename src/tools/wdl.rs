@@ -46,8 +46,8 @@ pub fn wdl_model(score: i32, board: &Board) -> (i32, i32) {
     let x = score as f64;
 
     (
-        (1000.0 / (1.0 + ((a - x) / b).exp())) as i32,
-        (1000.0 / (1.0 + ((a - x) / b).exp())) as i32,
+        (1000.0 / (1.0 + ((a - x) / b).exp())).round() as i32,
+        (1000.0 / (1.0 + ((a + x) / b).exp())).round() as i32,
     )
 }
 

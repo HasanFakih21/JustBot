@@ -265,9 +265,17 @@ impl SearchData {
             return;
         };
 
+        print!(
+            "info depth {} seldepth {} time {} nodes {} nps {} score",
+            root_move.searched_depth,
+            root_move.sel_depth,
+            self.time.elapsed().as_millis(),
+            self.shared.total_nodes_searched(),
+            self.nodes_per_second()
+        );
+
         let mut upperbound = root_move.upperbound;
         let mut lowerbound = root_move.lowerbound;
-
         let mut score = root_move.display_score;
 
         if root_move.score == -Score::INFINITY {
@@ -277,55 +285,42 @@ impl SearchData {
             lowerbound = false;
         }
 
-        // Report mate score
-        let mut score_print = if is_decisive(score) {
+        if is_decisive(score) {
             let num_plies = Score::MATE - score.abs();
             let mate_in = score.signum() * ((num_plies + 1) / 2);
-            format!("mate {}", mate_in)
+            print!(" mate {}", mate_in);
         } else {
-            format!("cp {}", normalize_score(score, &self.board))
-        };
+            print!(" cp {}", normalize_score(score, &self.board));
+        }
 
         if upperbound {
-            score_print.push_str(" upperbound");
+            print!(" upperbound");
         }
 
         if lowerbound {
-            score_print.push_str(" lowerbound");
+            print!(" lowerbound");
         }
-
-        let pv_display = {
-            let mut output = format!("{} ", root_move.m.to_uci(&self.board));
-            for m in &root_move.pv.inner {
-                output = format!("{output}{} ", m.to_uci(&self.board));
-            }
-
-            output
-        };
-
-        println!(
-            "info depth {} seldepth {} time {} score {} nodes {} nps {} pv {} hashfull {}",
-            root_move.searched_depth,
-            root_move.sel_depth,
-            self.time.elapsed().as_millis(),
-            score_print,
-            self.shared.total_nodes_searched(),
-            self.nodes_per_second(),
-            pv_display,
-            self.shared.tt.hashfull(),
-        );
 
         if let Report::Full(true) = self.report {
             if is_win(score) {
-                print!("wdl 1000 0 0");
+                print!(" wdl 1000 0 0");
             } else if is_loss(score) {
-                print!("wdl 0 0 1000");
+                print!(" wdl 0 0 1000");
             } else {
                 let (win, loss) = wdl::wdl_model(score, &self.board);
                 let draw = 1000 - win - loss;
-                print!("wdl {} {} {}", win, draw, loss);
+                print!(" wdl {} {} {}", win, draw, loss);
             }
         }
+
+        print!(" hashfull {}", self.shared.tt.hashfull());
+
+        print!(" pv");
+        for m in &root_move.pv.inner {
+            print!(" {}", m.to_uci(&self.board));
+        }
+
+        println!();
     }
 
     pub fn make_move(&mut self, m: Move, ply: isize) {
