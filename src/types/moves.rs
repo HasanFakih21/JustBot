@@ -158,6 +158,10 @@ impl Move {
         self.0 == 0
     }
 
+    pub const fn is_quiet(&self) -> bool {
+        !self.is_null() && self.kind().is_quiet()
+    }
+
     pub const fn castle_direction(&self) -> Option<usize> {
         match self.kind() {
             MoveKind::KingCastle => Some(Castling::KING_SIDE),

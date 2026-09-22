@@ -239,7 +239,7 @@ pub fn search<Node: NodeType>(
     {
         if let Some(tt_move) = tt_move
             && tt_score >= beta
-            && tt_move.kind().is_quiet()
+            && tt_move.is_quiet()
         {
             let bonus = (206 * depth - 50).min(1201);
             data.quiet_history.update(data.board.threats(), stm, tt_move, bonus);
@@ -386,7 +386,7 @@ pub fn search<Node: NodeType>(
     if !tt_pv
         && depth >= 7
         && !is_decisive(beta)
-        && tt_move.is_none_or(|m| !m.kind().is_quiet())
+        && tt_move.is_none_or(|m| !m.is_quiet())
         && tt_score.is_none_or(|s| s >= probcut_beta && !is_decisive(s))
     {
         let threshold = probcut_beta - static_eval;
@@ -498,7 +498,7 @@ pub fn search<Node: NodeType>(
         move_count += 1;
 
         let is_direct_check = data.board.is_direct_check(m);
-        let is_quiet = m.kind().is_quiet();
+        let is_quiet = m.is_quiet();
         let history = if is_quiet {
             data.quiet_history.get(data.board.threats(), stm, m)
                 + data.conthistory(m, ply, 1)
@@ -670,7 +670,7 @@ pub fn search<Node: NodeType>(
     }
 
     if let Some(m) = best_move {
-        let is_quiet = m.kind().is_quiet();
+        let is_quiet = m.is_quiet();
 
         let quiet_bonus = (325 * depth).min(947) - 225;
         let quiet_malus = (289 * depth).min(948) - 235;
@@ -713,10 +713,14 @@ pub fn search<Node: NodeType>(
     }
 
     // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.kind().is_quiet() {
+    if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.is_quiet() {
         let bonus = (122 * depth - 76).min(1194);
         data.quiet_history
             .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
+    }
+
+    if best_score >= beta && !is_decisive(best_score) && !is_decisive(beta) {
+        best_score = (best_score * depth + beta) / (depth + 1);
     }
 
     if !excluded {
@@ -740,7 +744,7 @@ pub fn search<Node: NodeType>(
 
         // Update Correction Histories
         if !in_check
-            && best_move.is_none_or(|m| m.kind().is_quiet())
+            && best_move.is_none_or(|m| m.is_quiet())
             && ((bound == Bound::Lower && best_score >= static_eval)
                 || (bound == Bound::Upper && best_score <= static_eval)
                 || bound == Bound::Exact)
@@ -910,7 +914,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
     if best_score >= beta
         && let Some(m) = best_move
-        && !m.kind().is_quiet()
+        && !m.is_quiet()
     {
         // Add noisy bonus to history
         let piece = data.board.piece_at_square(m.from());
