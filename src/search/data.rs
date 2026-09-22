@@ -320,7 +320,7 @@ impl SearchData {
 
         print!(" hashfull {}", self.shared.tt.hashfull());
 
-        print!(" pv");
+        print!(" pv {}", root_move.m.to_uci(&self.board));
         for m in &root_move.pv.inner {
             print!(" {}", m.to_uci(&self.board));
         }
