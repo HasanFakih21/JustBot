@@ -5,3 +5,4 @@ pub mod magics;
 pub mod parameters;
 pub mod perft;
 pub mod uci;
+pub mod wdl;
