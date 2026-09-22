@@ -115,7 +115,7 @@ pub fn search_runner(data: &mut SearchData) {
         data.best_move = Some(data.root_moves[0].clone());
         best_score = data.root_moves[0].score;
 
-        if let Report::Full(_) = data.report {
+        if data.report == Report::Full {
             data.print_uci_info();
         }
 
@@ -149,7 +149,7 @@ pub fn search_runner(data: &mut SearchData) {
         beta = (score + delta).min(Score::INFINITY);
     }
 
-    if matches!(data.report, Report::Minimal | Report::Full(_)) {
+    if matches!(data.report, Report::Minimal | Report::Full) {
         data.print_uci_info();
     }
 

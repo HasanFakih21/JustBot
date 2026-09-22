@@ -39,6 +39,7 @@ pub struct SharedData {
     pub tt: TranspositionTable,
     pub history: SharedCorrectionHistories,
     pub status: Status,
+    show_wdl: AtomicBool,
     nodes: Box<[AlignedAtomicU64; 512]>,
 }
 
@@ -66,6 +67,14 @@ impl SharedData {
             t.0.store(0, Ordering::Relaxed);
         }
     }
+
+    pub fn set_show_wdl(&self, val: bool) {
+        self.show_wdl.store(val, Ordering::Relaxed);
+    }
+
+    pub fn show_wdl(&self) -> bool {
+        self.show_wdl.load(Ordering::Relaxed)
+    }
 }
 
 impl Default for SharedData {
@@ -74,22 +83,18 @@ impl Default for SharedData {
             history: SharedCorrectionHistories::default(),
             tt: TranspositionTable::default(),
             status: Status(AtomicBool::new(Status::RUNNING)),
+            show_wdl: AtomicBool::new(true),
             nodes: Box::new(array::from_fn(|_| AlignedAtomicU64(AtomicU64::new(0)))),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub enum Report {
-    Full(bool),
+    #[default]
+    Full,
     Minimal,
     None,
-}
-
-impl Default for Report {
-    fn default() -> Self {
-        Self::Full(true)
-    }
 }
 
 pub struct SearchData {
@@ -301,7 +306,7 @@ impl SearchData {
             print!(" lowerbound");
         }
 
-        if let Report::Full(true) = self.report {
+        if self.shared.show_wdl() {
             if is_win(score) {
                 print!(" wdl 1000 0 0");
             } else if is_loss(score) {

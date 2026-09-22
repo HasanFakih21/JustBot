@@ -16,7 +16,6 @@ pub struct UCISettings {
     pub soft_nodes: bool,
     pub frc: bool,
     pub report: Report,
-    pub show_wdl: bool,
 }
 
 impl Default for UCISettings {
@@ -24,8 +23,7 @@ impl Default for UCISettings {
         Self {
             soft_nodes: false,
             frc: false,
-            report: Report::Full(true),
-            show_wdl: true,
+            report: Report::Full,
         }
     }
 }
@@ -182,7 +180,7 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
             if v {
                 uci_settings.report = Report::Minimal;
             } else {
-                uci_settings.report = Report::Full(uci_settings.show_wdl);
+                uci_settings.report = Report::Full;
             }
             println!("info string Set Minimal to {v}");
         }
@@ -212,13 +210,7 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
         }
         ["name", "uci_showwdl", "value", v] => {
             let v = v.parse().unwrap_or(true);
-            uci_settings.show_wdl = v;
-
-            match uci_settings.report {
-                Report::Full(_) => uci_settings.report = Report::Full(v),
-                _ => (),
-            };
-
+            shared.set_show_wdl(v);
             println!("info string Set UCI_ShowWDL to {v}");
         }
         #[cfg(feature = "tuning")]
