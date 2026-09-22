@@ -745,9 +745,12 @@ pub fn search<Node: NodeType>(
         // Update Correction Histories
         if !in_check
             && best_move.is_none_or(|m| m.is_quiet())
-            && ((bound == Bound::Lower && best_score >= static_eval)
-                || (bound == Bound::Upper && best_score <= static_eval)
-                || bound == Bound::Exact)
+            && match bound {
+                Bound::Lower => best_score > static_eval,
+                Bound::Upper => best_score < static_eval,
+                Bound::Exact => true,
+                Bound::None => unreachable!(),
+            }
         {
             data.update_correction_histories(best_score - static_eval, depth, ply);
         }
