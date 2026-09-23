@@ -38,6 +38,7 @@ impl Status {
 pub struct SharedData {
     pub tt: TranspositionTable,
     pub history: SharedCorrectionHistories,
+    pub lmr_history: LMRHistory,
     pub status: Status,
     show_wdl: AtomicBool,
     nodes: Box<[AlignedAtomicU64; 512]>,
@@ -81,6 +82,7 @@ impl Default for SharedData {
     fn default() -> Self {
         Self {
             history: SharedCorrectionHistories::default(),
+            lmr_history: LMRHistory::default(),
             tt: TranspositionTable::default(),
             status: Status(AtomicBool::new(Status::RUNNING)),
             show_wdl: AtomicBool::new(true),
@@ -118,7 +120,6 @@ pub struct SearchData {
     pub pawn_history: PawnHistory,
     pub conthistory: ContinuationHistory,
     pub contcorrhistory: ContinuationCorrectionHistory,
-    pub lmr_history: LMRHistory,
 
     pub network: Network,
 }
@@ -146,7 +147,6 @@ impl SearchData {
             pawn_history: PawnHistory::new(),
             conthistory: ContinuationHistory::new(),
             contcorrhistory: ContinuationCorrectionHistory::new(),
-            lmr_history: LMRHistory::default(),
 
             network: Network::new(),
         }
@@ -154,6 +154,10 @@ impl SearchData {
 
     pub fn corrhistory(&self) -> &SharedCorrectionHistories {
         &self.shared.history
+    }
+
+    pub fn lmr_history(&self) -> &LMRHistory {
+        &self.shared.lmr_history
     }
 
     pub fn nodes(&self) -> u64 {
@@ -183,18 +187,18 @@ impl SearchData {
 
     pub fn lmr_correction(&self) -> i32 {
         let stm = self.board.state.side_to_move;
-        (self.lmr_history.pawn.get(stm, self.board.state.keys.pawn)
-            + self.lmr_history.non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
-            + self.lmr_history.non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black]))
+        (self.lmr_history().pawn.get(stm, self.board.state.keys.pawn)
+            + self.lmr_history().non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
+            + self.lmr_history().non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black]))
             / 64
     }
 
     pub fn update_lmr_history(&mut self, r: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
         let bonus = (157 * depth * r / 128).clamp(-4605, 2548);
-        self.lmr_history.pawn.update(stm, self.board.state.keys.pawn, bonus);
-        self.lmr_history.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
-        self.lmr_history.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
+        self.lmr_history().pawn.update(stm, self.board.state.keys.pawn, bonus);
+        self.lmr_history().non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
+        self.lmr_history().non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
     }
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32, ply: isize) {
@@ -362,6 +366,15 @@ impl Default for SearchData {
 pub struct LMRHistory {
     pub pawn: CorrectionHistory,
     pub non_pawn: [CorrectionHistory; 2],
+}
+
+impl LMRHistory {
+    pub fn clear(&self) {
+        self.pawn.clear();
+        for history in self.non_pawn.iter() {
+            history.clear();
+        }
+    }
 }
 
 #[derive(Debug, Default)]

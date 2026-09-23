@@ -57,6 +57,7 @@ pub fn input_loop(cli_args: String) {
             "setoption" => set_option(args, &mut uci_settings, shared.clone(), &mut pool),
             "ucinewgame" => {
                 shared.history.clear();
+                shared.lmr_history.clear();
                 shared.tt.clear();
                 let thread_count = pool.count();
                 drop(pool);
