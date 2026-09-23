@@ -1,3 +1,5 @@
+use crate::tools::parameters::*;
+
 use std::{
     fmt::Display,
     ops::{Index, IndexMut},
@@ -58,13 +60,13 @@ impl Piece {
         }
     }
 
-    pub const fn value(&self) -> i32 {
+    pub fn value(&self) -> i32 {
         match self {
-            Self::Pawn => 105,
-            Self::Knight => 318,
-            Self::Bishop => 328,
-            Self::Rook => 503,
-            Self::Queen => 903,
+            Self::Pawn => value_pawn(),
+            Self::Knight => value_knight(),
+            Self::Bishop => value_bishop(),
+            Self::Rook => value_rook(),
+            Self::Queen => value_queen(),
             Self::King => 0,
         }
     }
