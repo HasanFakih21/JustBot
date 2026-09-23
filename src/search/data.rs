@@ -5,11 +5,12 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use crate::board::Board;
 use crate::nnue::Network;
 use crate::search::time::{Limit, TimeManager};
+use crate::tools::parameters::*;
 use crate::tools::wdl::{self, normalize_score};
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, LMRTable, Move, NoisyHistory, PawnHistory,
     STARTING_FEN, Score, Side, is_decisive, is_loss, is_win,
 };
 use crate::types::{QuietHistory, TranspositionTable};
@@ -112,6 +113,7 @@ pub struct SearchData {
     pub prev_score: i32,
     pub nmp_min_ply: i32,
     pub completed_depth: i32,
+    pub lmr: LMRTable,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -140,6 +142,7 @@ impl SearchData {
             prev_score: 0,
             nmp_min_ply: 0,
             completed_depth: 0,
+            lmr: LMRTable::default(),
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -191,7 +194,7 @@ impl SearchData {
 
     pub fn update_lmr_history(&mut self, r: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
-        let bonus = (157 * depth * r / 128).clamp(-4605, 2548);
+        let bonus = (lmr_hist_base() * depth * r / 128).clamp(lmr_hist_min(), lmr_hist_max());
         self.lmr_history.pawn.update(stm, self.board.state.keys.pawn, bonus);
         self.lmr_history.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
         self.lmr_history.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
@@ -199,7 +202,7 @@ impl SearchData {
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32, ply: isize) {
         let stm = self.board.state.side_to_move;
-        let bonus = (157 * depth * diff / 128).clamp(-4605, 2548);
+        let bonus = (corr_hist_base() * depth * diff / 128).clamp(corr_hist_min(), corr_hist_max());
         self.corrhistory().pawn.update(stm, self.board.state.keys.pawn, bonus);
         self.corrhistory().non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
         self.corrhistory().non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);

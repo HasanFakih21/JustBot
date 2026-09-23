@@ -1,3 +1,5 @@
+use crate::tools::parameters::*;
+
 use std::cmp::max;
 
 use crate::board::Board;
@@ -39,17 +41,17 @@ impl Board {
             material += self.state.pieces[piece].count_bits() as i32 * piece_scale(piece);
         }
 
-        static_eval * (24792 + material) / 32768 * (200 - self.state.half_move_clock as i32) / 200
+        static_eval * (mat_scale_base() + material) / 32768 * (200 - self.state.half_move_clock as i32) / 200
     }
 }
 
 pub fn piece_scale(piece: Piece) -> i32 {
     match piece {
-        Piece::Pawn => 50,
-        Piece::Knight => 420,
-        Piece::Bishop => 455,
-        Piece::Rook => 651,
-        Piece::Queen => 1216,
+        Piece::Pawn => mat_scale_pawn(),
+        Piece::Knight => mat_scale_knight(),
+        Piece::Bishop => mat_scale_bishop(),
+        Piece::Rook => mat_scale_rook(),
+        Piece::Queen => mat_scale_queen(),
         Piece::King => 0,
     }
 }

@@ -1,3 +1,5 @@
+use crate::tools::parameters::*;
+
 use crate::{
     attacks::RAYS,
     board::Board,
@@ -150,11 +152,11 @@ impl Board {
 
 pub fn value(piece: Piece) -> i32 {
     match piece {
-        Piece::Pawn => 88,
-        Piece::Knight => 429,
-        Piece::Bishop => 454,
-        Piece::Rook => 654,
-        Piece::Queen => 1293,
+        Piece::Pawn => see_pawn(),
+        Piece::Knight => see_knight(),
+        Piece::Bishop => see_bishop(),
+        Piece::Rook => see_rook(),
+        Piece::Queen => see_queen(),
         Piece::King => 0,
     }
 }
