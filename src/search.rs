@@ -722,7 +722,7 @@ pub fn search<Node: NodeType>(
             let bonus = (122 * depth - 76).min(1205);
             data.quiet_history.update(prior_threats, !stm, prior_move, bonus);
         } else {
-            let bonus = (50 * depth).min(650);
+            let bonus = 60;
             data.noisy_history.update(
                 data.stack[ply - 1].piece,
                 prior_move.to(),
