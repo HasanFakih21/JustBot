@@ -725,7 +725,6 @@ pub fn search<Node: NodeType>(
 
     if !excluded {
         if depth >= 2
-            && move_count > 3
             && let Some(r) = data.stack[ply - 1].reduction
         {
             data.update_lmr_history(r - average_r, depth);
