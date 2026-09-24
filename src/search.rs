@@ -563,10 +563,10 @@ pub fn search<Node: NodeType>(
             r += 2013 * (cutnode && tt_move.is_none()) as i32;
             r -= 1207 * tt_was_pv as i32;
             r -= 819 * is_direct_check as i32;
-            r += 206 * !improving as i32;
             r += 456 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 305 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 435 * history / 4096;
+            r -= (435 * improvement / 128).clamp(-200, 1024);
             r -= data.lmr_correction();
 
             average_r = (average_r + r) / 2;
