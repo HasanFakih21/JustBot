@@ -444,7 +444,7 @@ pub fn search<Node: NodeType>(
     let mut extension = 0;
     if !Node::ROOT
         && !excluded
-        && depth >= 5
+        && depth >= 5 + tt_pv as i32
         && tt_depth.is_some_and(|d| d >= depth - 3)
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
