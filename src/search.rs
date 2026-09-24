@@ -716,7 +716,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper {
+    if !Node::ROOT && bound == Bound::Upper && (cutnode || Node::PV) {
         let prior_move = data.stack[ply - 1].m;
         if prior_move.is_quiet() {
             let mut weight = 85;
