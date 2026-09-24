@@ -270,6 +270,7 @@ pub fn search<Node: NodeType>(
     };
 
     data.stack[ply].eval = static_eval;
+
     if !excluded && tt_entry.is_none() {
         data.shared.tt.add_entry(
             Move::NONE,
@@ -713,10 +714,23 @@ pub fn search<Node: NodeType>(
     }
 
     // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.is_quiet() {
-        let bonus = (122 * depth - 76).min(1205);
-        data.quiet_history
-            .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
+    if !Node::ROOT && bound == Bound::Upper {
+        let prior_move = data.stack[ply - 1].m;
+        let prior_threats = data.stack[ply - 1].threats;
+
+        if prior_move.is_quiet() {
+            let bonus = (122 * depth - 76).min(1205);
+            data.quiet_history.update(prior_threats, !stm, prior_move, bonus);
+        } else {
+            let bonus = (50 * depth).min(650);
+            data.noisy_history.update(
+                data.stack[ply - 1].piece,
+                prior_move.to(),
+                data.stack[ply - 1].captured,
+                prior_threats,
+                bonus,
+            );
+        }
     }
 
     if best_score >= beta && !is_decisive(best_score) && !is_decisive(beta) {

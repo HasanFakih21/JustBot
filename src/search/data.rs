@@ -337,9 +337,11 @@ impl SearchData {
         let from = m.from();
         let to = m.to();
         let piece = self.board.piece_at_square(from);
+        let captured = self.board.piece_at_square(m.capture_square()).map(|m| m.kind());
 
         self.stack[ply].m = m;
         self.stack[ply].piece = piece;
+        self.stack[ply].captured = captured;
         self.stack[ply].conthistory = self.conthistory.subtable(piece, to);
         self.stack[ply].contcorrhistory = self.contcorrhistory.subtable(piece, to);
         self.stack[ply].threats = self.board.threats();
