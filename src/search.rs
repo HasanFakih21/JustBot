@@ -270,6 +270,9 @@ pub fn search<Node: NodeType>(
     };
 
     data.stack[ply].eval = static_eval;
+    data.stack[ply].tt_move = tt_move;
+    data.stack[ply].move_count = 0;
+
     if !excluded && tt_entry.is_none() {
         data.shared.tt.add_entry(
             Move::NONE,
@@ -401,7 +404,7 @@ pub fn search<Node: NodeType>(
                 continue;
             }
 
-            data.make_move(m, ply);
+            data.make_move(m, ply, 0);
 
             let mut score = -quiesce::<NonPV>(data, -probcut_beta, -probcut_beta + 1, ply + 1);
             let probcut_depth = (depth - 3).max(1);
@@ -551,7 +554,7 @@ pub fn search<Node: NodeType>(
         let initial_nodes = data.nodes();
 
         // Make Move
-        data.make_move(m, ply);
+        data.make_move(m, ply, move_count);
         let new_depth = (depth - 1) + ((move_count == 1) as i32 * extension);
         let mut score = -Score::INFINITY;
 
@@ -713,10 +716,18 @@ pub fn search<Node: NodeType>(
     }
 
     // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.is_quiet() {
-        let bonus = (122 * depth - 76).min(1205);
-        data.quiet_history
-            .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
+    if !Node::ROOT && bound == Bound::Upper {
+        let prior_move = data.stack[ply - 1].m;
+        if prior_move.is_quiet() {
+            let mut weight = 85;
+            weight += (15 * data.stack[ply - 1].move_count as i32).min(250);
+            weight += 100 * data.stack[ply - 1].tt_move.is_some_and(|tt_move| tt_move == prior_move) as i32;
+
+            let bonus = weight * (150 * depth - 35).min(2400) / 128;
+            let prior_threats = data.stack[ply - 1].threats;
+
+            data.quiet_history.update(prior_threats, !stm, prior_move, bonus);
+        }
     }
 
     if best_score >= beta && !is_decisive(best_score) && !is_decisive(beta) {
@@ -879,7 +890,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
             }
         }
 
-        data.make_move(m, ply);
+        data.make_move(m, ply, move_count);
         let score = -quiesce::<Node>(data, -beta, -alpha, ply + 1);
         data.unmake_move();
 

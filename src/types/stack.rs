@@ -38,6 +38,7 @@ impl Default for Stack {
 #[derive(Debug, Clone, Copy)]
 pub struct PlyData {
     pub m: Move,
+    pub tt_move: Option<Move>,
     pub piece: OptionPiece<SidedPiece>,
     pub conthistory: *mut PieceToHistory<i16>,
     pub contcorrhistory: *mut PieceToHistory<i16>,
@@ -45,6 +46,7 @@ pub struct PlyData {
     pub excluded: Move,
     pub reduction: Option<i32>,
     pub threats: BitBoard,
+    pub move_count: u16,
 }
 
 impl Default for PlyData {
@@ -52,12 +54,14 @@ impl Default for PlyData {
         PlyData {
             m: Move::NONE,
             piece: OptionPiece::None,
+            tt_move: None,
             conthistory: std::ptr::null_mut(),
             contcorrhistory: std::ptr::null_mut(),
             eval: Score::NONE,
             excluded: Move::NONE,
             reduction: None,
             threats: BitBoard(0),
+            move_count: 0,
         }
     }
 }
