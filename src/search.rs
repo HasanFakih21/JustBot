@@ -688,6 +688,7 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    // History Updates
     if let Some(m) = best_move {
         let is_quiet = m.is_quiet();
 
@@ -743,7 +744,7 @@ pub fn search<Node: NodeType>(
     }
 
     if !excluded {
-        if !Node::PV && bound == Bound::Upper && !is_decisive(beta) {
+        if Node::PV && bound == Bound::Upper && !is_decisive(beta) {
             let regret_beta = beta + 400;
 
             for m in pruned_moves.iter() {
