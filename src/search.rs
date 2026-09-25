@@ -744,7 +744,7 @@ pub fn search<Node: NodeType>(
     }
 
     if !excluded {
-        if Node::PV && bound == Bound::Upper && !is_decisive(beta) && depth <= 8 {
+        if Node::PV && bound == Bound::Upper && !is_decisive(beta) {
             let regret_beta = beta + 400;
 
             for m in pruned_moves.iter() {
@@ -758,10 +758,10 @@ pub fn search<Node: NodeType>(
 
                 if score >= regret_beta {
                     if m.kind().is_quiet() {
-                        let bonus = (450 * depth - 75).min(1600);
+                        let bonus = 450;
                         data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
                     } else {
-                        let bonus = (350 * depth - 75).min(1600);
+                        let bonus = 350;
                         let piece = data.board.piece_at_square(m.from());
                         let to = m.to();
                         let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
