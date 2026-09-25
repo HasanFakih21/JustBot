@@ -467,7 +467,8 @@ pub fn search<Node: NodeType>(
 
         if singular_score < singular_beta {
             let double_margin = 9 + 150 * Node::PV as i32 + 51 * (Node::PV && !tt_was_pv) as i32;
-            let triple_margin = 101 + 347 * Node::PV as i32 + 56 * (Node::PV && !tt_was_pv) as i32;
+            let triple_margin =
+                101 + 347 * Node::PV as i32 + 56 * (Node::PV && !tt_was_pv) as i32 + 200 * !tt_move.is_quiet() as i32;
             extension = 1
                 + (singular_score < singular_beta - double_margin) as i32
                 + (singular_score < singular_beta - triple_margin) as i32;
