@@ -743,8 +743,7 @@ pub fn search<Node: NodeType>(
     }
 
     if !excluded {
-        // If no move raised alpha, search through pruned moves to see if one could've caused a cutoff
-        if !Node::PV && bound == Bound::Upper {
+        if !Node::PV && bound == Bound::Upper && !is_decisive(beta) {
             let regret_beta = beta + 400;
 
             for m in pruned_moves.iter() {
@@ -756,18 +755,18 @@ pub fn search<Node: NodeType>(
                     return Score::TIMEOUT;
                 }
 
-                let sign = 1 - 2 * ((score < regret_beta) as i32);
-
-                if m.kind().is_quiet() {
-                    let bonus = ((625 * depth).min(947) - 225) * sign;
-                    data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
-                } else {
-                    let bonus = ((253 * depth).min(1060) - 190) * sign;
-                    let piece = data.board.piece_at_square(m.from());
-                    let to = m.to();
-                    let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
-                    data.noisy_history
-                        .update(piece, to, captured, data.board.state.threats, bonus);
+                if score >= regret_beta {
+                    if m.kind().is_quiet() {
+                        let bonus = (450 * depth - 75).min(1600);
+                        data.quiet_history.update(data.board.state.threats, stm, *m, bonus);
+                    } else {
+                        let bonus = (350 * depth - 75).min(1600);
+                        let piece = data.board.piece_at_square(m.from());
+                        let to = m.to();
+                        let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
+                        data.noisy_history
+                            .update(piece, to, captured, data.board.state.threats, bonus);
+                    }
                 }
             }
         }
