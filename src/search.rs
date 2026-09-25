@@ -452,7 +452,7 @@ pub fn search<Node: NodeType>(
         && !is_decisive(tt_score)
         && tt_bound != Bound::Upper
     {
-        let singular_margin = depth + depth + (depth as u32).div_ceil(4) as i32 * (tt_pv & !Node::PV) as i32;
+        let singular_margin = depth * (160 + 128 * (tt_pv && !Node::PV) as i32) / 128;
         let singular_beta = tt_score - singular_margin;
         let singular_depth = (depth - 1) / 2;
 
