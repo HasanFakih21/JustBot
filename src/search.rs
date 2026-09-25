@@ -490,6 +490,7 @@ pub fn search<Node: NodeType>(
     let mut noisies_searched = StackVec::<Move, 32>::new();
     let mut skip_quiets = false;
     let mut pruned_moves = StackVec::<Move, 32>::new();
+    let mut pruned_move = None;
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
         if m == data.stack[ply].excluded {
@@ -514,6 +515,13 @@ pub fn search<Node: NodeType>(
             )
         };
 
+        if let Some(m) = pruned_move
+            && pruned_moves.len() < 32
+        {
+            pruned_moves.push(m);
+            pruned_move = None;
+        }
+
         if !Node::ROOT && !is_loss(best_score) {
             // Late Move Pruning (LMP)
             if !in_check
@@ -523,7 +531,7 @@ pub fn search<Node: NodeType>(
                 && move_count as i32 > (2981 + (1355 + 261 * improving as i32) * depth * depth) / 1024
             {
                 skip_quiets = true;
-                pruned_moves.push(m);
+                pruned_move = Some(m);
                 continue;
             }
 
@@ -535,20 +543,20 @@ pub fn search<Node: NodeType>(
                 && static_eval + 85 * depth + 141 + 53 * history / 1024 <= alpha
             {
                 skip_quiets = true;
-                pruned_moves.push(m);
+                pruned_move = Some(m);
                 continue;
             }
 
             // History Pruning (HP)
             if !in_check && is_quiet && depth <= 6 && history < -1515 * depth {
-                pruned_moves.push(m);
+                pruned_move = Some(m);
                 continue;
             }
 
             // Static Exchange Evaluation Pruning (SEE Pruning)
             let threshold = (-127 * depth * depth - 47 * depth + 12).min(-37);
             if !in_check && !is_quiet && !data.board.see(m, threshold) {
-                pruned_moves.push(m);
+                pruned_move = Some(m);
                 continue;
             }
         }
@@ -734,7 +742,9 @@ pub fn search<Node: NodeType>(
             let regret_beta = beta + 400;
             for m in pruned_moves.iter() {
                 data.make_move(*m, ply);
-                let score = -quiesce::<NonPV>(data, -regret_beta, -regret_beta + 1, ply);
+                let score = -quiesce::<NonPV>(data, -regret_beta, -regret_beta + 1, ply + 1);
+                data.unmake_move();
+
                 if score >= regret_beta {
                     if m.kind().is_quiet() {
                         let bonus = (625 * depth).min(947) - 225;
@@ -748,7 +758,6 @@ pub fn search<Node: NodeType>(
                             .update(piece, to, captured, data.board.state.threats, bonus);
                     }
                 }
-                data.unmake_move();
             }
         }
 
