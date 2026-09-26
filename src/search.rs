@@ -560,7 +560,6 @@ pub fn search<Node: NodeType>(
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r -= 1530 * correction.abs() / 1024;
             r += 1234 * cutnode as i32;
-            r += 2013 * (cutnode && tt_move.is_none()) as i32;
             r -= 1207 * tt_was_pv as i32;
             r -= 819 * is_direct_check as i32;
             r += 206 * !improving as i32;
