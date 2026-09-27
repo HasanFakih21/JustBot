@@ -61,7 +61,7 @@ impl MovePicker {
         if self.stage == Stage::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
-                let threshold = self.threshold.unwrap_or(-best_entry.score / 4 + 62);
+                let threshold = self.threshold.unwrap_or(-best_entry.score / 4 + 59);
                 if !data.board.see(best_entry.mv, threshold) {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
@@ -107,7 +107,7 @@ impl MovePicker {
 
             // Bonus for promotions
             if mv.kind().is_queen_promotion() {
-                score += 4832;
+                score += 5129;
             }
 
             let piece = data.board.piece_at_square(mv.from());
@@ -132,11 +132,11 @@ impl MovePicker {
             let to = mv.to();
 
             entry.score = data.quiet_history.get(threats, side, mv)
-                + 1039 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
-                + 1599 * data.conthistory(mv, ply, 1) / 1024
-                + 1044 * data.conthistory(mv, ply, 2) / 1024
-                + 1078 * data.conthistory(mv, ply, 4) / 1024
-                + 9722 * data.board.is_direct_check(mv) as i32;
+                + 1081 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
+                + 1573 * data.conthistory(mv, ply, 1) / 1024
+                + 1064 * data.conthistory(mv, ply, 2) / 1024
+                + 1048 * data.conthistory(mv, ply, 4) / 1024
+                + 9690 * data.board.is_direct_check(mv) as i32;
         }
     }
 
