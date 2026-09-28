@@ -7,7 +7,7 @@
 
 </div>
 
-<div align="center">JustBot is a competitive chess engine written in Rust, it's my attempt at learning the language while simultaneously working on something interesting to me; it has been a lot of fun and a huge learning experience and I hope to be able to continue working on it. This project has only been possible thanks to the wonderful open-source community. JustBot contains no LLM generated code.</div>
+<div align="center">JustBot is a competitive chess engine written in Rust, it's my attempt at learning the language while simultaneously working on something interesting to me; it has been a lot of fun and a huge learning experience and I hope to be able to continue working on it. This project has only been possible thanks to the wonderful open-source community.</div>
 
 ## Releases
 

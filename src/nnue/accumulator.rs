@@ -1,7 +1,7 @@
 use crate::{
     board::Board,
     nnue::{
-        HIDDEN_SIZE, MODEL, Parameters,
+        L1, MODEL, Parameters,
         cache::{AccumulatorCache, CacheData},
         input_bucket, input_context, simd,
     },
@@ -75,7 +75,7 @@ impl DualAccumulators {
         let updated = self.values[pov].vals.as_mut_ptr();
 
         unsafe {
-            for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
+            for i in (0..L1).step_by(simd::I16_CHUNK) {
                 let mut change = *current.add(i).cast();
                 for feature_index in adds {
                     change = simd::add_i16(
@@ -154,7 +154,7 @@ pub fn update_from_cache(
     unsafe {
         let mut registers = [simd::zeroed(); REGISTERS];
 
-        for i in (0..HIDDEN_SIZE).step_by(UNROLL) {
+        for i in (0..L1).step_by(UNROLL) {
             let src = cache_data.accumulator.vals.as_mut_ptr().add(i);
             for (r_idx, r) in registers.iter_mut().enumerate() {
                 *r = *src.add(r_idx * simd::I16_CHUNK).cast();
@@ -216,7 +216,7 @@ impl Default for DualAccumulators {
 #[derive(Clone, Copy, Debug)]
 #[repr(C, align(64))]
 pub struct Accumulator {
-    pub vals: [i16; HIDDEN_SIZE],
+    pub vals: [i16; L1],
 }
 
 impl Accumulator {

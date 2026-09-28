@@ -9,6 +9,20 @@ use crate::{
 
 mod accumulator;
 mod cache;
+mod forward {
+    #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
+    mod vectorized;
+    #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
+    pub(crate) use vectorized::*;
+
+    #[cfg(any(test, not(any(target_feature = "avx2", target_feature = "avx512f"))))]
+    mod scalar;
+    #[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
+    pub(crate) use scalar::*;
+
+    #[cfg(all(test, any(target_feature = "avx2", target_feature = "avx512f")))]
+    mod tests;
+}
 mod simd {
     #[cfg(target_feature = "avx512f")]
     mod avx512;
@@ -26,11 +40,16 @@ mod simd {
     pub use scalar::*;
 }
 
-const HIDDEN_SIZE: usize = 1024;
 const SCALE: i32 = 400;
-const NUM_OUTPUT_BUCKETS: usize = 8;
+
+const INPUT_BUCKETS: usize = 8;
+const OUTPUT_BUCKETS: usize = 8;
+
 const QA: i16 = 255;
-const QB: i16 = 64;
+
+const L1: usize = 1024;
+const L2: usize = 16;
+const L3: usize = 32;
 
 #[rustfmt::skip]
 const BUCKET_LAYOUT: [usize; 32] = [
@@ -43,8 +62,6 @@ const BUCKET_LAYOUT: [usize; 32] = [
     7,  7,  7,  7,
     7,  7,  7,  7,
 ];
-
-const NUM_INPUT_BUCKETS: usize = 8;
 
 pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!(env!("MODEL"))) };
 
@@ -129,87 +146,15 @@ impl Network {
         }
 
         let eval = self.output_layer(board);
-        #[cfg(not(feature = "datagen"))]
-        let eval = board.scale_eval(eval);
+        // #[cfg(not(feature = "datagen"))]
+        // let eval = board.scale_eval(eval);
         eval
     }
 
-    #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
     pub fn output_layer(&self, board: &Board) -> i32 {
-        const CHUNKS: usize = 16 / simd::I32_CHUNK;
-
         let stm = board.state.side_to_move;
-        let (us, them) = (
-            self.stack[self.index].values[stm].vals.as_ptr(),
-            self.stack[self.index].values[!stm].vals.as_ptr(),
-        );
-
-        let bucket = output_bucket(board);
-        let weights = &self.parameters.output_weights[bucket].as_ptr();
-
-        // Initialise output.
-        let mut sums = [simd::zeroed(); CHUNKS];
-
-        unsafe {
-            // Side-To-Move Accumulator -> Output.
-            for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
-                let x = us.add(i);
-                let w = weights.add(i);
-                let v = simd::clamp_i16(*x.cast(), simd::zeroed(), simd::splat_i16(QA));
-                let t = simd::mul_low_i16(v, *w.cast());
-                let p = simd::madd_i16_to_i32(v, t);
-                sums[0] = simd::add_i32(sums[0], p);
-            }
-
-            // Not-Side-To-Move Accumulator -> Output.
-            for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
-                let x = them.add(i);
-                let w = weights.add(HIDDEN_SIZE + i);
-                let v = simd::clamp_i16(*x.cast(), simd::zeroed(), simd::splat_i16(QA));
-                let t = simd::mul_low_i16(v, *w.cast());
-                let p = simd::madd_i16_to_i32(v, t);
-                sums[CHUNKS - 1] = simd::add_i32(sums[CHUNKS - 1], p);
-            }
-        }
-
-        let mut output = simd::reduce_add_i32(&sums);
-        output /= i32::from(QA);
-        output += i32::from(self.parameters.output_bias[bucket]);
-        output *= SCALE;
-        output /= i32::from(QA) * i32::from(QB);
-        output
-    }
-
-    #[cfg(not(any(target_feature = "avx2", target_feature = "avx512f")))]
-    pub fn output_layer(&self, board: &Board) -> i32 {
-        // Initialise output.
-        let mut output = 0;
-        let stm = board.state.side_to_move;
-        let (us, them) = (self.stack[self.index].values[stm], self.stack[self.index].values[!stm]);
-
-        let bucket = output_bucket(board);
-        let weights = &self.parameters.output_weights[bucket];
-
-        // Side-To-Move Accumulator -> Output.
-        for (&input, &weight) in us.vals.iter().zip(&weights[..HIDDEN_SIZE]) {
-            let mut y = i32::from(input).clamp(0, i32::from(QA));
-            y *= y;
-            output += y * i32::from(weight);
-        }
-
-        // Not-Side-To-Move Accumulator -> Output.
-        for (&input, &weight) in them.vals.iter().zip(&weights[HIDDEN_SIZE..]) {
-            let mut y = i32::from(input).clamp(0, i32::from(QA));
-            y *= y;
-            output += y * i32::from(weight);
-        }
-
-        output /= i32::from(QA);
-        output += i32::from(self.parameters.output_bias[bucket]);
-        output *= SCALE;
-        output /= i32::from(QA) * i32::from(QB);
-
-        output
+        let accs = &self.stack[self.index].values;
+        forward::forward(&accs[stm], &accs[!stm], self.parameters, output_bucket(board))
     }
 
     pub fn full_refresh(&mut self, board: &Board) {
@@ -227,10 +172,14 @@ impl Default for Network {
 
 #[repr(C)]
 pub struct Parameters {
-    feature_weights: [Accumulator; 768 * NUM_INPUT_BUCKETS],
+    feature_weights: [Accumulator; 768 * INPUT_BUCKETS],
     feature_bias: Accumulator,
-    output_weights: [[i16; 2 * HIDDEN_SIZE]; NUM_OUTPUT_BUCKETS],
-    output_bias: [i16; NUM_OUTPUT_BUCKETS],
+    l1_weights: [[[i8; L2]; OUTPUT_BUCKETS]; L1],
+    l1_bias: [[i32; L2]; OUTPUT_BUCKETS],
+    l2_weights: [[[i32; L3]; OUTPUT_BUCKETS]; 2 * L2],
+    l2_bias: [[i32; L3]; OUTPUT_BUCKETS],
+    l3_weights: [[i32; OUTPUT_BUCKETS]; L3],
+    l3_bias: [i32; OUTPUT_BUCKETS],
 }
 
 #[inline]
@@ -247,8 +196,8 @@ fn input_bucket(king_square: Square) -> usize {
 
 #[inline]
 fn output_bucket(pos: &Board) -> usize {
-    let divisor = 32usize.div_ceil(NUM_OUTPUT_BUCKETS);
-    ((pos.all_occupancy().count_bits() - 2) / divisor).min(NUM_OUTPUT_BUCKETS - 1)
+    let divisor = 32usize.div_ceil(OUTPUT_BUCKETS);
+    ((pos.all_occupancy().count_bits() - 2) / divisor).min(OUTPUT_BUCKETS - 1)
 }
 
 #[cfg(test)]
