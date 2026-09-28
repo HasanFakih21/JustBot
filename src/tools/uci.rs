@@ -83,6 +83,9 @@ pub fn input_loop(cli_args: String) {
                 println!("{} nodes {} nps", total_node_count, nps);
                 break;
             }
+            "eval" => {
+                println!("Eval: {}", pool.eval(&board));
+            }
             #[cfg(feature = "datagen")]
             "genfens" => {
                 genfens(args);

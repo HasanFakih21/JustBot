@@ -37,6 +37,19 @@ impl SearchThreads {
         SearchThreads { workers, shared }
     }
 
+    pub fn eval(&self, board: &Board) -> i32 {
+        self.workers[0]
+            .comm
+            .send(Command::Eval(board.clone()))
+            .expect("Worker ");
+
+        let Response::Eval(eval) = self.workers[0].result.recv().expect("Printing worker didn't respond!") else {
+            panic!("Should have recieved an eval here")
+        };
+
+        eval
+    }
+
     pub fn start(&mut self, board: &Board, time: TimeManager, report: Report) -> Option<Move> {
         debug_assert!(!self.workers.is_empty());
         self.shared.tt.increase_age();
@@ -136,7 +149,10 @@ impl SearchThreads {
             self.workers[threads[best_index].id]
                 .comm
                 .send(Command::PrintUCI)
-                .expect("Worker {id} was supposed to print uci but couldn't");
+                .expect(&format!(
+                    "Worker {} was supposed to print uci but couldn't",
+                    threads[best_index].id
+                ));
 
             let Response::PrintUCI = self.workers[threads[best_index].id]
                 .result
@@ -206,6 +222,12 @@ fn create_worker(shared: Arc<SharedData>, id: usize) -> Worker {
                         break;
                     }
                 }
+                Command::Eval(board) => {
+                    data.network.full_refresh(&board);
+                    if result_tx.send(Response::Eval(data.network.evaluate(&board))).is_err() {
+                        break;
+                    }
+                }
             }
         }
     });
@@ -226,11 +248,13 @@ struct SearchResult {
 enum Response {
     Search(SearchResult),
     PrintUCI,
+    Eval(i32),
 }
 
 enum Command {
     Search(Box<SearchParams>),
     PrintUCI,
+    Eval(Board),
     Quit,
 }
 
