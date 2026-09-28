@@ -146,8 +146,8 @@ impl Network {
         }
 
         let eval = self.output_layer(board);
-        // #[cfg(not(feature = "datagen"))]
-        // let eval = board.scale_eval(eval);
+        #[cfg(not(feature = "datagen"))]
+        let eval = board.scale_eval(eval);
         eval
     }
 
