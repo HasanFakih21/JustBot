@@ -567,6 +567,10 @@ pub fn search<Node: NodeType>(
             r += 456 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 305 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 435 * history / 4096;
+            r -= 800 * in_check as i32;
+            r += 600 * tt_move.is_some_and(|m| !m.is_quiet()) as i32;
+            r -= 500 * Node::PV as i32;
+            r += 250 * !Node::PV as i32;
             r -= data.lmr_correction();
 
             average_r = (average_r + r) / 2;
