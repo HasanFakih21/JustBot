@@ -227,7 +227,7 @@ pub fn search<Node: NodeType>(
     // TT Cutoffs
     if !Node::PV
         && let Some(tt_score) = tt_score
-        && tt_depth.is_some_and(|d| d >= depth)
+        && tt_depth.is_some_and(|d| d > depth - (tt_score < beta) as i32)
         && (tt_score <= alpha || cutnode)
         && !excluded
         && tt_bound.is_some_and(|b| match b {
