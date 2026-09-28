@@ -5,7 +5,7 @@ use std::{
 };
 
 const BASE_URL: &str = "https://github.com/HasanFakih21/JustBot-Networks/releases/download/Networks";
-const NETWORK_NAME: &str = "802c4ib-1024-stage2.nnue";
+const NETWORK_NAME: &str = "802d8ib-1024-3s.nnue";
 
 fn main() {
     set_model_env_var();
