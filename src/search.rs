@@ -574,9 +574,10 @@ pub fn search<Node: NodeType>(
             r -= data.lmr_correction();
 
             average_r = (average_r + r) / 2;
+            track!(r);
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
-            track!(reduction);
+            track!(reduced_depth);
 
             data.stack[ply].reduction = Some(r);
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, true);
@@ -758,6 +759,7 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    track!(best_score);
     best_score
 }
 
