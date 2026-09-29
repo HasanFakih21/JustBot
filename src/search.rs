@@ -283,7 +283,7 @@ pub fn search<Node: NodeType>(
         );
     }
 
-    let improvement = if in_check {
+    let mut improvement = if in_check {
         0
     } else if data.stack[ply - 2].eval != Score::NONE {
         static_eval - data.stack[ply - 2].eval
@@ -292,6 +292,7 @@ pub fn search<Node: NodeType>(
     } else {
         0
     };
+    improvement = improvement.clamp(-4500, 5000);
 
     let improving = improvement > 0;
 
@@ -563,10 +564,10 @@ pub fn search<Node: NodeType>(
             r += 1984 * (cutnode && tt_move.is_none()) as i32;
             r -= 1240 * tt_was_pv as i32;
             r -= 859 * is_direct_check as i32;
-            r += 202 * !improving as i32;
             r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 440 * history / 4096;
+            r -= (425 * improvement / 128).clamp(-250, 1200);
             r -= data.lmr_correction();
 
             average_r = (average_r + r) / 2;
