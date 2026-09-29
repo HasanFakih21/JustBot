@@ -45,6 +45,7 @@ pub struct PlyData {
     pub excluded: Move,
     pub reduction: Option<i32>,
     pub threats: BitBoard,
+    pub move_count: u16,
 }
 
 impl Default for PlyData {
@@ -58,6 +59,7 @@ impl Default for PlyData {
             excluded: Move::NONE,
             reduction: None,
             threats: BitBoard(0),
+            move_count: 0,
         }
     }
 }

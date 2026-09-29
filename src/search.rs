@@ -401,7 +401,7 @@ pub fn search<Node: NodeType>(
                 continue;
             }
 
-            data.make_move(m, ply);
+            data.make_move(m, ply, 0);
 
             let mut score = -quiesce::<NonPV>(data, -probcut_beta, -probcut_beta + 1, ply + 1);
             let probcut_depth = (depth - 3).max(1);
@@ -551,7 +551,7 @@ pub fn search<Node: NodeType>(
         let initial_nodes = data.nodes();
 
         // Make Move
-        data.make_move(m, ply);
+        data.make_move(m, ply, move_count);
         let new_depth = (depth - 1) + ((move_count == 1) as i32 * extension);
         let mut score = -Score::INFINITY;
 
@@ -689,13 +689,13 @@ pub fn search<Node: NodeType>(
             let pawn_key = data.board.state.keys.pawn;
             data.pawn_history.update(pawn_key, piece, to, quiet_bonus);
             data.quiet_history.update(threats, stm, m, quiet_bonus);
-            data.update_conthistories(m, ply, cont_bonus);
+            data.update_conthistories(piece, to, ply, cont_bonus);
             for quiet_move in quiets_searched.iter() {
                 let piece = data.board.piece_at_square(quiet_move.from());
                 let to = quiet_move.to();
                 data.pawn_history.update(pawn_key, piece, to, -quiet_malus);
                 data.quiet_history.update(threats, stm, *quiet_move, -quiet_malus);
-                data.update_conthistories(*quiet_move, ply, -cont_malus);
+                data.update_conthistories(piece, to, ply, -cont_malus);
             }
         } else {
             let piece = data.board.piece_at_square(m.from());
@@ -709,6 +709,11 @@ pub fn search<Node: NodeType>(
             let to = m.to();
             let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
             data.noisy_history.update(piece, to, captured, threats, -noisy_malus);
+        }
+
+        if !Node::ROOT && data.stack[ply - 1].m.is_quiet() && data.stack[ply - 1].move_count < 2 {
+            let malus = (100 * depth - 50).min(800);
+            data.update_conthistories(data.stack[ply - 1].piece, data.stack[ply - 1].m.to(), ply - 1, -malus);
         }
     }
 
@@ -879,7 +884,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
             }
         }
 
-        data.make_move(m, ply);
+        data.make_move(m, ply, move_count);
         let score = -quiesce::<Node>(data, -beta, -alpha, ply + 1);
         data.unmake_move();
 
