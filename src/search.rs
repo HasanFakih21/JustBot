@@ -232,7 +232,7 @@ pub fn search<Node: NodeType>(
         && !excluded
         && tt_bound.is_some_and(|b| match b {
             Bound::Lower => tt_score >= beta,
-            Bound::Upper => tt_score < alpha,
+            Bound::Upper => tt_score <= alpha,
             Bound::Exact => true,
             Bound::None => false,
         })
@@ -782,7 +782,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         && let Some(tt_score) = tt_score
         && tt_bound.is_some_and(|b| match b {
             Bound::Lower => tt_score >= beta,
-            Bound::Upper => tt_score < alpha,
+            Bound::Upper => tt_score <= alpha,
             Bound::Exact => true,
             Bound::None => false,
         })
