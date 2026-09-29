@@ -1,4 +1,4 @@
-use crate::types::MAX_PLY;
+use crate::{search::data::SearchData, types::MAX_PLY};
 
 pub struct Score;
 
@@ -8,7 +8,10 @@ impl Score {
     pub const MATE: i32 = 30000;
     pub const MATE_CUTOFF: i32 = Score::MATE - MAX_PLY as i32;
     pub const TIMEOUT: i32 = 111111;
-    pub const DRAW: i32 = 0;
+}
+
+pub fn draw(data: &SearchData) -> i32 {
+    (data.nodes() % 5) as i32 - 2
 }
 
 pub const fn is_loss(score: i32) -> bool {
