@@ -444,7 +444,7 @@ pub fn search<Node: NodeType>(
     let mut extension = 0;
     if !Node::ROOT
         && !excluded
-        && depth >= 5
+        && depth >= 6 + tt_pv as i32
         && tt_depth.is_some_and(|d| d >= depth - 3)
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
@@ -453,7 +453,7 @@ pub fn search<Node: NodeType>(
         && tt_bound != Bound::Upper
     {
         let singular_depth = (depth - 1) / 2;
-        let singular_beta = tt_score - (depth + depth);
+        let singular_beta = tt_score - (60 + 65 * (tt_pv && !Node::PV) as i32) * depth / 64;
 
         data.stack[ply].excluded = tt_move;
         data.stack[ply].m = Move::NONE;
