@@ -299,8 +299,6 @@ pub fn search<Node: NodeType>(
         0
     };
 
-    track!(improvement);
-
     let improving = improvement > 0;
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
@@ -528,6 +526,12 @@ pub fn search<Node: NodeType>(
                 data.board.threats(),
             )
         };
+
+        if is_quiet {
+            track!("quiet"; history);
+        } else {
+            track!("noisy"; history);
+        }
 
         if !Node::ROOT && !is_loss(best_score) {
             // Late Move Pruning (LMP)
