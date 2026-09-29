@@ -52,6 +52,22 @@ make
 # ./justbot
 ```
 
+## Evaluation network
+
+The default network is `802f8ib-768ml.nnue`, exported by Bullet's
+`examples/justbot-advanced.rs`: eight mirrored king buckets, a 768-wide feature
+transformer, pairwise CReLU, and 16- and 32-neuron SCReLU layers with eight
+material output buckets. Place the exported file in the project root. The build also attempts a download
+from JustBot-Networks when it is missing; this new asset must be published there
+before that fallback is available. Set `EVALFILE=/path/to/network.nnue` to use another export of
+this same architecture and quantization format.
+
+Inference follows the [Deep NNUE guide](https://asteri.sm/files/2024-08-17-multilayer):
+pairwise products are shifted by 8, the first affine sum is scaled by 32768,
+and the small dense layers use floating-point activations. Dense weights and
+biases are decoded with scales 64 and 4096; the final score scale is 400.
+Scalar, AVX2, and AVX-512 paths use the same export.
+
 ## Supported UCI Options
 
 |     Name     | Default |   Max   |                                                    Description                                                    |

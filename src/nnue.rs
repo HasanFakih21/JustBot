@@ -9,6 +9,8 @@ use crate::{
 
 mod accumulator;
 mod cache;
+#[cfg(test)]
+mod export_tests;
 mod forward {
     #[cfg(any(target_feature = "avx2", target_feature = "avx512f"))]
     mod vectorized;
@@ -47,7 +49,7 @@ const OUTPUT_BUCKETS: usize = 8;
 
 const QA: i16 = 255;
 
-const L1: usize = 1024;
+const L1: usize = 768;
 const L2: usize = 16;
 const L3: usize = 32;
 
@@ -63,7 +65,27 @@ const BUCKET_LAYOUT: [usize; 32] = [
     7,  7,  7,  7,
 ];
 
-pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!(env!("MODEL"))) };
+// Bullet exports l1/w transposed as [bucket][output][input]. Reorder once at
+// compile time so SIMD can accumulate consecutive output neurons.
+pub static MODEL: Parameters = {
+    let mut p: Parameters = unsafe { std::mem::transmute(*include_bytes!(env!("MODEL"))) };
+    let exported = p.l1_weights;
+    let mut bucket = 0;
+    while bucket < OUTPUT_BUCKETS {
+        let mut input = 0;
+        while input < L1 {
+            let mut output = 0;
+            while output < L2 {
+                let flat = output * L1 + input;
+                p.l1_weights[bucket][input][output] = exported[bucket][flat / L2][flat % L2];
+                output += 1;
+            }
+            input += 1;
+        }
+        bucket += 1;
+    }
+    p
+};
 
 pub struct Network {
     parameters: &'static Parameters,
@@ -174,11 +196,11 @@ impl Default for Network {
 pub struct Parameters {
     feature_weights: [Accumulator; 768 * INPUT_BUCKETS],
     feature_bias: Accumulator,
-    l1_weights: [[[i8; L2]; OUTPUT_BUCKETS]; L1],
+    l1_weights: [[[i8; L2]; L1]; OUTPUT_BUCKETS],
     l1_bias: [[i32; L2]; OUTPUT_BUCKETS],
-    l2_weights: [[[i32; L3]; OUTPUT_BUCKETS]; 2 * L2],
+    l2_weights: [[[i32; L3]; L2]; OUTPUT_BUCKETS],
     l2_bias: [[i32; L3]; OUTPUT_BUCKETS],
-    l3_weights: [[i32; OUTPUT_BUCKETS]; L3],
+    l3_weights: [[i32; L3]; OUTPUT_BUCKETS],
     l3_bias: [i32; OUTPUT_BUCKETS],
 }
 

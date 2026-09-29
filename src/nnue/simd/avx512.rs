@@ -2,7 +2,6 @@ use std::arch::x86_64::*;
 
 pub const I16_CHUNK: usize = std::mem::size_of::<__m512i>() / std::mem::size_of::<i16>();
 pub const I32_CHUNK: usize = std::mem::size_of::<__m512i>() / std::mem::size_of::<i32>();
-pub const I64_CHUNK: usize = std::mem::size_of::<__m512i>() / std::mem::size_of::<i64>();
 
 #[inline(always)]
 pub fn add_i16(a: __m512i, b: __m512i) -> __m512i {
@@ -77,23 +76,36 @@ pub fn mul_low_i32(a: __m512i, b: __m512i) -> __m512i {
     unsafe { _mm512_mullo_epi32(a, b) }
 }
 
-/// Multiply the even signed i32 lanes, retaining the full i64 products.
-#[inline(always)]
-pub fn mul_even_i32_to_i64(a: __m512i, b: __m512i) -> __m512i {
-    unsafe { _mm512_mul_epi32(a, b) }
-}
-
-#[inline(always)]
-pub fn add_i64(a: __m512i, b: __m512i) -> __m512i {
-    unsafe { _mm512_add_epi64(a, b) }
-}
-
 #[inline(always)]
 pub fn shift_right_u16<const SHIFT: u32>(a: __m512i) -> __m512i {
     unsafe { _mm512_srli_epi16::<SHIFT>(a) }
 }
 
 #[inline(always)]
-pub fn shift_right_u64<const SHIFT: u32>(a: __m512i) -> __m512i {
-    unsafe { _mm512_srli_epi64::<SHIFT>(a) }
+pub fn splat_f32(value: f32) -> __m512 {
+    unsafe { _mm512_set1_ps(value) }
+}
+
+#[inline(always)]
+pub fn i32_to_f32(value: __m512i) -> __m512 {
+    unsafe { _mm512_cvtepi32_ps(value) }
+}
+
+#[inline(always)]
+pub fn add_f32(a: __m512, b: __m512) -> __m512 {
+    unsafe { _mm512_add_ps(a, b) }
+}
+
+#[inline(always)]
+pub fn mul_f32(a: __m512, b: __m512) -> __m512 {
+    unsafe { _mm512_mul_ps(a, b) }
+}
+
+/// Store a full vector of floats without requiring alignment.
+///
+/// # Safety
+/// `ptr` must point to at least `I32_CHUNK` writable floats.
+#[inline(always)]
+pub unsafe fn store_f32(ptr: *mut f32, value: __m512) {
+    unsafe { _mm512_storeu_ps(ptr, value) }
 }
