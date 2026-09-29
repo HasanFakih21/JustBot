@@ -672,13 +672,13 @@ pub fn search<Node: NodeType>(
     if let Some(m) = best_move {
         let is_quiet = m.is_quiet();
 
-        let quiet_bonus = (294 * depth).min(944) - 232;
+        let quiet_bonus = (194 * depth).min(944) - 232;
         let quiet_malus = (296 * depth).min(951) - 211;
 
-        let noisy_bonus = (244 * depth).min(1054) - 203;
+        let noisy_bonus = (144 * depth).min(1054) - 203;
         let noisy_malus = (288 * depth).min(962) - 284;
 
-        let cont_bonus = (293 * depth).min(1019) - 196;
+        let cont_bonus = (193 * depth).min(1019) - 196;
         let cont_malus = (321 * depth).min(1105) - 266;
 
         let threats = data.board.threats();
