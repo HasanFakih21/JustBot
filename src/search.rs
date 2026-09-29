@@ -297,6 +297,8 @@ pub fn search<Node: NodeType>(
         0
     };
 
+    track!(improvement);
+
     let improving = improvement > 0;
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
@@ -574,7 +576,6 @@ pub fn search<Node: NodeType>(
             r -= data.lmr_correction();
 
             average_r = (average_r + r) / 2;
-            track!(r);
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
 
