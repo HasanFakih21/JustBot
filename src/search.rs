@@ -387,7 +387,7 @@ pub fn search<Node: NodeType>(
         && depth >= 7
         && !is_decisive(beta)
         && tt_move.is_none_or(|m| !m.is_quiet())
-        && tt_score.is_none_or(|s| s >= probcut_beta && !is_decisive(s))
+        && if let Some(s) = tt_score { s >= probcut_beta && !is_decisive(s) } else { static_eval >= beta }
     {
         let threshold = probcut_beta - static_eval;
 
