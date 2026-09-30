@@ -403,7 +403,7 @@ pub fn search<Node: NodeType>(
             data.make_move(m, ply);
 
             let mut score = -quiesce::<NonPV>(data, -probcut_beta, -probcut_beta + 1, ply + 1);
-            let probcut_depth = (depth - 3).max(1);
+            let probcut_depth = (depth - if improving { 5 } else { 3 }).max(1);
 
             if score >= probcut_beta {
                 score = -search::<NonPV>(
