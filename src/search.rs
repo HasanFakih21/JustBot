@@ -526,12 +526,12 @@ pub fn search<Node: NodeType>(
             }
 
             // Futility Pruning (FP)
-            if !in_check
-                && !is_direct_check
-                && is_quiet
-                && depth < 8
-                && static_eval + 76 * depth + 162 + 57 * history / 1024 <= alpha
-            {
+            let futility = static_eval + 76 * depth + 57 * history / 1024 + 162;
+            if !in_check && !is_direct_check && is_quiet && depth < 8 && futility <= alpha {
+                if !is_decisive(best_score) && best_score < futility {
+                    best_score = futility;
+                }
+
                 skip_quiets = true;
                 continue;
             }
