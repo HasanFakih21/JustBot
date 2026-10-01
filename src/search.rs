@@ -568,6 +568,7 @@ pub fn search<Node: NodeType>(
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 440 * history / 4096;
             r -= data.lmr_correction();
+            r += ((data.nodes() + data.id as u64 * 24) % 128) as i32 - 50;
 
             average_r = (average_r + r) / 2;
             let reduction = r / 1024;
