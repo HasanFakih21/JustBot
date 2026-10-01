@@ -536,6 +536,16 @@ pub fn search<Node: NodeType>(
                 continue;
             }
 
+            // Bad Noisy Futility Pruning (BNFP)
+            if !in_check
+                && !is_direct_check
+                && depth < 7
+                && move_picker.stage() == Stage::BadNoisy
+                && static_eval + 75 * depth + 25 <= alpha
+            {
+                break;
+            }
+
             // History Pruning (HP)
             if !in_check && is_quiet && depth <= 6 && history < -1464 * depth {
                 continue;
