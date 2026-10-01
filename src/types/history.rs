@@ -149,7 +149,7 @@ pub struct CorrectionHistory(Box<[[AtomicI16; Self::SIZE]; 2]>);
 impl CorrectionHistory {
     const MAX_HISTORY: i32 = 11921;
 
-    const SIZE: usize = 16384;
+    const SIZE: usize = 65536;
     const MASK: usize = Self::SIZE - 1;
 
     pub fn new() -> Self {
