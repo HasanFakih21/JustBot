@@ -201,6 +201,7 @@ impl SearchData {
         let stm = self.board.state.side_to_move;
         let bonus = (201 * depth * diff / 128).clamp(-4419, 2508);
         self.corrhistory().pawn.update(stm, self.board.state.keys.pawn, bonus);
+        self.corrhistory().minor.update(stm, self.board.state.keys.minor, bonus);
         self.corrhistory().non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
         self.corrhistory().non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
 
@@ -228,6 +229,7 @@ impl SearchData {
     pub fn correction(&self, ply: isize) -> i32 {
         let stm = self.board.state.side_to_move;
         (self.corrhistory().pawn.get(stm, self.board.state.keys.pawn)
+            + self.corrhistory().minor.get(stm, self.board.state.keys.minor)
             + self.corrhistory().non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
             + self.corrhistory().non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black])
             + unsafe {
@@ -371,11 +373,13 @@ pub struct LMRHistory {
 pub struct SharedCorrectionHistories {
     pub pawn: CorrectionHistory,
     pub non_pawn: [CorrectionHistory; 2],
+    pub minor: CorrectionHistory,
 }
 
 impl SharedCorrectionHistories {
     pub fn clear(&self) {
         self.pawn.clear();
+        self.minor.clear();
         for history in self.non_pawn.iter() {
             history.clear();
         }

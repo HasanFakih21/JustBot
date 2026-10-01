@@ -5,6 +5,7 @@ pub struct Keys {
     pub full: u64,
     pub pawn: u64,
     pub non_pawn: [u64; 2],
+    pub minor: u64,
 }
 
 impl Keys {
@@ -16,6 +17,10 @@ impl Keys {
             self.pawn ^= key;
         } else {
             self.non_pawn[side] ^= key;
+        }
+
+        if matches!(piece, Piece::King | Piece::Knight | Piece::Bishop) {
+            self.minor ^= key;
         }
     }
 
