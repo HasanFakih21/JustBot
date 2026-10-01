@@ -541,7 +541,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && depth < 7
                 && move_picker.stage() == Stage::BadNoisy
-                && static_eval + 75 * depth + 25 <= alpha
+                && static_eval + 75 * depth + 75 * history / 1024 + 25 <= alpha
             {
                 break;
             }
