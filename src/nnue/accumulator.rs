@@ -1,7 +1,7 @@
 use crate::{
     board::Board,
     nnue::{
-        HIDDEN_SIZE, MODEL, Parameters,
+        Aligned, L1, MODEL, Parameters,
         cache::{AccumulatorCache, CacheData},
         input_bucket, input_context, simd,
     },
@@ -17,18 +17,18 @@ pub struct Delta {
 }
 
 #[derive(Clone)]
-pub struct DualAccumulators {
-    pub values: [Accumulator; 2],
+pub struct Accumulator {
+    pub values: Aligned<[[i16; L1]; 2]>,
     pub accurate: [bool; 2],
     pub delta: Option<Delta>,
 }
 
 pub type FeatureIndex = u16;
 
-impl DualAccumulators {
+impl Accumulator {
     pub fn new() -> Self {
         Self {
-            values: [Accumulator::new(&MODEL); 2],
+            values: Aligned::new([MODEL.feature_bias.data; 2]),
             accurate: [false; 2],
             delta: None,
         }
@@ -71,17 +71,16 @@ impl DualAccumulators {
         pov: Side,
         parameters: &Parameters,
     ) {
-        let current = prev.values[pov].vals.as_ptr();
-        let updated = self.values[pov].vals.as_mut_ptr();
+        let current = prev.values.data[pov].as_ptr();
+        let updated = self.values.data[pov].as_mut_ptr();
 
         unsafe {
-            for i in (0..HIDDEN_SIZE).step_by(simd::I16_CHUNK) {
+            for i in (0..L1).step_by(simd::I16_CHUNK) {
                 let mut change = *current.add(i).cast();
                 for feature_index in adds {
                     change = simd::add_i16(
                         change,
-                        *parameters.feature_weights[feature_index as usize]
-                            .vals
+                        *parameters.feature_weights.data[feature_index as usize]
                             .as_ptr()
                             .add(i)
                             .cast(),
@@ -91,8 +90,7 @@ impl DualAccumulators {
                 for feature_index in subs {
                     change = simd::sub_i16(
                         change,
-                        *parameters.feature_weights[feature_index as usize]
-                            .vals
+                        *parameters.feature_weights.data[feature_index as usize]
                             .as_ptr()
                             .add(i)
                             .cast(),
@@ -134,7 +132,7 @@ impl DualAccumulators {
         cache_data.pieces = board.state.pieces;
         cache_data.occupancies = board.state.occupancies;
 
-        self.values[pov] = cache_data.accumulator;
+        self.values.data[pov] = cache_data.values.data;
         self.accurate[pov] = true;
     }
 }
@@ -154,14 +152,14 @@ pub fn update_from_cache(
     unsafe {
         let mut registers = [simd::zeroed(); REGISTERS];
 
-        for i in (0..HIDDEN_SIZE).step_by(UNROLL) {
-            let src = cache_data.accumulator.vals.as_mut_ptr().add(i);
+        for i in (0..L1).step_by(UNROLL) {
+            let src = cache_data.values.data.as_mut_ptr().add(i);
             for (r_idx, r) in registers.iter_mut().enumerate() {
                 *r = *src.add(r_idx * simd::I16_CHUNK).cast();
             }
 
             for &add in adds.iter() {
-                let weights = parameters.feature_weights[add as usize].vals.as_ptr().add(i);
+                let weights = parameters.feature_weights.data[add as usize].as_ptr().add(i);
 
                 for (r_idx, r) in registers.iter_mut().enumerate() {
                     *r = simd::add_i16(*r, *weights.add(r_idx * simd::I16_CHUNK).cast());
@@ -169,7 +167,7 @@ pub fn update_from_cache(
             }
 
             for &sub in subs.iter() {
-                let weights = parameters.feature_weights[sub as usize].vals.as_ptr().add(i);
+                let weights = parameters.feature_weights.data[sub as usize].as_ptr().add(i);
                 for (r_idx, r) in registers.iter_mut().enumerate() {
                     *r = simd::sub_i16(*r, *weights.add(r_idx * simd::I16_CHUNK).cast());
                 }
@@ -205,25 +203,9 @@ pub fn update_from_cache(
     }
 }
 
-impl Default for DualAccumulators {
+impl Default for Accumulator {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-/// A column of the feature-weights matrix.
-/// Note the `align(64)`.
-#[derive(Clone, Copy, Debug)]
-#[repr(C, align(64))]
-pub struct Accumulator {
-    pub vals: [i16; HIDDEN_SIZE],
-}
-
-impl Accumulator {
-    /// Initialised with bias so we can just efficiently
-    /// operate on it afterwards.
-    pub fn new(net: &Parameters) -> Self {
-        net.feature_bias
     }
 }
 
