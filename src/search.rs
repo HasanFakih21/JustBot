@@ -529,7 +529,7 @@ pub fn search<Node: NodeType>(
             if !in_check
                 && !is_direct_check
                 && is_quiet
-                && depth < 8
+                && depth < 14
                 && static_eval + 76 * depth + 162 + 57 * history / 1024 <= alpha
             {
                 skip_quiets = true;
