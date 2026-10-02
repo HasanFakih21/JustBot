@@ -9,7 +9,17 @@ use crate::{
 
 mod accumulator;
 mod cache;
-mod forward;
+mod forward {
+    #[cfg(target_feature = "avx2")]
+    mod vectorized;
+    #[cfg(target_feature = "avx2")]
+    pub use vectorized::*;
+
+    #[cfg(not(target_feature = "avx2"))]
+    mod scalar;
+    #[cfg(not(target_feature = "avx2"))]
+    pub use scalar::*;
+}
 
 mod simd {
     #[cfg(target_feature = "avx512f")]
