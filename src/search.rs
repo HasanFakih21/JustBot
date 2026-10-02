@@ -500,9 +500,15 @@ pub fn search<Node: NodeType>(
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.is_quiet();
         let history = if is_quiet {
-            data.quiet_history.get(data.board.threats(), stm, m)
-                + data.conthistory(m, ply, 1)
-                + data.conthistory(m, ply, 2)
+            204 * data.quiet_history.get(data.board.threats(), stm, m) / 1024
+                + 204
+                    * data
+                        .pawn_history
+                        .get(data.board.state.keys.pawn, data.board.piece_at_square(m.from()), m.to())
+                    / 1024
+                + 204 * data.conthistory(m, ply, 1) / 1024
+                + 204 * data.conthistory(m, ply, 2) / 1024
+                + 204 * data.conthistory(m, ply, 4) / 1024
         } else {
             let captured = data.board.piece_at_square(m.capture_square()).map(|p| p.kind());
             data.noisy_history.get(
