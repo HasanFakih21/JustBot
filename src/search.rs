@@ -561,7 +561,7 @@ pub fn search<Node: NodeType>(
             r -= 1653 * correction.abs() / 1024;
             r += 1270 * cutnode as i32;
             r += 1984 * (cutnode && tt_move.is_none()) as i32;
-            r -= 1240 * tt_was_pv as i32;
+            r -= 1240 * tt_pv as i32;
             r -= 859 * is_direct_check as i32;
             r += 202 * !improving as i32;
             r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
