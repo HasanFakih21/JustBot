@@ -35,11 +35,7 @@ const L2: usize = 16;
 const L3: usize = 32;
 
 const Q0: i16 = 255;
-const Q1: i16 = 128;
 const Q: i16 = 64;
-
-const FT_SHIFT: usize = 8;
-const FT_SHIFT_SCALE: f32 = Q0 as f32 / ((1 << FT_SHIFT) as f32);
 
 const INPUT_BUCKETS: usize = 8;
 const OUTPUT_BUCKETS: usize = 8;
@@ -138,10 +134,21 @@ impl Network {
             }
         }
 
-        let eval = self.output_layer(board);
+        let eval = self.output_transform(board);
         #[cfg(not(feature = "datagen"))]
         let eval = board.scale_eval(eval);
         eval
+    }
+
+    pub fn output_transform(&self, board: &Board) -> i32 {
+        let bucket = output_bucket(board);
+        let parameters = self.parameters;
+
+        let ft_out = forward::activate_features(&self.stack[self.index], board.state.side_to_move);
+        let l1_out = forward::propogate_l1(&ft_out, bucket, parameters);
+        let l2_out = forward::propogate_l2(&l1_out, bucket, parameters);
+
+        forward::propogate_l3(&l2_out, bucket, parameters)
     }
 
     pub fn full_refresh(&mut self, board: &Board) {
