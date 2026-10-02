@@ -187,16 +187,16 @@ pub fn update_from_cache(
     parameters: &Parameters,
     cache_data: &mut CacheData,
 ) {
-    let acc = &mut cache_data.accumulator.vals;
+    let acc = &mut cache_data.values;
     for &feature in adds.iter() {
-        let weights = &parameters.feature_weights[feature as usize].vals;
+        let weights = &parameters.feature_weights[feature as usize];
         for (output, &weight) in acc.iter_mut().zip(weights) {
             *output += weight;
         }
     }
 
     for &feature in subs.iter() {
-        let weights = &parameters.feature_weights[feature as usize].vals;
+        let weights = &parameters.feature_weights[feature as usize];
         for (output, &weight) in acc.iter_mut().zip(weights) {
             *output -= weight;
         }
