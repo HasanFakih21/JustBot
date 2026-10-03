@@ -331,7 +331,7 @@ impl SearchData {
         println!();
     }
 
-    pub fn make_move(&mut self, m: Move, ply: isize) {
+    pub fn make_move(&mut self, m: Move, ply: isize, move_count: usize) {
         self.network.push(&self.board, m);
 
         let from = m.from();
@@ -343,6 +343,7 @@ impl SearchData {
         self.stack[ply].conthistory = self.conthistory.subtable(piece, to);
         self.stack[ply].contcorrhistory = self.contcorrhistory.subtable(piece, to);
         self.stack[ply].threats = self.board.threats();
+        self.stack[ply].move_count = move_count as u16;
 
         self.board.make_move(m);
         self.shared.tt.prefetch(self.board.hash());
