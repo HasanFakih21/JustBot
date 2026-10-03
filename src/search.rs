@@ -716,16 +716,16 @@ pub fn search<Node: NodeType>(
     }
 
     // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper && (cutnode || Node::PV) {
+    if !Node::ROOT && bound == Bound::Upper {
         let prior_move = data.stack[ply - 1].m;
         if prior_move.is_quiet() {
-            let mut weight = 85;
-            weight += (15 * data.stack[ply - 1].move_count as i32).min(250);
-            weight += 100 * data.stack[ply - 1].tt_move.is_some_and(|tt_move| tt_move == prior_move) as i32;
+            let mut weight = 250;
+            weight += (depth * 400).min(4000);
+            weight += 950 * (data.stack[ply - 1].move_count >= 8) as i32;
+            weight += 950 * (data.stack[ply - 1].tt_move.is_some_and(|m| prior_move == m)) as i32;
 
-            let bonus = weight * (150 * depth - 35).min(2400) / 128;
+            let bonus = (150 * depth - 55).min(1200) * weight / 1024;
             let prior_threats = data.stack[ply - 1].threats;
-
             data.quiet_history.update(prior_threats, !stm, prior_move, bonus);
         }
     }
