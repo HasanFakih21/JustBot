@@ -690,12 +690,16 @@ pub fn search<Node: NodeType>(
             data.pawn_history.update(pawn_key, piece, to, quiet_bonus);
             data.quiet_history.update(threats, stm, m, quiet_bonus);
             data.update_conthistories(m, ply, cont_bonus);
-            for quiet_move in quiets_searched.iter() {
+            for (i, quiet_move) in quiets_searched.iter().enumerate() {
+                let denom = 1024 + 45 * i as i32;
+                let scale = 1024 * 1024 / (denom * denom / 1024);
                 let piece = data.board.piece_at_square(quiet_move.from());
                 let to = quiet_move.to();
-                data.pawn_history.update(pawn_key, piece, to, -quiet_malus);
-                data.quiet_history.update(threats, stm, *quiet_move, -quiet_malus);
-                data.update_conthistories(*quiet_move, ply, -cont_malus);
+                data.pawn_history
+                    .update(pawn_key, piece, to, -quiet_malus * scale / 1024);
+                data.quiet_history
+                    .update(threats, stm, *quiet_move, -quiet_malus * scale / 1024);
+                data.update_conthistories(*quiet_move, ply, -cont_malus * scale / 1024);
             }
         } else {
             let piece = data.board.piece_at_square(m.from());
