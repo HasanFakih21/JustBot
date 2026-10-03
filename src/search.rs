@@ -720,7 +720,6 @@ pub fn search<Node: NodeType>(
         let prior_move = data.stack[ply - 1].m;
         if prior_move.is_quiet() {
             let mut weight = 250;
-            weight += (depth * 400).min(4000);
             weight += 950 * (data.stack[ply - 1].move_count >= 8) as i32;
             weight += 950 * (data.stack[ply - 1].tt_move.is_some_and(|m| prior_move == m)) as i32;
 
