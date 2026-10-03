@@ -298,7 +298,7 @@ pub fn search<Node: NodeType>(
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
         // Quiet Move Ordering using Eval Difference
         if data.stack[ply - 1].m.is_quiet() && depth < 6 {
-            let eval_diff = 812 * (-(data.stack[ply - 1].eval + static_eval)) / 128;
+            let eval_diff = 512 * (-(data.stack[ply - 1].eval + static_eval)) / 128;
             let bonus = eval_diff.clamp(-200, 200);
             data.quiet_history
                 .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
