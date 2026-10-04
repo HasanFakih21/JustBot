@@ -720,9 +720,11 @@ pub fn search<Node: NodeType>(
         let prior_move = data.stack[ply - 1].m;
         if prior_move.is_quiet() {
             let mut weight = 250;
-            weight += 950 * (data.stack[ply - 1].move_count >= 8) as i32;
-            weight += 950 * (data.stack[ply - 1].tt_move.is_some_and(|m| prior_move == m)) as i32;
-
+            weight += 1024 * (data.stack[ply - 1].move_count >= 8) as i32;
+            weight += 1024 * (data.stack[ply - 1].tt_move.is_some_and(|m| prior_move == m)) as i32;
+            weight += 1024 * (!in_check && best_score < static_eval - 120) as i32;
+            weight +=
+                1024 * (data.stack[ply - 1].eval != Score::NONE && best_score < -data.stack[ply - 1].eval - 120) as i32;
             let bonus = (150 * depth - 55).min(1200) * weight / 1024;
             let prior_threats = data.stack[ply - 1].threats;
             data.quiet_history.update(prior_threats, !stm, prior_move, bonus);
@@ -731,8 +733,7 @@ pub fn search<Node: NodeType>(
             let to = prior_move.to();
             let captured = data.board.state.captured;
             let prior_threats = data.stack[ply - 1].threats;
-            let bonus = (50 * depth).min(500);
-            data.noisy_history.update(piece, to, captured, prior_threats, bonus);
+            data.noisy_history.update(piece, to, captured, prior_threats, 50);
         }
     }
 
