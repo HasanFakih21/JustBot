@@ -1,6 +1,6 @@
 use crate::search::{
     data::{Report, SearchData, Status},
-    movepicker::{MovePicker, Stage},
+    movepicker::MovePicker,
     time::Limit,
 };
 use crate::types::*;
@@ -377,64 +377,6 @@ pub fn search<Node: NodeType>(
 
             if verified_score >= beta {
                 return verified_score;
-            }
-        }
-    }
-
-    // Prob Cut
-    let probcut_beta = beta + 262 - 50 * improving as i32;
-    if depth >= 3
-        && !is_decisive(beta)
-        && tt_move.is_none_or(|m| !m.is_quiet())
-        && tt_score.is_none_or(|s| s >= probcut_beta && !is_decisive(s))
-    {
-        let threshold = probcut_beta - static_eval;
-
-        let mut move_picker = MovePicker::new(tt_move, Some(threshold));
-        while let Some(m) = move_picker.next(data, true, ply) {
-            if move_picker.stage() == Stage::BadNoisy {
-                break;
-            }
-
-            if m == data.stack[ply].excluded {
-                continue;
-            }
-
-            data.make_move(m, ply);
-
-            let mut score = -quiesce::<NonPV>(data, -probcut_beta, -probcut_beta + 1, ply + 1);
-            let probcut_depth = (depth - 3).max(1);
-
-            if score >= probcut_beta {
-                score = -search::<NonPV>(
-                    data,
-                    probcut_depth - 1,
-                    -probcut_beta,
-                    -probcut_beta + 1,
-                    ply + 1,
-                    false,
-                )
-            }
-
-            data.unmake_move();
-
-            if data.shared.status.get() == Status::STOPPED {
-                return Score::TIMEOUT;
-            }
-
-            if score >= probcut_beta {
-                data.shared.tt.add_entry(
-                    m,
-                    score,
-                    raw_eval,
-                    Bound::Lower,
-                    data.board.hash(),
-                    probcut_depth,
-                    ply,
-                    tt_pv,
-                );
-
-                return score;
             }
         }
     }
