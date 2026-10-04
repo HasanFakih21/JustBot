@@ -726,6 +726,13 @@ pub fn search<Node: NodeType>(
             let bonus = (150 * depth - 55).min(1200) * weight / 1024;
             let prior_threats = data.stack[ply - 1].threats;
             data.quiet_history.update(prior_threats, !stm, prior_move, bonus);
+        } else if !prior_move.is_null() {
+            let piece = data.stack[ply - 1].piece;
+            let to = prior_move.to();
+            let captured = data.board.state.captured;
+            let prior_threats = data.stack[ply - 1].threats;
+            let bonus = (50 * depth).min(500);
+            data.noisy_history.update(piece, to, captured, prior_threats, bonus);
         }
     }
 

@@ -14,6 +14,7 @@ pub mod see;
 pub struct BoardState {
     pub pieces: [BitBoard; 6],
     pub occupancies: [BitBoard; 2],
+    pub captured: OptionPiece<Piece>,
     pub mailbox: [OptionPiece<SidedPiece>; 64],
     pub side_to_move: Side,
     pub enpassant: Option<Square>,
@@ -35,6 +36,7 @@ impl BoardState {
         BoardState {
             pieces: [BitBoard(0); 6],
             occupancies: [BitBoard(0); 2],
+            captured: OptionPiece::None,
             mailbox: [OptionPiece::None; 64],
             side_to_move: Side::White,
             enpassant: None,

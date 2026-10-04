@@ -19,6 +19,7 @@ impl Board {
         self.copy_state();
         self.state.plies_from_null += 1;
         self.state.keys.toggle_castling(self.state.castling_rights);
+        self.state.captured = self.piece_at_square(m.capture_square()).map(|p| p.kind());
 
         if let Some(square) = self.state.enpassant {
             self.state.keys.toggle_en_passant(square);
@@ -146,6 +147,7 @@ impl Board {
         self.copy_state();
         self.state.plies_from_null = 0;
         self.state.half_move_clock += 1;
+        self.state.captured = OptionPiece::None;
 
         if let Some(square) = self.state.enpassant {
             self.state.keys.toggle_en_passant(square);
