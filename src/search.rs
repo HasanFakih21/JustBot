@@ -849,7 +849,11 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
             );
         }
 
-        return best_score;
+        if !is_decisive(best_score) && !is_decisive(beta) {
+            return ilerp::<1024>(best_score, beta, 600);
+        } else {
+            return best_score;
+        }
     }
 
     if best_score > alpha {
