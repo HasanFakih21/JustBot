@@ -268,7 +268,7 @@ impl Board {
 
         new_key.toggle(stm, moving, m.from());
 
-        if let OptionPiece::Some(piece) = self.piece_at_square(m.to()) {
+        if let OptionPiece::Some(piece) = self.piece_at_square(m.capture_square()) {
             new_key.toggle(!stm, piece.kind(), m.capture_square());
         }
 
