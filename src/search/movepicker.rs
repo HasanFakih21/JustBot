@@ -118,7 +118,7 @@ impl MovePicker {
             }
 
             score += data.noisy_history.get(piece, to, captured, threats) / 8;
-            entry.score = score + data.mp_correction();
+            entry.score = score + data.mp_correction(mv);
         }
     }
 
@@ -137,7 +137,7 @@ impl MovePicker {
                 + 1064 * data.conthistory(mv, ply, 2) / 1024
                 + 1048 * data.conthistory(mv, ply, 4) / 1024
                 + 9690 * data.board.is_direct_check(mv) as i32
-                + data.mp_correction();
+                + data.mp_correction(mv);
         }
     }
 

@@ -257,6 +257,26 @@ impl Board {
     pub fn all_occupancy(&self) -> BitBoard {
         self.occ(Side::White) | self.occ(Side::Black)
     }
+
+    // Ignores Castling Rights, Enpassant and Promotions
+    pub fn keys_after(&self, m: Move) -> Keys {
+        debug_assert!(self.piece_at_square(m.from()) != OptionPiece::None);
+
+        let mut new_key = self.state.keys;
+        let stm = self.state.side_to_move;
+        let moving = self.piece_at_square(m.from()).unwrap().kind();
+
+        new_key.toggle(stm, moving, m.from());
+
+        if let OptionPiece::Some(piece) = self.piece_at_square(m.to()) {
+            new_key.toggle(!stm, piece.kind(), m.capture_square());
+        }
+
+        new_key.toggle(stm, moving, m.to());
+        new_key.toggle_side();
+
+        new_key
+    }
 }
 
 impl Display for Board {

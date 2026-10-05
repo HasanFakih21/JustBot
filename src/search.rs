@@ -629,7 +629,8 @@ pub fn search<Node: NodeType>(
         if score > best_score {
             best_score = score;
 
-            data.update_mp_history((5 * move_count as i32).max(300), depth);
+            let bonus = (5 * move_count as i32).min(500);
+            data.update_mp_history(bonus, depth, m);
 
             if score > alpha {
                 best_move = Some(m);
@@ -648,7 +649,8 @@ pub fn search<Node: NodeType>(
                 alpha = score;
             }
         } else {
-            data.update_mp_history(-(300 - 10 * move_count as i32).min(10), depth);
+            let penalty = 500 - (5 * move_count as i32).min(500);
+            data.update_mp_history(-penalty, depth, m);
         }
 
         // Add searched quiet/noisy moves to list

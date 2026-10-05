@@ -183,20 +183,23 @@ impl SearchData {
         }
     }
 
-    pub fn mp_correction(&self) -> i32 {
+    pub fn mp_correction(&self, m: Move) -> i32 {
         let stm = self.board.state.side_to_move;
-        (self.mp_history.pawn.get(stm, self.board.state.keys.pawn)
-            + self.mp_history.non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
-            + self.mp_history.non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black]))
+        let keys = self.board.keys_after(m);
+
+        (self.mp_history.pawn.get(!stm, keys.pawn)
+            + self.mp_history.non_pawn[Side::White].get(!stm, keys.non_pawn[Side::White])
+            + self.mp_history.non_pawn[Side::Black].get(!stm, keys.non_pawn[Side::Black]))
             / 64
     }
 
-    pub fn update_mp_history(&mut self, diff: i32, depth: i32) {
+    pub fn update_mp_history(&mut self, diff: i32, depth: i32, m: Move) {
         let stm = self.board.state.side_to_move;
+        let keys = self.board.keys_after(m);
         let bonus = (165 * depth * diff / 128).clamp(-4415, 2343);
-        self.mp_history.pawn.update(stm, self.board.state.keys.pawn, bonus);
-        self.mp_history.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
-        self.mp_history.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
+        self.mp_history.pawn.update(stm, keys.pawn, bonus);
+        self.mp_history.non_pawn[Side::White].update(stm, keys.non_pawn[Side::White], bonus);
+        self.mp_history.non_pawn[Side::Black].update(stm, keys.non_pawn[Side::Black], bonus);
     }
 
     pub fn lmr_correction(&self) -> i32 {
