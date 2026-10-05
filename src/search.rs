@@ -629,6 +629,8 @@ pub fn search<Node: NodeType>(
         if score > best_score {
             best_score = score;
 
+            data.update_mp_history((5 * move_count as i32).max(300), depth);
+
             if score > alpha {
                 best_move = Some(m);
                 bound = Bound::Exact;
@@ -645,6 +647,8 @@ pub fn search<Node: NodeType>(
 
                 alpha = score;
             }
+        } else {
+            data.update_mp_history(-(300 - 10 * move_count as i32).min(10), depth);
         }
 
         // Add searched quiet/noisy moves to list

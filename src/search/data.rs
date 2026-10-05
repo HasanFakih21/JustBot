@@ -119,6 +119,7 @@ pub struct SearchData {
     pub conthistory: ContinuationHistory,
     pub contcorrhistory: ContinuationCorrectionHistory,
     pub lmr_history: LMRHistory,
+    pub mp_history: MovePickerHistory,
 
     pub network: Network,
 }
@@ -147,6 +148,7 @@ impl SearchData {
             conthistory: ContinuationHistory::new(),
             contcorrhistory: ContinuationCorrectionHistory::new(),
             lmr_history: LMRHistory::default(),
+            mp_history: MovePickerHistory::default(),
 
             network: Network::new(),
         }
@@ -179,6 +181,22 @@ impl SearchData {
                 );
             }
         }
+    }
+
+    pub fn mp_correction(&self) -> i32 {
+        let stm = self.board.state.side_to_move;
+        (self.mp_history.pawn.get(stm, self.board.state.keys.pawn)
+            + self.mp_history.non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
+            + self.mp_history.non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black]))
+            / 64
+    }
+
+    pub fn update_mp_history(&mut self, diff: i32, depth: i32) {
+        let stm = self.board.state.side_to_move;
+        let bonus = (165 * depth * diff / 128).clamp(-4415, 2343);
+        self.mp_history.pawn.update(stm, self.board.state.keys.pawn, bonus);
+        self.mp_history.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
+        self.mp_history.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
     }
 
     pub fn lmr_correction(&self) -> i32 {
@@ -359,6 +377,12 @@ impl Default for SearchData {
     fn default() -> Self {
         Self::new(Arc::new(SharedData::default()), 0)
     }
+}
+
+#[derive(Debug, Default)]
+pub struct MovePickerHistory {
+    pub pawn: CorrectionHistory,
+    pub non_pawn: [CorrectionHistory; 2],
 }
 
 #[derive(Debug, Default)]
