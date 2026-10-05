@@ -197,9 +197,9 @@ impl SearchData {
         let stm = self.board.state.side_to_move;
         let keys = self.board.keys_after(m);
         let bonus = (165 * depth * diff / 128).clamp(-4415, 2343);
-        self.mp_history.pawn.update(stm, keys.pawn, bonus);
-        self.mp_history.non_pawn[Side::White].update(stm, keys.non_pawn[Side::White], bonus);
-        self.mp_history.non_pawn[Side::Black].update(stm, keys.non_pawn[Side::Black], bonus);
+        self.mp_history.pawn.update(!stm, keys.pawn, bonus);
+        self.mp_history.non_pawn[Side::White].update(!stm, keys.non_pawn[Side::White], bonus);
+        self.mp_history.non_pawn[Side::Black].update(!stm, keys.non_pawn[Side::Black], bonus);
     }
 
     pub fn lmr_correction(&self) -> i32 {
