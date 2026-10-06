@@ -342,6 +342,8 @@ pub fn search<Node: NodeType>(
         && !in_check
         && ply as i32 >= data.nmp_min_ply
         && !data.board.only_king_and_pawns()
+        && !is_loss(beta)
+        && !is_win(static_eval)
         && tt_bound.is_none_or(|b| b != Bound::Upper)
         && static_eval >= beta + (217 - 1274 * depth / 128 - 65 * improving as i32).max(0)
         && !data.stack[ply - 1].m.is_null()
