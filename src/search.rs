@@ -315,6 +315,7 @@ pub fn search<Node: NodeType>(
 
     // Razoring
     if !Node::PV
+        && depth <= 4
         && !excluded
         && !in_check
         && tt_bound.is_none_or(|b| b != Bound::Lower)
