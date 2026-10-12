@@ -217,7 +217,7 @@ pub fn search<Node: NodeType>(
 
     // Transposition Table Entries
     let tt_entry = data.shared.tt.entry(data.board.hash(), ply);
-    let tt_move = tt_entry.as_ref().map(|e| e.best_move()).filter(|m| !m.is_null());
+    let mut tt_move = tt_entry.as_ref().map(|e| e.best_move()).filter(|m| !m.is_null());
     let tt_bound = tt_entry.as_ref().map(|e| e.bound());
     let tt_score = tt_entry.as_ref().map(|e| e.score()).filter(|s| *s != Score::NONE);
     let tt_was_pv = tt_entry.as_ref().map(|e| e.is_pv()).unwrap_or(false);
@@ -445,7 +445,7 @@ pub fn search<Node: NodeType>(
         && !excluded
         && depth >= 5
         && tt_depth.is_some_and(|d| d >= depth - 3)
-        && let Some(tt_move) = tt_move
+        && let Some(tt_m) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
         && !is_decisive(tt_score)
@@ -455,7 +455,7 @@ pub fn search<Node: NodeType>(
         let singular_margin = depth + depth * (tt_pv && !Node::PV) as i32;
         let singular_beta = tt_score - singular_margin;
 
-        data.stack[ply].excluded = tt_move;
+        data.stack[ply].excluded = tt_m;
         data.stack[ply].m = Move::NONE;
         // Search everything except the TT move with a null window at a reduced depth to find out if it's worth extending or not
         let singular_score = search::<NonPV>(data, singular_depth, singular_beta - 1, singular_beta, ply, cutnode);
@@ -471,6 +471,8 @@ pub fn search<Node: NodeType>(
             extension = 1
                 + (singular_score < singular_beta - double_margin) as i32
                 + (singular_score < singular_beta - triple_margin) as i32;
+        } else if singular_score > tt_score && !data.stack[ply].m.is_null() {
+            tt_move = None;
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
