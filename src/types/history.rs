@@ -143,8 +143,8 @@ impl ContinuationCorrectionHistory {
 }
 
 #[derive(Debug)]
-// [Side to Move][Key]
-pub struct CorrectionHistory(Box<[[AtomicI16; Self::SIZE]; 2]>);
+// [Halfmove Bucket][Side to Move][Key]
+pub struct CorrectionHistory(Box<[[[AtomicI16; Self::SIZE]; 2]; 16]>);
 
 impl CorrectionHistory {
     const MAX_HISTORY: i32 = 11921;
@@ -156,21 +156,23 @@ impl CorrectionHistory {
         Self(zeroed_box())
     }
 
-    pub fn update(&self, stm: Side, key: u64, bonus: i32) {
-        let entry = &self.0[stm][key as usize & Self::MASK];
+    pub fn update(&self, stm: Side, key: u64, bonus: i32, bucket: usize) {
+        let entry = &self.0[bucket][stm][key as usize & Self::MASK];
         let mut value = entry.load(Ordering::Relaxed);
         update_entry::<{ Self::MAX_HISTORY }>(bonus, &mut value);
         entry.store(value, Ordering::Relaxed);
     }
 
-    pub fn get(&self, stm: Side, key: u64) -> i32 {
-        self.0[stm][key as usize & Self::MASK].load(Ordering::Relaxed) as i32
+    pub fn get(&self, stm: Side, key: u64, bucket: usize) -> i32 {
+        self.0[bucket][stm][key as usize & Self::MASK].load(Ordering::Relaxed) as i32
     }
 
     pub fn clear(&self) {
-        for entries in self.0.iter() {
-            for entry in entries.iter() {
-                entry.store(0, Ordering::Relaxed);
+        for bucket in self.0.iter() {
+            for entries in bucket.iter() {
+                for entry in entries.iter() {
+                    entry.store(0, Ordering::Relaxed);
+                }
             }
         }
     }

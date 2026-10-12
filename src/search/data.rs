@@ -183,26 +183,46 @@ impl SearchData {
 
     pub fn lmr_correction(&self) -> i32 {
         let stm = self.board.state.side_to_move;
-        (self.lmr_history.pawn.get(stm, self.board.state.keys.pawn)
-            + self.lmr_history.non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
-            + self.lmr_history.non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black]))
+        let bucket = self.board.halfmove_bucket();
+
+        (self.lmr_history.pawn.get(stm, self.board.state.keys.pawn, bucket)
+            + self.lmr_history.non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White], bucket)
+            + self.lmr_history.non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black], bucket))
             / 64
     }
 
     pub fn update_lmr_history(&mut self, r: i32, depth: i32) {
         let stm = self.board.state.side_to_move;
+        let bucket = self.board.halfmove_bucket();
         let bonus = (165 * depth * r / 128).clamp(-4415, 2343);
-        self.lmr_history.pawn.update(stm, self.board.state.keys.pawn, bonus);
-        self.lmr_history.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
-        self.lmr_history.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
+
+        self.lmr_history
+            .pawn
+            .update(stm, self.board.state.keys.pawn, bonus, bucket);
+        self.lmr_history.non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus, bucket);
+        self.lmr_history.non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus, bucket);
     }
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32, ply: isize) {
         let stm = self.board.state.side_to_move;
+        let bucket = self.board.halfmove_bucket();
+
         let bonus = (201 * depth * diff / 128).clamp(-4419, 2508);
-        self.corrhistory().pawn.update(stm, self.board.state.keys.pawn, bonus);
-        self.corrhistory().non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
-        self.corrhistory().non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
+        self.corrhistory()
+            .pawn
+            .update(stm, self.board.state.keys.pawn, bonus, bucket);
+        self.corrhistory().non_pawn[Side::White].update(
+            stm,
+            self.board.state.keys.non_pawn[Side::White],
+            bonus,
+            bucket,
+        );
+        self.corrhistory().non_pawn[Side::Black].update(
+            stm,
+            self.board.state.keys.non_pawn[Side::Black],
+            bonus,
+            bucket,
+        );
 
         unsafe {
             if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
@@ -227,9 +247,11 @@ impl SearchData {
 
     pub fn correction(&self, ply: isize) -> i32 {
         let stm = self.board.state.side_to_move;
-        (self.corrhistory().pawn.get(stm, self.board.state.keys.pawn)
-            + self.corrhistory().non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White])
-            + self.corrhistory().non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black])
+        let bucket = self.board.halfmove_bucket();
+
+        (self.corrhistory().pawn.get(stm, self.board.state.keys.pawn, bucket)
+            + self.corrhistory().non_pawn[Side::White].get(stm, self.board.state.keys.non_pawn[Side::White], bucket)
+            + self.corrhistory().non_pawn[Side::Black].get(stm, self.board.state.keys.non_pawn[Side::Black], bucket)
             + unsafe {
                 if !self.stack[ply - 1].m.is_null() && !self.stack[ply - 2].m.is_null() {
                     self.contcorrhistory.get(
