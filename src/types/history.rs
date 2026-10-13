@@ -73,8 +73,8 @@ impl NoisyHistory {
 }
 
 #[derive(Debug, Clone)]
-// [Is Capture][Piece][To][Piece][To]
-pub struct ContinuationHistory(Box<[PieceToHistory<PieceToHistory<i16>>; 2]>);
+// [In Check][Is Capture][Piece][To][Piece][To]
+pub struct ContinuationHistory(Box<[[PieceToHistory<PieceToHistory<i16>>; 2]; 2]>);
 
 impl ContinuationHistory {
     pub const MAX_HISTORY: i32 = 7851;
@@ -85,11 +85,12 @@ impl ContinuationHistory {
 
     pub fn subtable(
         &mut self,
+        in_check: bool,
         is_capture: bool,
         piece: OptionPiece<SidedPiece>,
         to: Square,
     ) -> *mut PieceToHistory<i16> {
-        &raw mut self.0[is_capture as usize][piece][to]
+        &raw mut self.0[in_check as usize][is_capture as usize][piece][to]
     }
 
     /// # Safety
