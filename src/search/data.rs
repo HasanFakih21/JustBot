@@ -340,7 +340,7 @@ impl SearchData {
 
         self.stack[ply].m = m;
         self.stack[ply].piece = piece;
-        self.stack[ply].conthistory = self.conthistory.subtable(piece, to);
+        self.stack[ply].conthistory = self.conthistory.subtable(m.is_capture(), piece, to);
         self.stack[ply].contcorrhistory = self.contcorrhistory.subtable(piece, to);
         self.stack[ply].threats = self.board.threats();
 
