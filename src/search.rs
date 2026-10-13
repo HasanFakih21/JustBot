@@ -483,7 +483,6 @@ pub fn search<Node: NodeType>(
     let mut best_move: Option<Move> = None;
     // Fail-high means score is atleast this good so lower-bound/Fail-low means the score is an upper bound
     let mut bound = Bound::Upper;
-    let mut average_r = 0;
 
     let mut move_picker = MovePicker::new(tt_move, None);
     let mut quiets_searched = StackVec::<Move, 32>::new();
@@ -567,9 +566,7 @@ pub fn search<Node: NodeType>(
             r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 440 * history / 4096;
-            r -= data.lmr_correction();
 
-            average_r = (average_r + r) / 2;
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
 
@@ -724,13 +721,6 @@ pub fn search<Node: NodeType>(
     }
 
     if !excluded {
-        if depth >= 2
-            && move_count > 3
-            && let Some(r) = data.stack[ply - 1].reduction
-        {
-            data.update_lmr_history(r - average_r, depth);
-        }
-
         data.shared.tt.add_entry(
             best_move.unwrap_or(Move::NONE),
             best_score,
