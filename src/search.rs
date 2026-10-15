@@ -499,18 +499,15 @@ pub fn search<Node: NodeType>(
 
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.is_quiet();
+        let moved_piece = data.board.piece_at_square(m.from());
         let history = if is_quiet {
             data.quiet_history.get(data.board.threats(), stm, m)
-                + data.conthistory(m, ply, 1)
-                + data.conthistory(m, ply, 2)
+                + data.conthistory(moved_piece, m.to(), ply, 1)
+                + data.conthistory(moved_piece, m.to(), ply, 2)
         } else {
             let captured = data.board.piece_at_square(m.capture_square()).map(|p| p.kind());
-            data.noisy_history.get(
-                data.board.piece_at_square(m.from()),
-                m.to(),
-                captured,
-                data.board.threats(),
-            )
+            data.noisy_history
+                .get(moved_piece, m.to(), captured, data.board.threats())
         };
 
         if !Node::ROOT && !is_loss(best_score) {
@@ -579,7 +576,7 @@ pub fn search<Node: NodeType>(
 
             if score > alpha && reduced_depth < new_depth {
                 score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
-                data.update_conthistories(m, ply, 1024);
+                data.update_conthistories(moved_piece, m.to(), ply, 1024);
             }
         } else if !Node::PV || move_count > 1 {
             score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
@@ -690,13 +687,13 @@ pub fn search<Node: NodeType>(
             let pawn_key = data.board.state.keys.pawn;
             data.pawn_history.update(pawn_key, piece, to, quiet_bonus);
             data.quiet_history.update(threats, stm, m, quiet_bonus);
-            data.update_conthistories(m, ply, cont_bonus);
+            data.update_conthistories(piece, to, ply, cont_bonus);
             for quiet_move in quiets_searched.iter() {
                 let piece = data.board.piece_at_square(quiet_move.from());
                 let to = quiet_move.to();
                 data.pawn_history.update(pawn_key, piece, to, -quiet_malus);
                 data.quiet_history.update(threats, stm, *quiet_move, -quiet_malus);
-                data.update_conthistories(*quiet_move, ply, -cont_malus);
+                data.update_conthistories(piece, to, ply, -cont_malus);
             }
         } else {
             let piece = data.board.piece_at_square(m.from());

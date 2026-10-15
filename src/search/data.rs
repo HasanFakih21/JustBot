@@ -9,8 +9,8 @@ use crate::tools::wdl;
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory,
-    STARTING_FEN, Score, Side, is_decisive, is_loss, is_win,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory, OptionPiece,
+    PawnHistory, STARTING_FEN, Score, Side, SidedPiece, Square, is_decisive, is_loss, is_win,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -168,15 +168,11 @@ impl SearchData {
         (self.shared.total_nodes_searched() as f32 / self.time.elapsed().as_secs_f32()) as usize
     }
 
-    pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
+    pub fn update_conthistories(&mut self, piece: OptionPiece<SidedPiece>, to: Square, ply: isize, bonus: i32) {
         unsafe {
             for i in [1, 2, 4] {
-                self.conthistory.update(
-                    self.stack[ply - i].conthistory,
-                    self.board.piece_at_square(m.from()),
-                    m.to(),
-                    bonus,
-                );
+                self.conthistory
+                    .update(self.stack[ply - i].conthistory, piece, to, bonus);
             }
         }
     }
@@ -255,14 +251,8 @@ impl SearchData {
             / 64
     }
 
-    pub fn conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {
-        unsafe {
-            self.conthistory.get(
-                self.stack[ply - index].conthistory,
-                self.board.piece_at_square(m.from()),
-                m.to(),
-            )
-        }
+    pub fn conthistory(&self, piece: OptionPiece<SidedPiece>, to: Square, ply: isize, index: isize) -> i32 {
+        unsafe { self.conthistory.get(self.stack[ply - index].conthistory, piece, to) }
     }
 
     pub fn print_uci_info(&self) {

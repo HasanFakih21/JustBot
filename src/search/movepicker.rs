@@ -133,9 +133,9 @@ impl MovePicker {
 
             entry.score = data.quiet_history.get(threats, side, mv)
                 + 1081 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
-                + 1573 * data.conthistory(mv, ply, 1) / 1024
-                + 1064 * data.conthistory(mv, ply, 2) / 1024
-                + 1048 * data.conthistory(mv, ply, 4) / 1024
+                + 1573 * data.conthistory(piece, to, ply, 1) / 1024
+                + 1064 * data.conthistory(piece, to, ply, 2) / 1024
+                + 1048 * data.conthistory(piece, to, ply, 4) / 1024
                 + 9690 * data.board.is_direct_check(mv) as i32;
         }
     }
