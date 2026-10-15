@@ -269,6 +269,19 @@ pub fn search<Node: NodeType>(
         static_eval = raw_eval + correction;
     };
 
+    let estimated_score = if !in_check
+        && !excluded
+        && let Some(tt_score) = tt_score
+        && tt_bound.is_some_and(|b| match b {
+            Bound::Upper => tt_score < static_eval,
+            Bound::Lower => tt_score > static_eval,
+            _ => true,
+        }) {
+        tt_score
+    } else {
+        static_eval
+    };
+
     data.stack[ply].eval = static_eval;
     if !excluded && tt_entry.is_none() {
         data.shared.tt.add_entry(
@@ -318,7 +331,7 @@ pub fn search<Node: NodeType>(
         && !excluded
         && !in_check
         && tt_bound.is_none_or(|b| b != Bound::Lower)
-        && static_eval < alpha - 237 - 262 * depth * depth
+        && estimated_score < alpha - 237 - 262 * depth * depth
         && alpha < 2000
     {
         return quiesce::<Node>(data, alpha, beta, ply);
@@ -328,14 +341,14 @@ pub fn search<Node: NodeType>(
     if !tt_pv
         && !in_check
         && !excluded
-        && static_eval >= beta + 93 * depth + 7 * depth * depth - 72 * improving as i32
+        && estimated_score >= beta + 93 * depth + 7 * depth * depth - 72 * improving as i32
         && !is_decisive(beta)
-        && !is_decisive(static_eval)
+        && !is_decisive(estimated_score)
     {
-        return ilerp::<1024>(static_eval, beta, 666);
+        return ilerp::<1024>(estimated_score, beta, 666);
     }
 
-    // Null Move Pruning
+    // Null Move Pruning (NMP)
     if cutnode
         && depth >= 3
         && !excluded
@@ -343,7 +356,7 @@ pub fn search<Node: NodeType>(
         && ply as i32 >= data.nmp_min_ply
         && !data.board.only_king_and_pawns()
         && tt_bound.is_none_or(|b| b != Bound::Upper)
-        && static_eval >= beta + (217 - 1274 * depth / 128 - 65 * improving as i32).max(0)
+        && estimated_score >= beta + (217 - 1274 * depth / 128 - 65 * improving as i32).max(0)
         && !data.stack[ply - 1].m.is_null()
     {
         let r = 6 + depth * 134 / 640;
