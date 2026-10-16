@@ -866,9 +866,8 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
     let mut move_count = 0;
     let mut bound = Bound::Upper;
     let mut best_move: Option<Move> = None;
-    let skip_quiets = !in_check;
 
-    while let Some(m) = move_picker.next(data, skip_quiets, ply) {
+    while let Some(m) = move_picker.next(data, !in_check || !is_loss(best_score), ply) {
         move_count += 1;
 
         if !is_loss(best_score) {
