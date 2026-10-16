@@ -181,6 +181,40 @@ impl CorrectionHistory {
     }
 }
 
+#[derive(Debug)]
+// [Side to Move][Key]
+pub struct LMRCorrectionHistory(Box<[[AtomicI16; Self::SIZE]; 2]>);
+
+impl LMRCorrectionHistory {
+    const MAX_HISTORY: i32 = 11921;
+
+    const SIZE: usize = 16384;
+    const MASK: usize = Self::SIZE - 1;
+
+    pub fn new() -> Self {
+        Self(zeroed_box())
+    }
+
+    pub fn update(&self, stm: Side, key: u64, bonus: i32) {
+        let entry = &self.0[stm][key as usize & Self::MASK];
+        let mut value = entry.load(Ordering::Relaxed);
+        update_entry::<{ Self::MAX_HISTORY }>(bonus, &mut value);
+        entry.store(value, Ordering::Relaxed);
+    }
+
+    pub fn get(&self, stm: Side, key: u64) -> i32 {
+        self.0[stm][key as usize & Self::MASK].load(Ordering::Relaxed) as i32
+    }
+
+    pub fn clear(&self) {
+        for entries in self.0.iter() {
+            for entry in entries.iter() {
+                entry.store(0, Ordering::Relaxed);
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 // [Pawn Key][Piece][To]
 pub struct PawnHistory(Box<[PieceToHistory<i16>; Self::SIZE]>);
@@ -248,6 +282,12 @@ impl Default for ContinuationCorrectionHistory {
 impl Default for CorrectionHistory {
     fn default() -> Self {
         CorrectionHistory::new()
+    }
+}
+
+impl Default for LMRCorrectionHistory {
+    fn default() -> Self {
+        LMRCorrectionHistory::new()
     }
 }
 

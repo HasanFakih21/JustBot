@@ -9,8 +9,8 @@ use crate::tools::wdl;
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory, OptionPiece,
-    PawnHistory, STARTING_FEN, Score, Side, SidedPiece, Square, is_decisive, is_loss, is_win,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, LMRCorrectionHistory, Move, NoisyHistory,
+    OptionPiece, PawnHistory, STARTING_FEN, Score, Side, SidedPiece, Square, is_decisive, is_loss, is_win,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -353,8 +353,8 @@ impl Default for SearchData {
 
 #[derive(Debug, Default)]
 pub struct LMRHistory {
-    pub pawn: CorrectionHistory,
-    pub non_pawn: [CorrectionHistory; 2],
+    pub pawn: LMRCorrectionHistory,
+    pub non_pawn: [LMRCorrectionHistory; 2],
 }
 
 #[derive(Debug, Default)]
