@@ -576,7 +576,7 @@ pub fn search<Node: NodeType>(
 
             if score > alpha && reduced_depth < new_depth {
                 score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
-                data.update_conthistories(moved_piece, m.to(), ply, 1024);
+                data.update_conthistories(moved_piece, m.to(), ply, 800);
             }
         } else if !Node::PV || move_count > 1 {
             score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
