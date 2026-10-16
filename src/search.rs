@@ -559,6 +559,8 @@ pub fn search<Node: NodeType>(
         if depth >= 2 && move_count > 1 {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r -= 1653 * correction.abs() / 1024;
+            r += 1200 * (bound == Bound::Exact) as i32;
+            r += 1024 * is_win(beta) as i32;
             r += 1270 * cutnode as i32;
             r += 1984 * (cutnode && tt_move.is_none()) as i32;
             r -= 1240 * tt_was_pv as i32;
@@ -567,6 +569,7 @@ pub fn search<Node: NodeType>(
             r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r -= 440 * history / 4096;
+            r -= 800 * in_check as i32;
             r -= data.lmr_correction();
 
             average_r = (average_r + r) / 2;
