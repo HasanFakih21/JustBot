@@ -836,6 +836,10 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
     // Stand Pat
     if best_score >= beta {
+        if !is_decisive(best_score) && !is_decisive(beta) {
+            best_score = ilerp::<1024>(best_score, beta, 800);
+        }
+
         if tt_entry.is_none() {
             data.shared.tt.add_entry(
                 Move::NONE,
