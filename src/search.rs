@@ -296,6 +296,14 @@ pub fn search<Node: NodeType>(
     let improving = improvement > 0;
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
+        // Update Quiet History Based on Evaluation Difference
+        if !data.stack[ply - 1].m.is_null() && data.stack[ply - 1].m.is_quiet() {
+            let parent_gain = -data.stack[ply - 1].eval - static_eval;
+            let bonus = (10 * parent_gain).clamp(-1500, 1500) + 500;
+            data.quiet_history
+                .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
+        }
+
         // Hindsight Extension
         if depth < MAX_PLY as i32
             && data.stack[ply - 1].reduction.is_some_and(|r| r >= 3167)
