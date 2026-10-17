@@ -297,9 +297,9 @@ pub fn search<Node: NodeType>(
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
         // Update Quiet History Based on Evaluation Difference
-        if !data.stack[ply - 1].m.is_null() && data.stack[ply - 1].m.is_quiet() {
+        if data.stack[ply - 1].m.is_quiet() {
             let parent_gain = -data.stack[ply - 1].eval - static_eval;
-            let bonus = (10 * parent_gain).clamp(-1500, 1500) + 500;
+            let bonus = (812 * parent_gain / 128).clamp(-350, 350);
             data.quiet_history
                 .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
         }
