@@ -77,7 +77,7 @@ impl NoisyHistory {
 pub struct ContinuationHistory(Box<[PieceToHistory<PieceToHistory<i16>>; 2]>);
 
 impl ContinuationHistory {
-    pub const MAX_HISTORY: i32 = 16000;
+    pub const MAX_HISTORY: i32 = 7851;
 
     pub fn new() -> Self {
         Self(zeroed_box())
