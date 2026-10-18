@@ -299,13 +299,9 @@ pub fn search<Node: NodeType>(
         // Update Quiet History Based on Evaluation Difference
         if data.stack[ply - 1].m.is_quiet() {
             let parent_gain = -data.stack[ply - 1].eval - static_eval;
-            let bonus = (10 * parent_gain).clamp(-8000, 8000) + 150;
-            data.quiet_history.update(
-                data.stack[ply - 1].threats,
-                !stm,
-                data.stack[ply - 1].m,
-                800 * bonus / 1024,
-            );
+            let bonus = (256 * parent_gain / 128).clamp(-350, 350);
+            data.quiet_history
+                .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
         }
 
         // Hindsight Extension
