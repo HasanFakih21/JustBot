@@ -169,13 +169,14 @@ impl SearchData {
     }
 
     pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
+        const WEIGHTS: [i32; 5] = [0, 1000, 1200, 0, 950];
         unsafe {
             for i in [1, 2, 4] {
                 self.conthistory.update(
                     self.stack[ply - i].conthistory,
                     self.board.piece_at_square(m.from()),
                     m.to(),
-                    bonus,
+                    WEIGHTS[i as usize] * bonus / 1024,
                 );
             }
         }
