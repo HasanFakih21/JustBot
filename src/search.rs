@@ -439,6 +439,11 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    // Internal Iterative Reduction (IIR)
+    if !Node::ROOT && depth >= 4 && tt_entry.is_none() {
+        depth -= 1;
+    }
+
     // Singular Extensions (SE)
     let mut extension = 0;
     if !Node::ROOT
