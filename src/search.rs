@@ -482,7 +482,7 @@ pub fn search<Node: NodeType>(
             extension -= 3;
         }
     }
-    // Low Depth Singular Extensions (LSDE)
+    // Low Depth Singular Extensions (LDSE)
     else if depth <= 7 && !in_check && tt_bound.is_some_and(|b| b == Bound::Lower) && static_eval <= alpha - 25 {
         extension = 1;
     }
