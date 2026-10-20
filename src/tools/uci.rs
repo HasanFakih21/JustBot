@@ -232,15 +232,11 @@ pub fn go(args: &str, pool: &mut SearchThreads, board: &mut Board, uci_settings:
     let limit = parse_limit(board.state.side_to_move, args.as_slice(), uci_settings.soft_nodes);
 
     let mut movestosearch = board.generate_moves(MoveGenKind::All);
-    if let [.., "searchmoves", moves] = args.as_slice() {
+    if let Some(i) = args.iter().position(|&arg| arg == "searchmoves") {
+        let moves = &args[i + 1..];
         movestosearch = movestosearch
             .iter()
-            .filter(|m| {
-                moves
-                    .trim_ascii()
-                    .split_ascii_whitespace()
-                    .any(|string_m| string_m == m.mv.to_uci(board))
-            })
+            .filter(|&m| moves.contains(&m.mv.to_uci(board).as_str()))
             .map(|m| m.mv)
             .collect();
     }

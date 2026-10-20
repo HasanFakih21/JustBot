@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    board::{Board, movegen::MoveGenKind},
+    board::Board,
     search::{
         data::{Report, RootMove, SearchData, SharedData},
         search_runner,
@@ -79,8 +79,7 @@ impl SearchThreads {
         }
 
         if threads.is_empty() {
-            let move_list = board.generate_moves(MoveGenKind::All);
-            if move_list.is_empty() { return None } else { return Some(move_list.get(0).mv) }
+            if movestosearch.is_empty() { return None } else { return Some(movestosearch.get(0).mv) }
         }
 
         let lowest_score = threads.iter().map(|result| result.best_move.score).min().unwrap();
