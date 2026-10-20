@@ -14,7 +14,7 @@ use crate::{
         search_runner,
         time::TimeManager,
     },
-    types::{Move, Score, is_decisive, is_loss, is_win},
+    types::{Move, MoveList, Score, is_decisive, is_loss, is_win},
 };
 
 pub struct SearchThreads {
@@ -37,14 +37,13 @@ impl SearchThreads {
         SearchThreads { workers, shared }
     }
 
-    pub fn start(&mut self, board: &Board, time: TimeManager, report: Report) -> Option<Move> {
+    pub fn start(&mut self, board: &Board, time: TimeManager, report: Report, movestosearch: MoveList) -> Option<Move> {
         debug_assert!(!self.workers.is_empty());
         self.shared.tt.increase_age();
         self.shared.reset_all_nodes();
         self.shared.status.run();
 
-        let root_moves: Vec<RootMove> = board
-            .generate_moves(MoveGenKind::All)
+        let root_moves: Vec<RootMove> = movestosearch
             .iter()
             .map(|e| RootMove {
                 m: e.mv,

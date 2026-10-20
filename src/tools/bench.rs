@@ -71,7 +71,12 @@ pub fn bench() -> (u64, u64) {
         let board = Board::from_fen(fen).unwrap();
         let time_manager = TimeManager::new(Limit::Depth(12), 0);
 
-        pool.start(&board, time_manager, Report::None);
+        pool.start(
+            &board,
+            time_manager,
+            Report::None,
+            board.generate_moves(crate::board::movegen::MoveGenKind::All),
+        );
         total_node_count += shared.total_nodes_searched();
     }
 

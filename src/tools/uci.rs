@@ -230,9 +230,23 @@ pub fn go(args: &str, pool: &mut SearchThreads, board: &mut Board, uci_settings:
     let args = args.to_ascii_lowercase();
     let args: Vec<&str> = args.split_ascii_whitespace().collect();
     let limit = parse_limit(board.state.side_to_move, args.as_slice(), uci_settings.soft_nodes);
-    let time = TimeManager::new(limit, board.state.full_move);
 
-    pool.start(board, time, uci_settings.report)
+    let mut movestosearch = board.generate_moves(MoveGenKind::All);
+    if let [.., "searchmoves", moves] = args.as_slice() {
+        movestosearch = movestosearch
+            .iter()
+            .filter(|m| {
+                moves
+                    .trim_ascii()
+                    .split_ascii_whitespace()
+                    .any(|string_m| string_m == m.mv.to_uci(board))
+            })
+            .map(|m| m.mv)
+            .collect();
+    }
+
+    let time = TimeManager::new(limit, board.state.full_move);
+    pool.start(board, time, uci_settings.report, movestosearch)
 }
 
 fn parse_limit(stm: Side, args: &[&str], soft_node: bool) -> Limit {

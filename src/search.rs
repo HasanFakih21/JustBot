@@ -496,6 +496,10 @@ pub fn search<Node: NodeType>(
     let mut skip_quiets = false;
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
+        if Node::ROOT && !data.root_moves.iter().any(|rm| rm.m == m) {
+            continue;
+        }
+
         if m == data.stack[ply].excluded {
             continue;
         }
@@ -874,6 +878,10 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
     let skip_quiets = !in_check;
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
+        if Node::ROOT && !data.root_moves.iter().any(|rm| rm.m == m) {
+            continue;
+        }
+
         move_count += 1;
 
         if !is_loss(best_score) {
