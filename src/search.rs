@@ -564,7 +564,7 @@ pub fn search<Node: NodeType>(
         let mut score = -Score::INFINITY;
 
         // Late Move Reductions (LMR)
-        if depth >= 2 && move_count > 1 {
+        if depth >= 2 && move_count > 1 + Node::ROOT as usize {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r -= 1653 * correction.abs() / 1024;
             r += 1270 * cutnode as i32;
