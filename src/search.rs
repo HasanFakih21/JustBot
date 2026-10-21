@@ -565,6 +565,17 @@ pub fn search<Node: NodeType>(
 
         // Late Move Reductions (LMR)
         if depth >= 2 && move_count > 1 {
+            let lmr_history = if is_quiet {
+                let mut h = 0;
+                h += data.quiet_history.get(data.board.threats(), stm, m) * 450;
+                h += data.conthistory(m, ply, 1) * 1125;
+                h += data.conthistory(m, ply, 2) * 1200;
+                h += data.conthistory(m, ply, 4) * 600;
+                h / 1024
+            } else {
+                history
+            };
+
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r -= 1653 * correction.abs() / 1024;
             r += 1270 * cutnode as i32;
@@ -574,7 +585,7 @@ pub fn search<Node: NodeType>(
             r += 202 * !improving as i32;
             r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
-            r -= 440 * history / 4096;
+            r -= 440 * lmr_history / 4096;
             r += 333;
 
             let reduction = r / 1024;
