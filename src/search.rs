@@ -553,7 +553,7 @@ pub fn search<Node: NodeType>(
             let threshold = if is_quiet {
                 (-20 * depth * depth + 50 * depth + 25).min(0)
             } else {
-                (-125 * depth * depth - 44 * depth + 13).min(0)
+                (-10 * depth * depth - 34 * depth + 13).min(0)
             };
 
             if !in_check && !data.board.see(m, threshold) {
