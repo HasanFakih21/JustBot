@@ -550,8 +550,13 @@ pub fn search<Node: NodeType>(
             }
 
             // Static Exchange Evaluation Pruning (SEE Pruning)
-            let threshold = (-125 * depth * depth - 44 * depth + 13).min(-38);
-            if !in_check && !is_quiet && !data.board.see(m, threshold) {
+            let threshold = if is_quiet {
+                (-20 * depth * depth + 50 * depth + 25).min(0)
+            } else {
+                (-125 * depth * depth - 44 * depth + 13).min(0)
+            };
+
+            if !in_check && !data.board.see(m, threshold) {
                 continue;
             }
         }
