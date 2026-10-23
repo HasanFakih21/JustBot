@@ -656,6 +656,10 @@ pub fn search<Node: NodeType>(
                 }
 
                 alpha = score;
+
+                if depth > 2 && depth < 12 && !is_loss(best_score) {
+                    depth -= 1;
+                }
             }
         }
 
