@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use crate::types::{BitBoard, MAX_PLY, Move, OptionPiece, PieceToHistory, Score, SidedPiece};
+use crate::types::{BitBoard, MAX_PLY, Move, OptionPiece, Piece, PieceToHistory, Score, SidedPiece};
 
 #[derive(Debug)]
 pub struct Stack {
@@ -39,6 +39,7 @@ impl Default for Stack {
 pub struct PlyData {
     pub m: Move,
     pub piece: OptionPiece<SidedPiece>,
+    pub captured: OptionPiece<Piece>,
     pub conthistory: *mut PieceToHistory<i16>,
     pub contcorrhistory: *mut PieceToHistory<i16>,
     pub eval: i32,
@@ -52,6 +53,7 @@ impl Default for PlyData {
         PlyData {
             m: Move::NONE,
             piece: OptionPiece::None,
+            captured: OptionPiece::None,
             conthistory: std::ptr::null_mut(),
             contcorrhistory: std::ptr::null_mut(),
             eval: Score::NONE,
