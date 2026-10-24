@@ -549,6 +549,15 @@ pub fn search<Node: NodeType>(
                 continue;
             }
 
+            // Bad Noisy Futility Pruning (BNFP)
+            if !in_check
+                && depth < 11
+                && move_picker.stage() == Stage::BadNoisy
+                && static_eval + 85 * depth + 25 <= alpha
+            {
+                break;
+            }
+
             // Static Exchange Evaluation Pruning (SEE Pruning)
             let threshold = if is_quiet {
                 (-20 * depth * depth + 50 * depth + 25 - 25 * history / 1024).min(0)
