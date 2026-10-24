@@ -521,7 +521,11 @@ pub fn search<Node: NodeType>(
             )
         };
 
+        let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+
         if !Node::ROOT && !is_loss(best_score) {
+            let lmr_depth = (depth - 1) - r / 1024;
+
             // Late Move Pruning (LMP)
             if !in_check
                 && !is_direct_check
@@ -537,8 +541,8 @@ pub fn search<Node: NodeType>(
             if !in_check
                 && !is_direct_check
                 && is_quiet
-                && depth < 8
-                && static_eval + 76 * depth + 162 + 57 * history / 1024 <= alpha
+                && lmr_depth < 8
+                && static_eval + 76 * lmr_depth + 162 + 57 * history / 1024 <= alpha
             {
                 skip_quiets = true;
                 continue;
@@ -570,7 +574,6 @@ pub fn search<Node: NodeType>(
 
         // Late Move Reductions (LMR)
         if depth >= 2 && move_count > 1 {
-            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r -= 1653 * correction.abs() / 1024;
             r += 1270 * cutnode as i32;
             r += 1984 * (cutnode && tt_move.is_none()) as i32;
