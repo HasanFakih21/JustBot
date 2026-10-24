@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use crate::types::{BitBoard, Rank, Square, zeroed_box};
+use crate::types::{BitBoard, Rank, Square};
 
 pub const A_FILE: u64 = 0x0101010101010101;
 pub const B_FILE: u64 = 0x0202020202020202;
@@ -62,22 +62,13 @@ pub const fn to_file_bb(square: Square) -> BitBoard {
     BitBoard(A_FILE).shift(EAST * file as i8)
 }
 
-/// `[Is Quiet][Depth][Move Count]`
-pub static LMR_TABLE: LazyLock<Box<[[[i32; 64]; 128]; 2]>> = {
+pub static REDUCTIONS: LazyLock<[i32; MAX_MOVE_NUM]> = {
     LazyLock::new(|| {
-        let mut table: Box<[[[i32; 64]; 128]; 2]> = zeroed_box();
-
-        for depth in 1..128 {
-            for move_count in 1..64 {
-                // Quiet Moves
-                table[1][depth][move_count] =
-                    ((0.6048 + (move_count as f32).ln() * (depth as f32).ln() / 2.4978) * 1024.0) as i32;
-                // Noisy Moves
-                table[0][depth][move_count] =
-                    ((0.1546 + (move_count as f32).ln() * (depth as f32).ln() / 3.0169) * 1024.0) as i32;
-            }
+        let mut reductions = [0; MAX_MOVE_NUM];
+        for i in 1..MAX_MOVE_NUM {
+            reductions[i] = (2872.0 / 128.0 * (i as f32).ln()) as i32;
         }
 
-        table
+        reductions
     })
 };

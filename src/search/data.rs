@@ -9,7 +9,7 @@ use crate::tools::wdl;
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, Move, NoisyHistory, PawnHistory, REDUCTIONS,
     STARTING_FEN, Score, Side, is_decisive, is_loss, is_win,
 };
 use crate::types::{QuietHistory, TranspositionTable};
@@ -112,6 +112,7 @@ pub struct SearchData {
     pub prev_score: i32,
     pub nmp_min_ply: i32,
     pub completed_depth: i32,
+    pub root_delta: i32,
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -139,6 +140,7 @@ impl SearchData {
             prev_score: 0,
             nmp_min_ply: 0,
             completed_depth: 0,
+            root_delta: 0,
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -148,6 +150,11 @@ impl SearchData {
 
             network: Network::new(),
         }
+    }
+
+    pub fn reduction(&self, improving: bool, depth: i32, move_count: usize, delta: i32) -> i32 {
+        let scale = REDUCTIONS[depth as usize] * REDUCTIONS[move_count];
+        scale - delta * 577 / self.root_delta + !improving as i32 * scale * 197 / 512 + 982
     }
 
     pub fn corrhistory(&self) -> &SharedCorrectionHistories {
