@@ -725,7 +725,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper {
+    if !Node::ROOT && bound == Bound::Upper && (Node::PV || cutnode) {
         if data.stack[ply - 1].m.is_quiet() {
             let bonus = (115 * depth - 75).min(1203);
             data.quiet_history
