@@ -221,6 +221,7 @@ tunable_params! {
     score_queen_promo = 5129, 2500..=10000, true;
 
     // Score Quiet
+    score_quiet        = 1024, 500..=1500,   true;
     score_quiet_pawn   = 1081, 500..=1500,   true;
     score_quiet_cont1  = 1573, 1200..=2000,  true;
     score_quiet_cont2  = 1064, 800..=1600,   true;

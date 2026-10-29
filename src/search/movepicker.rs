@@ -132,7 +132,7 @@ impl MovePicker {
             let piece = data.board.piece_at_square(mv.from());
             let to = mv.to();
 
-            entry.score = data.quiet_history.get(threats, side, mv)
+            entry.score = score_quiet() * data.quiet_history.get(threats, side, mv) / 1024
                 + score_quiet_pawn() * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
                 + score_quiet_cont1() * data.conthistory(mv, ply, 1) / 1024
                 + score_quiet_cont2() * data.conthistory(mv, ply, 2) / 1024
