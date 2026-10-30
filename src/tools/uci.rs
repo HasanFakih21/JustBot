@@ -282,7 +282,7 @@ fn parse_limit(stm: Side, args: &[&str], soft_node: bool) -> Limit {
 }
 
 pub fn uci() {
-    println!("id name JustBot {}", env!("CARGO_PKG_VERSION"));
+    println!("id name JustBot {}", env!("ENGINE_VERSION"));
     println!("id author Hasan Fakih");
     println!("option name Threads type spin default 1 min 1 max 512");
     println!("option name Hash type spin default 16 min 1 max 1048576");
