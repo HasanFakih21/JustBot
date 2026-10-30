@@ -47,19 +47,19 @@ const L3: usize = 32;
 const Q0: i16 = 255;
 const Q: i16 = 64;
 
-const INPUT_BUCKETS: usize = 10;
+const INPUT_BUCKETS: usize = 16;
 const OUTPUT_BUCKETS: usize = 8;
 
 #[rustfmt::skip]
 const BUCKET_LAYOUT: [usize; 32] = [
-    0,  1,  2,  3,
-    4,  4,  5,  5,
-    6,  6,  6,  6,
-    7,  7,  7,  7,
-    8,  8,  8,  8,
-    8,  8,  8,  8,
-    9,  9,  9,  9,
-    9,  9,  9,  9,
+     0,  1,  2,  3,
+     4,  5,  6,  7,
+     8,  8,  9,  9,
+    10, 10, 11, 11,
+    12, 12, 13, 13,
+    12, 12, 13, 13,
+    14, 14, 15, 15,
+    14, 14, 15, 15,
 ];
 
 pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!(env!("MODEL"))) };
