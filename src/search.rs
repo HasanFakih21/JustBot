@@ -152,7 +152,7 @@ pub fn search_runner(data: &mut SearchData) {
         alpha = (score - delta).max(-Score::INFINITY);
         beta = (score + delta).min(Score::INFINITY);
 
-        let optimism = 100 * data.root_moves[0].average_score / (data.root_moves[0].average_score.abs() + 200);
+        let optimism = 147 * data.root_moves[0].average_score / (data.root_moves[0].average_score.abs() + 101);
         data.optimism[data.board.state.side_to_move] = optimism;
         data.optimism[!data.board.state.side_to_move] = -optimism;
     }
