@@ -112,6 +112,7 @@ pub struct SearchData {
     pub prev_score: i32,
     pub nmp_min_ply: i32,
     pub completed_depth: i32,
+    pub optimism: [i32; 2],
 
     pub quiet_history: QuietHistory,
     pub noisy_history: NoisyHistory,
@@ -139,6 +140,7 @@ impl SearchData {
             prev_score: 0,
             nmp_min_ply: 0,
             completed_depth: 0,
+            optimism: [0; 2],
 
             quiet_history: QuietHistory::new(),
             noisy_history: NoisyHistory::new(),
@@ -370,6 +372,7 @@ pub struct RootMove {
     pub lowerbound: bool,
     pub searched_depth: i32,
     pub sel_depth: i32,
+    pub average_score: i32,
 }
 
 impl Default for RootMove {
@@ -385,6 +388,7 @@ impl Default for RootMove {
             lowerbound: false,
             searched_depth: 0,
             sel_depth: 0,
+            average_score: 0,
         }
     }
 }
