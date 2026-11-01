@@ -388,7 +388,7 @@ impl Default for RootMove {
             lowerbound: false,
             searched_depth: 0,
             sel_depth: 0,
-            average_score: 0,
+            average_score: -Score::INFINITY,
         }
     }
 }

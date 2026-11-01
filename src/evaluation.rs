@@ -46,7 +46,7 @@ pub fn adjust_eval(data: &SearchData, raw_eval: i32, correction: i32) -> i32 {
         + data.optimism[data.board.state.side_to_move] * (2000 + material * 1000 / 1024))
         / 32768;
 
-    eval *= (200 - data.board.state.half_move_clock as i32) / 200;
+    eval = eval * (200 - data.board.state.half_move_clock as i32) / 200;
 
     eval += correction;
 
