@@ -42,9 +42,8 @@ pub fn adjust_eval(data: &SearchData, raw_eval: i32, correction: i32) -> i32 {
         material += data.board.state.pieces[piece].count_bits() as i32 * piece_scale(piece);
     }
 
-    let mut eval = (raw_eval * (24301 + material)
-        + data.optimism[data.board.state.side_to_move] * (2000 + material * 1000 / 1024))
-        / 32768;
+    let mut eval =
+        (raw_eval * (24301 + material) + data.optimism[data.board.state.side_to_move] * (1500 + material)) / 32768;
 
     eval = eval * (200 - data.board.state.half_move_clock as i32) / 200;
 
