@@ -57,6 +57,7 @@ pub fn search_runner(data: &mut SearchData) {
     data.completed_depth = 0;
     data.root_depth = 0;
     data.sel_depth = 0;
+    data.optimism = [0; 2];
 
     if data.root_moves.is_empty() {
         return;
@@ -78,6 +79,12 @@ pub fn search_runner(data: &mut SearchData) {
         {
             data.shared.status.stop();
             break;
+        }
+
+        if depth > 1 {
+            let optimism = 150 * data.root_moves[0].average_score / (data.root_moves[0].average_score.abs() + 100);
+            data.optimism[data.board.state.side_to_move] = optimism;
+            data.optimism[!data.board.state.side_to_move] = -optimism;
         }
 
         let score = search::<Root>(data, (depth - reduction).max(1), alpha, beta, 0, false);
@@ -150,10 +157,6 @@ pub fn search_runner(data: &mut SearchData) {
         delta = 24;
         alpha = (score - delta).max(-Score::INFINITY);
         beta = (score + delta).min(Score::INFINITY);
-
-        let optimism = 150 * data.root_moves[0].average_score / (data.root_moves[0].average_score.abs() + 100);
-        data.optimism[data.board.state.side_to_move] = optimism;
-        data.optimism[!data.board.state.side_to_move] = -optimism;
     }
 
     if matches!(data.report, Report::Minimal | Report::Full) {
@@ -202,7 +205,8 @@ pub fn search<Node: NodeType>(
             if in_check {
                 return Score::DRAW;
             } else {
-                return data.network.evaluate(&data.board);
+                let raw_eval = data.network.evaluate(&data.board);
+                return adjust_eval(data, raw_eval, data.correction(ply));
             }
         }
 
@@ -818,7 +822,8 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         if in_check {
             return Score::DRAW;
         } else {
-            return data.network.evaluate(&data.board);
+            let raw_eval = data.network.evaluate(&data.board);
+            return adjust_eval(data, raw_eval, data.correction(ply));
         }
     }
 
