@@ -270,6 +270,8 @@ pub fn search<Node: NodeType>(
     };
 
     data.stack[ply].eval = static_eval;
+    data.stack[ply + 2].num_fail_highs = 0;
+
     if !excluded && tt_entry.is_none() {
         data.shared.tt.add_entry(
             Move::NONE,
@@ -579,6 +581,7 @@ pub fn search<Node: NodeType>(
             r += 202 * !improving as i32;
             r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
+            r += 500 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
             r -= 440 * history / 4096;
             r += 333;
 
@@ -652,6 +655,7 @@ pub fn search<Node: NodeType>(
                 // Cutoff
                 if score >= beta {
                     bound = Bound::Lower;
+                    data.stack[ply].num_fail_highs += 1;
                     break;
                 }
 
