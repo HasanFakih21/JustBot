@@ -881,6 +881,11 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         move_count += 1;
 
         if !is_loss(best_score) {
+            // Futility Pruning (FP)
+            if !in_check && static_eval + 150 <= alpha && !data.board.see(m, 1) {
+                continue;
+            }
+
             // Late Move Pruning (LMP)
             if move_count >= 3 && !data.board.is_direct_check(m) {
                 break;
