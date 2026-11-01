@@ -81,12 +81,6 @@ pub fn search_runner(data: &mut SearchData) {
             break;
         }
 
-        if depth > 1 {
-            let optimism = 150 * data.root_moves[0].average_score / (data.root_moves[0].average_score.abs() + 100);
-            data.optimism[data.board.state.side_to_move] = optimism;
-            data.optimism[!data.board.state.side_to_move] = -optimism;
-        }
-
         let score = search::<Root>(data, (depth - reduction).max(1), alpha, beta, 0, false);
 
         if data.shared.status.get() == Status::STOPPED {
@@ -157,6 +151,10 @@ pub fn search_runner(data: &mut SearchData) {
         delta = 24;
         alpha = (score - delta).max(-Score::INFINITY);
         beta = (score + delta).min(Score::INFINITY);
+
+        let optimism = 150 * data.root_moves[0].average_score / (data.root_moves[0].average_score.abs() + 100);
+        data.optimism[data.board.state.side_to_move] = optimism;
+        data.optimism[!data.board.state.side_to_move] = -optimism;
     }
 
     if matches!(data.report, Report::Minimal | Report::Full) {
