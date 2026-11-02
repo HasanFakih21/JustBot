@@ -582,6 +582,7 @@ pub fn search<Node: NodeType>(
             r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r += 500 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
+            r += 650 * (move_picker.stage() == Stage::BadNoisy) as i32;
             r -= 440 * history / 4096;
             r += 333;
 
