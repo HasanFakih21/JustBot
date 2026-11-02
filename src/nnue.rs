@@ -155,10 +155,10 @@ impl Network {
         let parameters = self.parameters;
 
         let ft_out = forward::activate_features(&self.stack[self.index], board.state.side_to_move);
-        let l1_out = forward::propogate_l1(&ft_out, bucket, parameters);
-        let l2_out = forward::propogate_l2(&l1_out, bucket, parameters);
+        let l1_out = forward::propagate_l1(&ft_out, bucket, parameters);
+        let l2_out = forward::propagate_l2(&l1_out, bucket, parameters);
 
-        forward::propogate_l3(&l2_out, bucket, parameters)
+        forward::propagate_l3(&l2_out, bucket, parameters)
     }
 
     pub fn full_refresh(&mut self, board: &Board) {
