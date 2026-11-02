@@ -728,13 +728,6 @@ pub fn search<Node: NodeType>(
         }
     }
 
-    // Prior Countermove Bonus
-    if !Node::ROOT && bound == Bound::Upper && data.stack[ply - 1].m.is_quiet() {
-        let bonus = (115 * depth - 75).min(1203);
-        data.quiet_history
-            .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
-    }
-
     if best_score >= beta && !is_decisive(best_score) && !is_decisive(beta) {
         best_score = (best_score * depth + beta) / (depth + 1);
     }
