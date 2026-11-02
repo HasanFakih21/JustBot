@@ -472,6 +472,7 @@ pub fn search<Node: NodeType>(
             return Score::TIMEOUT;
         }
 
+        // Double / Triple Extensions
         if singular_score < singular_beta {
             let double_margin = 9 + 142 * Node::PV as i32 + 55 * (Node::PV && !tt_was_pv) as i32;
             let triple_margin = 104 + 358 * Node::PV as i32 + 66 * (Node::PV && !tt_was_pv) as i32;
@@ -479,9 +480,15 @@ pub fn search<Node: NodeType>(
                 + (singular_score < singular_beta - double_margin) as i32
                 + (singular_score < singular_beta - triple_margin) as i32;
         }
+        // Multi-Cut
+        else if singular_score >= beta {
+            return singular_score;
+        }
         // Negative Extensions
-        else if tt_score >= beta || cutnode {
+        else if tt_score >= beta {
             extension -= 3;
+        } else if cutnode {
+            extension -= 2;
         }
     }
 
