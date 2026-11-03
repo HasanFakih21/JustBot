@@ -439,7 +439,11 @@ pub fn search<Node: NodeType>(
                     tt_pv,
                 );
 
-                return score;
+                if is_decisive(score) {
+                    return score;
+                }
+
+                return ilerp::<1024>(score, beta, 300);
             }
         }
     }
