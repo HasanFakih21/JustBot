@@ -1,10 +1,13 @@
-use crate::search::{
-    data::{Report, SearchData, Status},
-    movepicker::{MovePicker, Stage},
-    time::Limit,
+use crate::{
+    search::{
+        data::{Report, SearchData, Status},
+        movepicker::{MovePicker, Stage},
+        time::Limit,
+    },
+    types::{stack::Stack, stackvec::StackVec},
 };
+
 use crate::types::*;
-use crate::types::{stack::Stack, stackvec::StackVec};
 
 pub mod data;
 pub mod movepicker;
