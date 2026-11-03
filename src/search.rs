@@ -587,6 +587,7 @@ pub fn search<Node: NodeType>(
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r += 500 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
             r -= 440 * history / 4096;
+            r += 333;
             r -= data.lmr_correction();
 
             average_r = (average_r + r) / 2;
