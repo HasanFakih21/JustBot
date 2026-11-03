@@ -299,6 +299,8 @@ pub fn search<Node: NodeType>(
         0
     };
 
+    track!(improvement);
+
     let improving = improvement > 0;
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
