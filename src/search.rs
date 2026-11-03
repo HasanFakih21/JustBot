@@ -4,7 +4,6 @@ use crate::{
         movepicker::{MovePicker, Stage},
         time::Limit,
     },
-    track,
     types::{stack::Stack, stackvec::StackVec},
 };
 
@@ -526,12 +525,6 @@ pub fn search<Node: NodeType>(
                 data.board.threats(),
             )
         };
-
-        if is_quiet {
-            track!("quiet"; history);
-        } else {
-            track!("noisy"; history);
-        }
 
         if !Node::ROOT && !is_loss(best_score) {
             // Late Move Pruning (LMP)

@@ -1,3 +1,4 @@
+# Source: https://github.com/cosmobobak/viridithas/blob/master/scripts/plotter.py
 # /// script
 # requires-python = ">=3.14"
 # dependencies = [

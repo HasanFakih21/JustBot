@@ -17,7 +17,7 @@ linkme = { version = "0.3", optional = true }
 histogram = { version = "1.3", optional = true }
 
 [features]
-default = ["stats"]
+default = []
 tuning = []
 datagen = ["dep:rand"]
 stats = ["dep:linkme", "dep:histogram"]

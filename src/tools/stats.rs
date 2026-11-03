@@ -1,3 +1,4 @@
+// Source: https://github.com/cosmobobak/viridithas/blob/master/src/stats.rs
 // SPDX-License-Identifier: AGPL-3.0-only
 
 //! Statistics tracking for search value distributions.
