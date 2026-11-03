@@ -446,14 +446,16 @@ pub fn search<Node: NodeType>(
 
     // Small Prob-Cut
     let probcut_beta = beta + 450;
-    if tt_bound.is_some_and(|b| b == Bound::Lower)
-        && tt_depth.is_some_and(|d| d >= depth - 4)
+    if !Node::PV
+        && !excluded
+        && tt_bound.is_some_and(|b| b == Bound::Lower)
+        && tt_depth.is_some_and(|d| d >= depth - 2)
         && let Some(tt_score) = tt_score
         && tt_score >= probcut_beta
         && !is_decisive(beta)
         && !is_decisive(tt_score)
     {
-        return probcut_beta;
+        return tt_score;
     }
 
     // Internal Iterative Reduction (IIR)
