@@ -444,6 +444,18 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    // Small Prob-Cut
+    let probcut_beta = beta + 450;
+    if tt_bound.is_some_and(|b| b == Bound::Lower)
+        && tt_depth.is_some_and(|d| d >= depth - 4)
+        && let Some(tt_score) = tt_score
+        && tt_score >= probcut_beta
+        && !is_decisive(beta)
+        && !is_decisive(tt_score)
+    {
+        return probcut_beta;
+    }
+
     // Internal Iterative Reduction (IIR)
     if !Node::ROOT && depth >= 4 && tt_entry.is_none() {
         depth -= 1;
