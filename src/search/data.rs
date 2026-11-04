@@ -169,7 +169,7 @@ impl SearchData {
     pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
         unsafe {
             for i in [1, 2, 4] {
-                if !self.stack[ply - 1].m.is_null() {
+                if !self.stack[ply - i].m.is_null() {
                     self.conthistory.update(
                         self.stack[ply - i].conthistory,
                         self.board.piece_at_square(m.from()),
