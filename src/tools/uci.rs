@@ -16,6 +16,7 @@ pub struct UCISettings {
     pub soft_nodes: bool,
     pub frc: bool,
     pub report: Report,
+    pub overhead: u64,
 }
 
 impl Default for UCISettings {
@@ -24,6 +25,7 @@ impl Default for UCISettings {
             soft_nodes: false,
             frc: false,
             report: Report::Full,
+            overhead: 50,
         }
     }
 }
@@ -213,6 +215,11 @@ pub fn set_option(args: &str, uci_settings: &mut UCISettings, shared: Arc<Shared
             shared.set_show_wdl(v);
             println!("info string Set UCI_ShowWDL to {v}");
         }
+        ["name", "moveoverhead", "value", v] => {
+            let v = v.parse().unwrap_or(50);
+            uci_settings.overhead = v;
+            println!("info string Set MoveOverhead to {v}");
+        }
         #[cfg(feature = "tuning")]
         ["name", name, "value", amount] => {
             match amount.parse::<i32>() {
@@ -241,7 +248,7 @@ pub fn go(args: &str, pool: &mut SearchThreads, board: &mut Board, uci_settings:
             .collect();
     }
 
-    let time = TimeManager::new(limit, board.state.full_move);
+    let time = TimeManager::new(limit, board.state.full_move, uci_settings.overhead);
     pool.start(board, time, uci_settings.report, movestosearch)
 }
 
@@ -291,6 +298,7 @@ pub fn uci() {
     println!("option name Minimal type check default false");
     println!("option name SoftNodes type check default false");
     println!("option name UCI_ShowWDL type check default true");
+    println!("option name MoveOverhead type spin default 100 min 0 max 2000");
     #[cfg(feature = "tuning")]
     list_params();
     println!("uciok");

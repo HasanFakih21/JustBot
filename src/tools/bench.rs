@@ -69,7 +69,7 @@ pub fn bench() -> (u64, u64) {
     let mut total_node_count = 0;
     for fen in positions {
         let board = Board::from_fen(fen).unwrap();
-        let time_manager = TimeManager::new(Limit::Depth(12), 0);
+        let time_manager = TimeManager::new(Limit::Depth(12), 0, 0);
 
         pool.start(
             &board,
