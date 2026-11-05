@@ -497,7 +497,7 @@ pub fn search<Node: NodeType>(
     let mut move_picker = MovePicker::new(tt_move, None);
     let mut quiets_searched = StackVec::<Move, 32>::new();
     let mut noisies_searched = StackVec::<Move, 32>::new();
-    let mut pruned_moves = StackVec::<Move, 32>::new();
+    let mut pruned_moves = StackVec::<Move, 8>::new();
     let mut skip_quiets = false;
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
@@ -536,7 +536,7 @@ pub fn search<Node: NodeType>(
                 && move_count as i32 > (2896 + (1286 + 266 * improving as i32) * depth * depth) / 1024
             {
                 skip_quiets = true;
-                if pruned_moves.len() < 32 {
+                if pruned_moves.len() < 8 {
                     pruned_moves.push(m);
                 }
                 continue;
@@ -550,7 +550,7 @@ pub fn search<Node: NodeType>(
                 && static_eval + 76 * depth + 162 + 57 * history / 1024 <= alpha
             {
                 skip_quiets = true;
-                if pruned_moves.len() < 32 {
+                if pruned_moves.len() < 8 {
                     pruned_moves.push(m);
                 }
                 continue;
@@ -558,7 +558,7 @@ pub fn search<Node: NodeType>(
 
             // History Pruning (HP)
             if !in_check && is_quiet && depth <= 6 && history < -1464 * depth {
-                if pruned_moves.len() < 32 {
+                if pruned_moves.len() < 8 {
                     pruned_moves.push(m);
                 }
                 continue;
@@ -701,7 +701,7 @@ pub fn search<Node: NodeType>(
     let threats = data.board.threats();
 
     // Regret Search
-    if bound == Bound::Upper && depth > 3 && !is_decisive(beta) {
+    if bound == Bound::Upper && depth < 6 && !is_decisive(beta) {
         let regret_depth = (depth - 1) / 2;
         for &m in pruned_moves.iter() {
             data.make_move(m, ply);
@@ -713,7 +713,7 @@ pub fn search<Node: NodeType>(
             }
 
             if regret_score > alpha {
-                data.quiet_history.update(threats, stm, m, 200);
+                data.quiet_history.update(threats, stm, m, 100);
             }
         }
     }
