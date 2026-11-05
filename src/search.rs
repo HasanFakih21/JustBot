@@ -746,10 +746,14 @@ pub fn search<Node: NodeType>(
         let regret_depth = (depth - 1) / 2;
         for &m in pruned_moves.iter() {
             data.make_move(m, ply);
-            let score = search::<NonPV>(data, regret_depth, -alpha, -alpha - 1, ply + 1, true);
+            let regret_score = -search::<NonPV>(data, regret_depth, -alpha - 1, -alpha, ply + 1, true);
             data.unmake_move();
 
-            if score > alpha {
+            if data.shared.status.get() == Status::STOPPED {
+                return Score::TIMEOUT;
+            }
+
+            if regret_score > alpha {
                 let quiet_bonus = (94 * depth).min(944) - 40;
                 data.quiet_history.update(threats, stm, m, quiet_bonus);
             } else {
