@@ -596,11 +596,10 @@ pub fn search<Node: NodeType>(
             data.stack[ply].reduction = None;
 
             if score > alpha {
-                let do_deeper = best_score + 20 + 400 * depth / 128;
-                let do_shallower = best_score + (1024 + 1024 * new_depth) / 1024;
+                let do_deeper = score > best_score + 50;
+                let do_shallower = score < best_score + 8;
 
-                new_depth += (score > do_deeper) as i32;
-                new_depth -= (score < do_shallower) as i32;
+                new_depth += do_deeper as i32 - do_shallower as i32;
 
                 if reduced_depth < new_depth {
                     score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
