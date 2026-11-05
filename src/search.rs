@@ -497,6 +497,7 @@ pub fn search<Node: NodeType>(
     let mut move_picker = MovePicker::new(tt_move, None);
     let mut quiets_searched = StackVec::<Move, 32>::new();
     let mut noisies_searched = StackVec::<Move, 32>::new();
+    let mut pruned_moves = StackVec::<Move, 32>::new();
     let mut skip_quiets = false;
 
     while let Some(m) = move_picker.next(data, skip_quiets, ply) {
@@ -535,6 +536,9 @@ pub fn search<Node: NodeType>(
                 && move_count as i32 > (2896 + (1286 + 266 * improving as i32) * depth * depth) / 1024
             {
                 skip_quiets = true;
+                if pruned_moves.len() < 32 {
+                    pruned_moves.push(m);
+                }
                 continue;
             }
 
@@ -546,11 +550,17 @@ pub fn search<Node: NodeType>(
                 && static_eval + 76 * depth + 162 + 57 * history / 1024 <= alpha
             {
                 skip_quiets = true;
+                if pruned_moves.len() < 32 {
+                    pruned_moves.push(m);
+                }
                 continue;
             }
 
             // History Pruning (HP)
             if !in_check && is_quiet && depth <= 6 && history < -1464 * depth {
+                if pruned_moves.len() < 32 {
+                    pruned_moves.push(m);
+                }
                 continue;
             }
 
@@ -688,6 +698,8 @@ pub fn search<Node: NodeType>(
         }
     }
 
+    let threats = data.board.threats();
+
     if let Some(m) = best_move {
         let is_quiet = m.is_quiet();
 
@@ -699,8 +711,6 @@ pub fn search<Node: NodeType>(
 
         let cont_bonus = (293 * depth).min(1019) - 196;
         let cont_malus = (321 * depth).min(1105) - 266;
-
-        let threats = data.board.threats();
 
         if is_quiet {
             let piece = data.board.piece_at_square(m.from());
@@ -728,6 +738,24 @@ pub fn search<Node: NodeType>(
             let to = m.to();
             let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
             data.noisy_history.update(piece, to, captured, threats, -noisy_malus);
+        }
+    }
+
+    // Regret Search
+    if bound == Bound::Upper && depth > 3 && !is_decisive(beta) {
+        let regret_depth = (depth - 1) / 2;
+        for &m in pruned_moves.iter() {
+            data.make_move(m, ply);
+            let score = search::<NonPV>(data, regret_depth, -alpha, -alpha - 1, ply + 1, true);
+            data.unmake_move();
+
+            if score > alpha {
+                let quiet_bonus = (94 * depth).min(944) - 40;
+                data.quiet_history.update(threats, stm, m, quiet_bonus);
+            } else {
+                let quiet_malus = (96 * depth).min(951) - 21;
+                data.quiet_history.update(threats, stm, m, -quiet_malus);
+            }
         }
     }
 
