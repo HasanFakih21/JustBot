@@ -341,8 +341,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Null Move Pruning
-    if cutnode
-        && depth >= 3
+    if depth >= 3
         && !excluded
         && !in_check
         && ply as i32 >= data.nmp_min_ply
