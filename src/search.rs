@@ -549,11 +549,6 @@ pub fn search<Node: NodeType>(
                 continue;
             }
 
-            // History Pruning (HP)
-            if !in_check && is_quiet && depth <= 6 && history < -1464 * depth {
-                continue;
-            }
-
             // Static Exchange Evaluation Pruning (SEE Pruning)
             let threshold = if is_quiet {
                 (-20 * depth * depth + 50 * depth + 25 - 25 * history / 1024).min(0)
