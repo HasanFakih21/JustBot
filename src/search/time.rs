@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::{search::data::SearchData, types::MOVE_OVERHEAD};
+use crate::search::data::SearchData;
 
 #[derive(Debug, Clone)]
 pub struct TimeManager {
@@ -28,7 +28,7 @@ pub enum Limit {
 }
 
 impl TimeManager {
-    pub fn new(limit: Limit, full_moves: usize) -> TimeManager {
+    pub fn new(limit: Limit, full_moves: usize, overhead: u64) -> TimeManager {
         let soft_bound;
         let hard_bound;
 
@@ -36,7 +36,7 @@ impl TimeManager {
             Limit::Fischer(main, inc) => {
                 let soft_scale = 0.06 - 0.05 * (-0.035 * full_moves as f64).exp();
                 let hard_scale = 0.75;
-                let max_time = main.saturating_sub(MOVE_OVERHEAD);
+                let max_time = main.saturating_sub(overhead);
 
                 let soft = (soft_scale * max_time as f64 + inc as f64 * 0.75) as u64;
                 let hard = (hard_scale * max_time as f64 + inc as f64 * 0.75) as u64;
@@ -45,15 +45,15 @@ impl TimeManager {
                 hard_bound = Some(Duration::from_millis(hard.min(max_time)));
             }
             Limit::Cyclic(main, inc, moves) => {
-                let max_time = main.saturating_sub(MOVE_OVERHEAD);
+                let max_time = main.saturating_sub(overhead);
                 let base = (max_time as f64 / moves as f64) + inc as f64 * 0.75;
 
                 soft_bound = Some(Duration::from_millis(((1.0 * base) as u64).min(max_time)));
                 hard_bound = Some(Duration::from_millis(((5.0 * base) as u64).min(max_time)));
             }
             Limit::Exact(main) => {
-                soft_bound = Some(Duration::from_millis(main.saturating_sub(MOVE_OVERHEAD)));
-                hard_bound = Some(Duration::from_millis(main.saturating_sub(MOVE_OVERHEAD)));
+                soft_bound = Some(Duration::from_millis(main.saturating_sub(overhead)));
+                hard_bound = Some(Duration::from_millis(main.saturating_sub(overhead)));
             }
             _ => {
                 soft_bound = None;

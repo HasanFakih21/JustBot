@@ -130,7 +130,7 @@ impl SearchData {
             shared,
             pv: PVTable::new(),
             board: Board::from_fen(STARTING_FEN).unwrap(),
-            time: TimeManager::new(Limit::Infinite, 0),
+            time: TimeManager::new(Limit::Infinite, 0, 0),
             report: Report::None,
             stack: Stack::new(),
             root_moves: Vec::new(),
