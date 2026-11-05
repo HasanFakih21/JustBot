@@ -599,7 +599,19 @@ pub fn search<Node: NodeType>(
                 score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
             }
         } else if !Node::PV || move_count > 1 {
-            score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
+            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            r += 1270 * cutnode as i32;
+            r -= 3000 * tt_move.is_some_and(|tt_move| tt_move == m) as i32;
+            r -= 1653 * correction.abs() / 1024;
+            r -= 600 * Node::PV as i32;
+            r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
+            r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
+            r += 202 * !improving as i32;
+            r -= 440 * history / 4096;
+
+            let reduced_depth = new_depth - (r >= 2400) as i32 - (r >= 5500) as i32;
+
+            score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
         }
 
         // Principal Variation Search (PVS)
