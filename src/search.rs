@@ -700,6 +700,24 @@ pub fn search<Node: NodeType>(
 
     let threats = data.board.threats();
 
+    // Regret Search
+    if bound == Bound::Upper && depth > 3 && !is_decisive(beta) {
+        let regret_depth = (depth - 1) / 2;
+        for &m in pruned_moves.iter() {
+            data.make_move(m, ply);
+            let regret_score = -search::<NonPV>(data, regret_depth, -alpha - 1, -alpha, ply + 1, true);
+            data.unmake_move();
+
+            if data.shared.status.get() == Status::STOPPED {
+                return Score::TIMEOUT;
+            }
+
+            if regret_score > alpha {
+                data.quiet_history.update(threats, stm, m, 200);
+            }
+        }
+    }
+
     if let Some(m) = best_move {
         let is_quiet = m.is_quiet();
 
@@ -738,28 +756,6 @@ pub fn search<Node: NodeType>(
             let to = m.to();
             let captured = data.board.piece_at_square(m.capture_square()).map(|e| e.kind());
             data.noisy_history.update(piece, to, captured, threats, -noisy_malus);
-        }
-    }
-
-    // Regret Search
-    if bound == Bound::Upper && depth > 3 && !is_decisive(beta) {
-        let regret_depth = (depth - 1) / 2;
-        for &m in pruned_moves.iter() {
-            data.make_move(m, ply);
-            let regret_score = -search::<NonPV>(data, regret_depth, -alpha - 1, -alpha, ply + 1, true);
-            data.unmake_move();
-
-            if data.shared.status.get() == Status::STOPPED {
-                return Score::TIMEOUT;
-            }
-
-            if regret_score > alpha {
-                let quiet_bonus = (94 * depth).min(944) - 40;
-                data.quiet_history.update(threats, stm, m, quiet_bonus);
-            } else {
-                let quiet_malus = (96 * depth).min(951) - 21;
-                data.quiet_history.update(threats, stm, m, -quiet_malus);
-            }
         }
     }
 
