@@ -577,17 +577,26 @@ pub fn search<Node: NodeType>(
         if depth >= 2 && move_count > 1 {
             let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r -= 1653 * correction.abs() / 1024;
-            r += 1270 * cutnode as i32;
-            r += 1984 * (cutnode && tt_move.is_none()) as i32;
-            r -= 1240 * tt_was_pv as i32;
-            r += 500 * tt_move.is_some_and(|m| m.is_quiet() && move_picker.stage() == Stage::BadNoisy) as i32;
             r -= 859 * is_direct_check as i32;
             r += 202 * !improving as i32;
             r += 474 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 294 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r += 500 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
-            r -= 440 * history / 4096;
             r += 333;
+
+            if tt_pv {
+                r -= 1240;
+            } else if cutnode {
+                r += 1270;
+                r += 1984 * tt_move.is_none() as i32;
+            }
+
+            if m.is_quiet() {
+                r -= 440 * history / 4096;
+            } else {
+                r -= 440 * history / 4096;
+                r += 300 * tt_move.is_some_and(|m| m.is_quiet() && move_picker.stage() == Stage::BadNoisy) as i32;
+            }
 
             let reduction = r / 1024;
             let reduced_depth = (new_depth - reduction).max(1) + Node::PV as i32;
