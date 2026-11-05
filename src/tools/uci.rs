@@ -298,7 +298,7 @@ pub fn uci() {
     println!("option name Minimal type check default false");
     println!("option name SoftNodes type check default false");
     println!("option name UCI_ShowWDL type check default true");
-    println!("option name MoveOverhead type spin default 100 min 0 max 2000");
+    println!("option name MoveOverhead type spin default 50 min 0 max 2000");
     #[cfg(feature = "tuning")]
     list_params();
     println!("uciok");

@@ -84,7 +84,7 @@ fn generate_random_opening(
 }
 
 fn validation_search(data: &mut SearchData, limit: Limit) {
-    data.time = TimeManager::new(limit, 0);
+    data.time = TimeManager::new(limit, 0, 0);
     data.shared.reset_all_nodes();
     data.shared.status.run();
     data.root_moves = data
