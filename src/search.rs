@@ -570,7 +570,7 @@ pub fn search<Node: NodeType>(
 
         // Make Move
         data.make_move(m, ply);
-        let new_depth = (depth - 1) + ((move_count == 1) as i32 * extension);
+        let mut new_depth = (depth - 1) + ((move_count == 1) as i32 * extension);
         let mut score = -Score::INFINITY;
 
         // Late Move Reductions (LMR)
@@ -595,8 +595,15 @@ pub fn search<Node: NodeType>(
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, true);
             data.stack[ply].reduction = None;
 
-            if score > alpha && reduced_depth < new_depth {
-                score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
+            if score > alpha {
+                let do_deeper = score > best_score + 50;
+                let do_shallower = score < best_score + 8;
+
+                new_depth += do_deeper as i32 - do_shallower as i32;
+
+                if reduced_depth < new_depth {
+                    score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
+                }
             }
         } else if !Node::PV || move_count > 1 {
             score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
