@@ -249,7 +249,9 @@ pub fn search<Node: NodeType>(
             data.quiet_history.update(data.board.threats(), stm, tt_move, bonus);
         }
 
-        return tt_score;
+        if data.board.state.half_move_clock < 90 {
+            return tt_score;
+        }
     }
 
     // Evaluation
@@ -817,9 +819,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
             Bound::None => false,
         })
     {
-        if data.board.state.half_move_clock < 90 {
-            return tt_score;
-        }
+        return tt_score;
     }
 
     let in_check = data.board.king_in_check();
