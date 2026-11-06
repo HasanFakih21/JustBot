@@ -606,7 +606,7 @@ pub fn search<Node: NodeType>(
                 }
 
                 // Post LMR Continuation History Updates
-                data.update_conthistories(m, ply, 1200);
+                data.update_conthistories(data.stack[ply].piece, m.to(), ply, 1200);
             }
         } else if !Node::PV || move_count > 1 {
             score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
