@@ -302,7 +302,7 @@ pub fn search<Node: NodeType>(
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
         // Update History Based on Evaluation Difference
-        if data.stack[ply - 1].m.is_quiet() {
+        if data.stack[ply - 1].m.is_quiet() && depth < 6 {
             let value = 10 * -(static_eval + data.stack[ply - 1].eval);
             let bonus = value.clamp(-65, 200);
             data.quiet_history
