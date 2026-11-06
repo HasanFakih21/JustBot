@@ -301,6 +301,14 @@ pub fn search<Node: NodeType>(
     let improving = improvement > 0;
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
+        // Update History Based on Evaluation Difference
+        if data.stack[ply - 1].m.is_quiet() && depth < 6 {
+            let value = 10 * -(static_eval + data.stack[ply - 1].eval);
+            let bonus = value.clamp(-65, 200);
+            data.quiet_history
+                .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
+        }
+
         // Hindsight Extension
         if depth < MAX_PLY as i32
             && data.stack[ply - 1].reduction.is_some_and(|r| r >= 3167)
