@@ -715,13 +715,13 @@ pub fn search<Node: NodeType>(
             let pawn_key = data.board.state.keys.pawn;
             data.pawn_history.update(pawn_key, piece, to, quiet_bonus);
             data.quiet_history.update(threats, stm, m, quiet_bonus);
-            data.update_conthistories(m, ply, cont_bonus);
+            data.update_conthistories(piece, to, ply, cont_bonus);
             for quiet_move in quiets_searched.iter() {
                 let piece = data.board.piece_at_square(quiet_move.from());
                 let to = quiet_move.to();
                 data.pawn_history.update(pawn_key, piece, to, -quiet_malus);
                 data.quiet_history.update(threats, stm, *quiet_move, -quiet_malus);
-                data.update_conthistories(*quiet_move, ply, -cont_malus);
+                data.update_conthistories(piece, to, ply, -cont_malus);
             }
         } else {
             let piece = data.board.piece_at_square(m.from());
