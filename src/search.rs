@@ -105,7 +105,9 @@ pub fn search_runner(data: &mut SearchData) {
 
         data.completed_depth = depth;
         data.sel_depth = 0;
+
         depth += 1;
+        depth = depth.min(MAX_PLY as i32 - 1);
 
         data.root_moves.sort_by_key(|rm| std::cmp::Reverse(rm.score));
         data.root_moves.iter_mut().for_each(|rm| rm.previous_score = rm.score);
