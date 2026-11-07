@@ -558,7 +558,7 @@ pub fn search<Node: NodeType>(
             }
 
             // History Pruning (HP)
-            if !in_check && is_quiet && depth <= 6 && history < -1464 * depth {
+            if !in_check && is_quiet && depth <= 4 && history < -1464 * depth * depth {
                 continue;
             }
 
