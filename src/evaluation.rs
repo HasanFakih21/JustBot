@@ -32,10 +32,10 @@ impl Board {
             return false;
         }
 
-        let original_key = self.state.keys.full;
+        let current_key = self.state.keys.full;
 
-        let mut index = self.game_history.len() - 1;
-        let mut other = original_key ^ self.game_history[index] ^ ZOBRIST.side();
+        let mut index = self.game_history.len() - 2;
+        let mut other = current_key ^ self.game_history[index] ^ ZOBRIST.side();
 
         for d in (3..=half_moves).step_by(2) {
             index -= 1;
@@ -46,7 +46,7 @@ impl Board {
                 continue;
             }
 
-            let diff = original_key ^ self.game_history[index];
+            let diff = current_key ^ self.game_history[index];
             let mut cuckoo_index = h1(diff);
 
             if cuckoo(cuckoo_index) != diff {
@@ -61,7 +61,11 @@ impl Board {
                     return true;
                 }
 
-                return self.detect_repetition();
+                for i in (d + 2)..=half_moves {
+                    if current_key == self.game_history[i] {
+                        return true;
+                    }
+                }
             }
         }
 
