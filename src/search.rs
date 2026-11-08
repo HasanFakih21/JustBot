@@ -249,7 +249,9 @@ pub fn search<Node: NodeType>(
             data.quiet_history.update(data.board.threats(), stm, tt_move, bonus);
         }
 
-        return tt_score;
+        if data.board.state.half_move_clock < 90 {
+            return tt_score;
+        }
     }
 
     // Evaluation
