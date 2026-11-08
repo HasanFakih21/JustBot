@@ -1,6 +1,6 @@
 use justbot::{
     attacks::{BISHOP_ATTACKS, ROOK_ATTACKS},
-    types::LMR_TABLE,
+    types::{LMR_TABLE, cuckoo},
 };
 use std::sync::LazyLock;
 
@@ -9,6 +9,8 @@ fn main() {
     LazyLock::force(&ROOK_ATTACKS);
     LazyLock::force(&BISHOP_ATTACKS);
     LazyLock::force(&LMR_TABLE);
+
+    cuckoo::initialize();
 
     let args: Vec<String> = std::env::args().skip(1).collect();
     justbot::tools::uci::input_loop(args.join(" "));

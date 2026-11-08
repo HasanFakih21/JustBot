@@ -184,6 +184,13 @@ pub fn search<Node: NodeType>(
         return quiesce::<Node>(data, alpha, beta, ply);
     }
 
+    if !Node::ROOT && alpha < Score::DRAW && data.board.upcoming_repetition(ply as usize) {
+        alpha = Score::DRAW;
+        if alpha >= beta {
+            return alpha;
+        }
+    }
+
     let stm = data.board.state.side_to_move;
     let in_check = data.board.king_in_check();
     let excluded = !data.stack[ply].excluded.is_null();
@@ -792,6 +799,13 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
     if Node::PV {
         data.pv.clear(ply);
         data.sel_depth = data.sel_depth.max(ply as i32);
+    }
+
+    if alpha < Score::DRAW && data.board.upcoming_repetition(ply as usize) {
+        alpha = Score::DRAW;
+        if alpha >= beta {
+            return alpha;
+        }
     }
 
     if data.board.is_draw() {
