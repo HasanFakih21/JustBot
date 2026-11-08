@@ -2,7 +2,7 @@ use std::cmp::max;
 
 use crate::attacks::BETWEEN;
 use crate::board::Board;
-use crate::types::{BitBoard, Piece, Square, ZOBRIST, cuckoo, cuckoo_a, cuckoo_b, h1, h2};
+use crate::types::{BitBoard, Piece, Square, cuckoo};
 
 impl Board {
     // Only checks for the current side to move
@@ -28,41 +28,47 @@ impl Board {
 
     pub fn upcoming_repetition(&self, ply: usize) -> bool {
         let half_moves = self.state.plies_from_null.min(self.state.half_move_clock as usize);
+
         if half_moves < 3 {
             return false;
         }
 
-        let current_key = self.state.keys.full;
+        let prev_key = |d| self.game_history[self.game_history.len() - d - 1];
 
-        let mut index = self.game_history.len() - 2;
-        let mut other = current_key ^ self.game_history[index] ^ ZOBRIST.side();
+        let occ = self.all_occupancy();
+        let original_key = self.state.keys.full;
+
+        let mut other = original_key ^ prev_key(1);
 
         for d in (3..=half_moves).step_by(2) {
-            index -= 1;
-            other ^= self.game_history[index] ^ self.game_history[index - 1] ^ ZOBRIST.side();
-            index -= 1;
+            let current_key = prev_key(d);
 
+            other ^= current_key ^ prev_key(d - 1);
             if other != 0 {
                 continue;
             }
 
-            let diff = current_key ^ self.game_history[index];
-            let mut cuckoo_index = h1(diff);
+            let diff = current_key ^ original_key;
 
-            if cuckoo(cuckoo_index) != diff {
-                cuckoo_index = h2(diff);
-                if cuckoo(cuckoo_index) != diff {
-                    continue;
-                }
+            let mut slot = cuckoo::h1(diff);
+
+            if cuckoo::keys(slot) != diff {
+                slot = cuckoo::h2(diff);
             }
 
-            if (BETWEEN[cuckoo_a(cuckoo_index)][cuckoo_b(cuckoo_index)] & self.all_occupancy()).is_empty() {
+            if cuckoo::keys(slot) != diff {
+                continue;
+            }
+
+            let m = cuckoo::moves(slot);
+
+            if (BETWEEN[m.from()][m.to()] & occ).is_empty() {
                 if ply > d {
                     return true;
                 }
 
                 for i in (d + 2)..=half_moves {
-                    if current_key == self.game_history[i] {
+                    if current_key == prev_key(i) {
                         return true;
                     }
                 }
