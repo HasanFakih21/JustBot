@@ -71,10 +71,10 @@ pub fn search_runner(data: &mut SearchData) {
         data.root_depth = depth;
 
         if data.id == 0
-            && (match data.time.limit {
+            && ((match data.time.limit {
                 Limit::Depth(limit) => depth > limit,
                 _ => data.time.hard_limit(data),
-            })
+            }) || depth > MAX_PLY as i32)
         {
             data.shared.status.stop();
             break;
@@ -107,7 +107,6 @@ pub fn search_runner(data: &mut SearchData) {
         data.sel_depth = 0;
 
         depth += 1;
-        depth = depth.min(MAX_PLY as i32 - 1);
 
         data.root_moves.sort_by_key(|rm| std::cmp::Reverse(rm.score));
         data.root_moves.iter_mut().for_each(|rm| rm.previous_score = rm.score);
