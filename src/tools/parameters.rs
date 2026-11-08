@@ -93,8 +93,8 @@ tunable_params! {
     tm_fm_mult = 35, 20..=50, true;
     tm_hard_scale = 750, 500..=1000, true;
     tm_inc_scale = 750, 500..=1000, true;
-    tm_cyclic_soft_scale = 1000, 500..=2000, true;
-    tm_cyclic_hard_scale = 5000, 2000..=8000, true;
+    tm_cyclic_soft_scale = 1000, 500..=2000, false;
+    tm_cyclic_hard_scale = 5000, 2000..=8000, false;
 
     // Node Time Scaling
     node_tm_base = 2977, 2500..=3500, true;
