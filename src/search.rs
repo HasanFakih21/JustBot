@@ -1,11 +1,13 @@
-use crate::search::{
-    data::{Report, SearchData, Status},
-    movepicker::{MovePicker, Stage},
-    time::Limit,
+use crate::{
+    search::{
+        data::{Report, SearchData, Status},
+        movepicker::{MovePicker, Stage},
+        time::Limit,
+    },
+    types::{stack::Stack, stackvec::StackVec},
 };
 use crate::tools::parameters::*;
 use crate::types::*;
-use crate::types::{stack::Stack, stackvec::StackVec};
 
 pub mod data;
 pub mod movepicker;
@@ -71,10 +73,10 @@ pub fn search_runner(data: &mut SearchData) {
         data.root_depth = depth;
 
         if data.id == 0
-            && (match data.time.limit {
+            && ((match data.time.limit {
                 Limit::Depth(limit) => depth > limit,
                 _ => data.time.hard_limit(data),
-            })
+            }) || depth > MAX_PLY as i32)
         {
             data.shared.status.stop();
             break;
@@ -105,6 +107,7 @@ pub fn search_runner(data: &mut SearchData) {
 
         data.completed_depth = depth;
         data.sel_depth = 0;
+
         depth += 1;
 
         data.root_moves.sort_by_key(|rm| std::cmp::Reverse(rm.score));
@@ -183,6 +186,13 @@ pub fn search<Node: NodeType>(
         return quiesce::<Node>(data, alpha, beta, ply);
     }
 
+    if !Node::ROOT && alpha < Score::DRAW && data.board.upcoming_repetition(ply as usize) {
+        alpha = Score::DRAW;
+        if alpha >= beta {
+            return alpha;
+        }
+    }
+
     let stm = data.board.state.side_to_move;
     let in_check = data.board.king_in_check();
     let excluded = !data.stack[ply].excluded.is_null();
@@ -248,7 +258,9 @@ pub fn search<Node: NodeType>(
             data.quiet_history.update(data.board.threats(), stm, tt_move, bonus);
         }
 
-        return tt_score;
+        if data.board.state.half_move_clock < 90 {
+            return tt_score;
+        }
     }
 
     // Evaluation
@@ -273,6 +285,8 @@ pub fn search<Node: NodeType>(
     };
 
     data.stack[ply].eval = static_eval;
+    data.stack[ply + 2].num_fail_highs = 0;
+
     if !excluded && tt_entry.is_none() {
         data.shared.tt.add_entry(
             Move::NONE,
@@ -299,6 +313,14 @@ pub fn search<Node: NodeType>(
     let improving = improvement > 0;
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
+        // Update History Based on Evaluation Difference
+        if data.stack[ply - 1].m.is_quiet() && depth < 6 {
+            let value = 10 * -(static_eval + data.stack[ply - 1].eval);
+            let bonus = value.clamp(-65, 200);
+            data.quiet_history
+                .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
+        }
+
         // Hindsight Extension
         if depth < MAX_PLY as i32
             && data.stack[ply - 1]
@@ -550,7 +572,7 @@ pub fn search<Node: NodeType>(
             if !in_check
                 && !is_direct_check
                 && is_quiet
-                && depth < 8
+                && depth < 14
                 && static_eval + fp_scale() * depth + fp_offset() + fp_history() * history / 1024 <= alpha
             {
                 skip_quiets = true;
@@ -582,7 +604,7 @@ pub fn search<Node: NodeType>(
 
         // Make Move
         data.make_move(m, ply);
-        let new_depth = (depth - 1) + ((move_count == 1) as i32 * extension);
+        let mut new_depth = (depth - 1) + ((move_count == 1) as i32 * extension);
         let mut score = -Score::INFINITY;
 
         // Late Move Reductions (LMR)
@@ -592,10 +614,13 @@ pub fn search<Node: NodeType>(
             r += lmr_cutnode() * cutnode as i32;
             r += lmr_cutnode_no_tt() * (cutnode && tt_move.is_none()) as i32;
             r -= lmr_ttpv() * tt_was_pv as i32;
+            r -= 600 * (tt_pv && tt_score.is_some_and(|s| s > alpha)) as i32;
+            r -= 600 * (tt_pv && tt_depth.is_some_and(|d| d >= depth)) as i32;
             r -= lmr_direct_check() * is_direct_check as i32;
             r += lmr_improving() * !improving as i32;
             r += lmr_tt_score() * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += lmr_tt_depth() * (tt_depth.is_some_and(|d| d < depth)) as i32;
+            r += 500 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
             r -= lmr_history() * history / 4096;
             r += lmr_offset();
 
@@ -606,8 +631,15 @@ pub fn search<Node: NodeType>(
             score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, true);
             data.stack[ply].reduction = None;
 
-            if score > alpha && reduced_depth < new_depth {
-                score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
+            if score > alpha {
+                let do_deeper = score > best_score + 50;
+                let do_shallower = score < best_score + 8;
+
+                new_depth += do_deeper as i32 - do_shallower as i32;
+
+                if reduced_depth < new_depth {
+                    score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
+                }
             }
         } else if !Node::PV || move_count > 1 {
             score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
@@ -669,6 +701,7 @@ pub fn search<Node: NodeType>(
                 // Cutoff
                 if score >= beta {
                     bound = Bound::Lower;
+                    data.stack[ply].num_fail_highs += 1;
                     break;
                 }
 
@@ -718,13 +751,13 @@ pub fn search<Node: NodeType>(
             let pawn_key = data.board.state.keys.pawn;
             data.pawn_history.update(pawn_key, piece, to, quiet_bonus);
             data.quiet_history.update(threats, stm, m, quiet_bonus);
-            data.update_conthistories(m, ply, cont_bonus);
+            data.update_conthistories(piece, to, ply, cont_bonus);
             for quiet_move in quiets_searched.iter() {
                 let piece = data.board.piece_at_square(quiet_move.from());
                 let to = quiet_move.to();
                 data.pawn_history.update(pawn_key, piece, to, -quiet_malus);
                 data.quiet_history.update(threats, stm, *quiet_move, -quiet_malus);
-                data.update_conthistories(*quiet_move, ply, -cont_malus);
+                data.update_conthistories(piece, to, ply, -cont_malus);
             }
         } else {
             let piece = data.board.piece_at_square(m.from());
@@ -782,6 +815,13 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
     if Node::PV {
         data.pv.clear(ply);
         data.sel_depth = data.sel_depth.max(ply as i32);
+    }
+
+    if alpha < Score::DRAW && data.board.upcoming_repetition(ply as usize) {
+        alpha = Score::DRAW;
+        if alpha >= beta {
+            return alpha;
+        }
     }
 
     if data.board.is_draw() {

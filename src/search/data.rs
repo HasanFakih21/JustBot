@@ -10,8 +10,8 @@ use crate::tools::wdl;
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, LMRTable, Move, NoisyHistory, PawnHistory,
-    STARTING_FEN, Score, Side, is_decisive, is_loss, is_win,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, LMRTable, Move, NoisyHistory,
+    OptionPiece, PawnHistory, STARTING_FEN, Score, Side, SidedPiece, Square, is_decisive, is_loss, is_win,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -132,7 +132,7 @@ impl SearchData {
             shared,
             pv: PVTable::new(),
             board: Board::from_fen(STARTING_FEN).unwrap(),
-            time: TimeManager::new(Limit::Infinite, 0),
+            time: TimeManager::new(Limit::Infinite, 0, 0),
             report: Report::None,
             stack: Stack::new(),
             root_moves: Vec::new(),
@@ -169,15 +169,13 @@ impl SearchData {
         (self.shared.total_nodes_searched() as f32 / self.time.elapsed().as_secs_f32()) as usize
     }
 
-    pub fn update_conthistories(&mut self, m: Move, ply: isize, bonus: i32) {
+    pub fn update_conthistories(&mut self, piece: OptionPiece<SidedPiece>, to: Square, ply: isize, bonus: i32) {
         unsafe {
             for i in [1, 2, 4] {
-                self.conthistory.update(
-                    self.stack[ply - i].conthistory,
-                    self.board.piece_at_square(m.from()),
-                    m.to(),
-                    bonus,
-                );
+                if !self.stack[ply - i].m.is_null() {
+                    self.conthistory
+                        .update(self.stack[ply - i].conthistory, piece, to, bonus);
+                }
             }
         }
     }

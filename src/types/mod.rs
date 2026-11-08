@@ -1,6 +1,7 @@
 pub mod bitboard;
 pub mod castling;
 pub mod constants;
+pub mod cuckoo;
 pub mod history;
 pub mod keys;
 pub mod lmr;
@@ -18,6 +19,7 @@ pub mod zobrist;
 pub use bitboard::*;
 pub use castling::*;
 pub use constants::*;
+pub use cuckoo::*;
 pub use history::*;
 pub use lmr::*;
 pub use moves::*;

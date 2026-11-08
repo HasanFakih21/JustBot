@@ -2,8 +2,9 @@ use crate::tools::parameters::*;
 
 use std::cmp::max;
 
+use crate::attacks::BETWEEN;
 use crate::board::Board;
-use crate::types::{BitBoard, Piece, Square};
+use crate::types::{BitBoard, Piece, Square, ZOBRIST, cuckoo};
 
 impl Board {
     // Only checks for the current side to move
@@ -25,6 +26,58 @@ impl Board {
             .skip(2)
             .step_by(2)
             .any(|e| *e == self.state.keys.full)
+    }
+
+    pub fn upcoming_repetition(&self, ply: usize) -> bool {
+        let half_moves = self.state.plies_from_null.min(self.state.half_move_clock as usize);
+
+        if half_moves < 3 {
+            return false;
+        }
+
+        let prev_key = |d| self.game_history[self.game_history.len() - d - 1];
+
+        let occ = self.all_occupancy();
+        let original_key = self.state.keys.full;
+
+        let mut other = original_key ^ prev_key(1) ^ ZOBRIST.side();
+
+        for d in (3..=half_moves).step_by(2) {
+            let current_key = prev_key(d);
+
+            other ^= current_key ^ prev_key(d - 1) ^ ZOBRIST.side();
+            if other != 0 {
+                continue;
+            }
+
+            let diff = current_key ^ original_key;
+
+            let mut slot = cuckoo::h1(diff);
+
+            if cuckoo::keys(slot) != diff {
+                slot = cuckoo::h2(diff);
+            }
+
+            if cuckoo::keys(slot) != diff {
+                continue;
+            }
+
+            let m = cuckoo::moves(slot);
+
+            if (BETWEEN[m.from()][m.to()] & occ).is_empty() {
+                if ply > d {
+                    return true;
+                }
+
+                for i in (d + 2)..=half_moves {
+                    if current_key == prev_key(i) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        false
     }
 
     pub fn draw_by_fifty_moves(&self) -> bool {

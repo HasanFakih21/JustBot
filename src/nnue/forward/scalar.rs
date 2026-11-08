@@ -20,7 +20,7 @@ pub fn activate_features(acc: &Accumulator, stm: Side) -> Aligned<[u8; L1]> {
     output
 }
 
-pub fn propogate_l1(ft_out: &Aligned<[u8; L1]>, bucket: usize, parameters: &Parameters) -> Aligned<[i32; L2]> {
+pub fn propagate_l1(ft_out: &Aligned<[u8; L1]>, bucket: usize, parameters: &Parameters) -> Aligned<[i32; L2]> {
     const CHUNKS: usize = 4;
 
     let mut pre_activations = parameters.l1_bias[bucket];
@@ -45,7 +45,7 @@ pub fn propogate_l1(ft_out: &Aligned<[u8; L1]>, bucket: usize, parameters: &Para
     output
 }
 
-pub fn propogate_l2(l1_out: &Aligned<[i32; L2]>, bucket: usize, parameters: &Parameters) -> Aligned<[i32; L3]> {
+pub fn propagate_l2(l1_out: &Aligned<[i32; L2]>, bucket: usize, parameters: &Parameters) -> Aligned<[i32; L3]> {
     let mut output = Aligned::new(parameters.l2_bias[bucket]);
     let weights = &parameters.l2_weights[bucket];
 
@@ -62,7 +62,7 @@ pub fn propogate_l2(l1_out: &Aligned<[i32; L2]>, bucket: usize, parameters: &Par
     output
 }
 
-pub fn propogate_l3(l2_out: &Aligned<[i32; L3]>, bucket: usize, parameters: &Parameters) -> i32 {
+pub fn propagate_l3(l2_out: &Aligned<[i32; L3]>, bucket: usize, parameters: &Parameters) -> i32 {
     let mut sum = i64::from(parameters.l3_bias[bucket]);
     let weights = &parameters.l3_weights[bucket];
 

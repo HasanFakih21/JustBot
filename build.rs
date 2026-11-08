@@ -5,10 +5,11 @@ use std::{
 };
 
 const BASE_URL: &str = "https://github.com/HasanFakih21/JustBot-Networks/releases/download/Networks";
-const NETWORK_NAME: &str = "938b10ib-1024ml.nnue";
+const NETWORK_NAME: &str = "983d16ib-1024ml.nnue";
 
 fn main() {
     set_model_env_var();
+    set_engine_version();
     let network_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(NETWORK_NAME);
     if !network_path.exists() && env::var("EVALFILE").is_err() {
         download_netowrk();
@@ -16,6 +17,27 @@ fn main() {
 
     println!("cargo::rerun-if-changed={}", network_path.display());
     println!("cargo::rerun-if-env-changed=EVALFILE")
+}
+
+fn set_engine_version() {
+    let version = env!("CARGO_PKG_VERSION");
+    let git_sha = if version.contains("dev") {
+        Command::new("git")
+            .args(["rev-parse", "--short=8", "HEAD"])
+            .output()
+            .ok()
+            .filter(|v| v.status.success())
+            .and_then(|v| String::from_utf8(v.stdout).ok())
+            .map(|v| v.trim().to_string())
+    } else {
+        None
+    };
+
+    if let Some(sha) = git_sha {
+        println!("cargo::rustc-env=ENGINE_VERSION={version}-{sha}")
+    } else {
+        println!("cargo::rustc-env=ENGINE_VERSION={version}")
+    }
 }
 
 fn set_model_env_var() {

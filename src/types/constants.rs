@@ -53,8 +53,6 @@ pub const KING_TO: [[Square; 2]; 2] = [[Square::G1, Square::C1], [Square::G8, Sq
 pub const MAX_PLY: usize = 248;
 pub const MAX_MOVE_NUM: usize = 256;
 
-pub const MOVE_OVERHEAD: u64 = 50;
-
 pub const fn to_file_bb(square: Square) -> BitBoard {
     let file = square.to_file();
     BitBoard(A_FILE).shift(EAST * file as i8)

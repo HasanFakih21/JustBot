@@ -47,19 +47,19 @@ const L3: usize = 32;
 const Q0: i16 = 255;
 const Q: i16 = 64;
 
-const INPUT_BUCKETS: usize = 10;
+const INPUT_BUCKETS: usize = 16;
 const OUTPUT_BUCKETS: usize = 8;
 
 #[rustfmt::skip]
 const BUCKET_LAYOUT: [usize; 32] = [
-    0,  1,  2,  3,
-    4,  4,  5,  5,
-    6,  6,  6,  6,
-    7,  7,  7,  7,
-    8,  8,  8,  8,
-    8,  8,  8,  8,
-    9,  9,  9,  9,
-    9,  9,  9,  9,
+     0,  1,  2,  3,
+     4,  5,  6,  7,
+     8,  8,  9,  9,
+    10, 10, 11, 11,
+    12, 12, 13, 13,
+    12, 12, 13, 13,
+    14, 14, 15, 15,
+    14, 14, 15, 15,
 ];
 
 pub static MODEL: Parameters = unsafe { std::mem::transmute(*include_bytes!(env!("MODEL"))) };
@@ -155,10 +155,10 @@ impl Network {
         let parameters = self.parameters;
 
         let ft_out = forward::activate_features(&self.stack[self.index], board.state.side_to_move);
-        let l1_out = forward::propogate_l1(&ft_out, bucket, parameters);
-        let l2_out = forward::propogate_l2(&l1_out, bucket, parameters);
+        let l1_out = forward::propagate_l1(&ft_out, bucket, parameters);
+        let l2_out = forward::propagate_l2(&l1_out, bucket, parameters);
 
-        forward::propogate_l3(&l2_out, bucket, parameters)
+        forward::propagate_l3(&l2_out, bucket, parameters)
     }
 
     pub fn full_refresh(&mut self, board: &Board) {

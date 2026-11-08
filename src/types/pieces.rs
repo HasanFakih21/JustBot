@@ -128,6 +128,23 @@ pub enum SidedPiece {
 }
 
 impl SidedPiece {
+    pub const NUM: usize = 12;
+
+    pub const ALL: [Self; Self::NUM] = [
+        Self::WhitePawn,
+        Self::WhiteKnight,
+        Self::WhiteBishop,
+        Self::WhiteRook,
+        Self::WhiteQueen,
+        Self::WhiteKing,
+        Self::BlackPawn,
+        Self::BlackKnight,
+        Self::BlackBishop,
+        Self::BlackRook,
+        Self::BlackQueen,
+        Self::BlackKing,
+    ];
+
     pub const fn from(side: Side, piece: Piece) -> Self {
         unsafe { std::mem::transmute(piece as u8 + (6 * side as u8)) }
     }
