@@ -63,6 +63,26 @@ make
 |   Minimal    |  false  |   --    |                                                Minimal UCI output                                                 |
 |  SoftNodes   |  false  |   --    | When a node limit is set, it will finish the current depth after hitting the limit rather than stopping instantly |
 | UCI_ShowWDL  |  true   |   --    |                              Displays the win/draw/loss probabilities in UCI output                               |
+| MoveOverhead |   50    |  2000   |                              Time reserved per move in milliseconds for communication overhead                               |
+
+## SPSA tuning
+
+This branch enables the `tuning` feature by default. The `uci` command lists tunable
+options and their bounds; `params` exports them in OpenBench SPSA format:
+
+```bash
+cargo build --release
+printf 'params\n' | ./target/release/justbot
+```
+
+Set parameters through UCI, for example `setoption name tm_base value 60`.
+Values are clamped to their advertised bounds. Time management parameters use
+integers divided by 1000, so `tm_base = 60` represents `0.06`. They cover clock
+allocation, increment usage, cyclic controls, node share, score trend, and move
+stability. `MoveOverhead` remains a separate UCI option measured in milliseconds.
+
+Defaults match master. Build with `cargo build --release --no-default-features`
+to use fixed defaults and omit the tuning options.
 
 ## Acknowledgments
 

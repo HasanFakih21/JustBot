@@ -62,7 +62,9 @@ impl MovePicker {
         if self.stage == Stage::GoodNoisy {
             while !self.moves.is_empty() {
                 let best_entry = self.best_entry();
-                let threshold = self.threshold.unwrap_or(-best_entry.score / 4 + mp_see_base());
+                let threshold = self
+                    .threshold
+                    .unwrap_or(-best_entry.score / mp_see_div() + mp_see_base());
                 if !data.board.see(best_entry.mv, threshold) {
                     self.bad_noisy.push(best_entry.mv);
                     continue;
@@ -118,7 +120,7 @@ impl MovePicker {
                 score += see::value(p)
             }
 
-            score += data.noisy_history.get(piece, to, captured, threats) / 8;
+            score += data.noisy_history.get(piece, to, captured, threats) / score_noisy_div();
             entry.score = score;
         }
     }

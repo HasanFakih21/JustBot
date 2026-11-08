@@ -94,7 +94,9 @@ impl Board {
             material += self.state.pieces[piece].count_bits() as i32 * piece_scale(piece);
         }
 
-        static_eval * (mat_scale_base() + material) / 32768 * (200 - self.state.half_move_clock as i32) / 200
+        static_eval * (mat_scale_base() + material) / 32768
+            * (eval_halfmove_scale() - self.state.half_move_clock as i32)
+            / eval_halfmove_scale()
     }
 }
 

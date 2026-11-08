@@ -10,8 +10,8 @@ use crate::tools::wdl;
 use crate::types::pv::PVTable;
 use crate::types::stack::Stack;
 use crate::types::{
-    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, LMRTable, Move, NoisyHistory,
-    OptionPiece, PawnHistory, STARTING_FEN, Score, Side, SidedPiece, Square, is_decisive, is_loss, is_win,
+    ContinuationCorrectionHistory, ContinuationHistory, CorrectionHistory, LMRTable, Move, NoisyHistory, OptionPiece,
+    PawnHistory, STARTING_FEN, Score, Side, SidedPiece, Square, is_decisive, is_loss, is_win,
 };
 use crate::types::{QuietHistory, TranspositionTable};
 
@@ -182,7 +182,7 @@ impl SearchData {
 
     pub fn update_correction_histories(&mut self, diff: i32, depth: i32, ply: isize) {
         let stm = self.board.state.side_to_move;
-        let bonus = (corr_hist_base() * depth * diff / 128).clamp(corr_hist_min(), corr_hist_max());
+        let bonus = (corr_hist_base() * depth * diff / corr_hist_div()).clamp(corr_hist_min(), corr_hist_max());
         self.corrhistory().pawn.update(stm, self.board.state.keys.pawn, bonus);
         self.corrhistory().non_pawn[Side::White].update(stm, self.board.state.keys.non_pawn[Side::White], bonus);
         self.corrhistory().non_pawn[Side::Black].update(stm, self.board.state.keys.non_pawn[Side::Black], bonus);
@@ -235,7 +235,7 @@ impl SearchData {
                     0
                 }
             })
-            / 64
+            / corr_div()
     }
 
     pub fn conthistory(&self, m: Move, ply: isize, index: isize) -> i32 {

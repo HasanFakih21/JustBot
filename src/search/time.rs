@@ -1,6 +1,7 @@
 use std::time::{Duration, Instant};
 
 use crate::search::data::SearchData;
+use crate::tools::parameters::*;
 
 #[derive(Debug, Clone)]
 pub struct TimeManager {
@@ -34,22 +35,29 @@ impl TimeManager {
 
         match limit {
             Limit::Fischer(main, inc) => {
-                let soft_scale = 0.06 - 0.05 * (-0.035 * full_moves as f64).exp();
-                let hard_scale = 0.75;
+                let soft_scale = (tm_base() as f64 / 1000.0
+                    - tm_mult() as f64 / 1000.0 * (-(tm_fm_mult() as f64 / 1000.0) * full_moves as f64).exp())
+                .max(0.0);
+                let hard_scale = tm_hard_scale() as f64 / 1000.0;
+                let inc_scale = tm_inc_scale() as f64 / 1000.0;
                 let max_time = main.saturating_sub(overhead);
 
-                let soft = (soft_scale * max_time as f64 + inc as f64 * 0.75) as u64;
-                let hard = (hard_scale * max_time as f64 + inc as f64 * 0.75) as u64;
+                let soft = (soft_scale * max_time as f64 + inc as f64 * inc_scale) as u64;
+                let hard = (hard_scale * max_time as f64 + inc as f64 * inc_scale) as u64;
 
                 soft_bound = Some(Duration::from_millis(soft.min(max_time)));
                 hard_bound = Some(Duration::from_millis(hard.min(max_time)));
             }
             Limit::Cyclic(main, inc, moves) => {
                 let max_time = main.saturating_sub(overhead);
-                let base = (max_time as f64 / moves as f64) + inc as f64 * 0.75;
+                let base = (max_time as f64 / moves.max(1) as f64) + inc as f64 * (tm_inc_scale() as f64 / 1000.0);
 
-                soft_bound = Some(Duration::from_millis(((1.0 * base) as u64).min(max_time)));
-                hard_bound = Some(Duration::from_millis(((5.0 * base) as u64).min(max_time)));
+                soft_bound = Some(Duration::from_millis(
+                    ((tm_cyclic_soft_scale() as f64 / 1000.0 * base) as u64).min(max_time),
+                ));
+                hard_bound = Some(Duration::from_millis(
+                    ((tm_cyclic_hard_scale() as f64 / 1000.0 * base) as u64).min(max_time),
+                ));
             }
             Limit::Exact(main) => {
                 soft_bound = Some(Duration::from_millis(main.saturating_sub(overhead)));
@@ -103,6 +111,56 @@ impl TimeManager {
             Limit::Nodes(NodeKind::Hard(limit)) => data.nodes() >= limit,
             Limit::Nodes(NodeKind::Soft(_)) => data.nodes() >= 256_000,
             _ => false,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_clock_allocations() {
+        for (limit, full_moves, soft, hard) in [
+            (Limit::Fischer(10_000, 100), 0, 174, 7537),
+            (Limit::Fischer(60_000, 5000), 20, 5858, 48_712),
+            (Limit::Cyclic(10_000, 100, 20), 0, 572, 2862),
+        ] {
+            let time = TimeManager::new(limit, full_moves, 50);
+            assert_eq!(time.soft_bound, Some(Duration::from_millis(soft)));
+            assert_eq!(time.hard_bound, Some(Duration::from_millis(hard)));
+        }
+    }
+
+    #[test]
+    fn clock_allocations_reserve_overhead_and_cap_increment() {
+        for limit in [
+            Limit::Fischer(100, 10_000),
+            Limit::Cyclic(100, 10_000, 1),
+            Limit::Exact(100),
+        ] {
+            let time = TimeManager::new(limit.clone(), 100, 50);
+            assert_eq!(time.soft_bound, Some(Duration::from_millis(50)));
+            assert_eq!(time.hard_bound, Some(Duration::from_millis(50)));
+
+            let time = TimeManager::new(limit, 100, 200);
+            assert_eq!(time.soft_bound, Some(Duration::ZERO));
+            assert_eq!(time.hard_bound, Some(Duration::ZERO));
+        }
+    }
+
+    #[test]
+    fn non_clock_limits_have_no_time_bounds() {
+        for limit in [
+            Limit::Infinite,
+            Limit::Depth(10),
+            Limit::Mate(3),
+            Limit::Nodes(NodeKind::Soft(1000)),
+            Limit::Nodes(NodeKind::Hard(1000)),
+        ] {
+            let time = TimeManager::new(limit, 20, 50);
+            assert_eq!(time.soft_bound, None);
+            assert_eq!(time.hard_bound, None);
         }
     }
 }

@@ -26,7 +26,7 @@ macro_rules! tunable_params {
         pub fn set_param(name: &str, val: i32) {
             match name {
                 $(
-                    stringify!($name) => vals::$name.store(val, Ordering::Relaxed),
+                    stringify!($name) => vals::$name.store(val.clamp($min, $max), Ordering::Relaxed),
                 )*
                 _ => println!("info error unknown option"),
             }
@@ -62,6 +62,8 @@ macro_rules! tunable_params {
         }
 
         $(
+        const _: () = assert!($min <= $val && $val <= $max && $min < $max);
+
         #[cfg(feature = "tuning")]
         #[inline]
         pub fn $name() -> i32 {
@@ -83,20 +85,61 @@ tunable_params! {
     init_delta = 24, 5..=50, true;
     fail_low_delta = 23, 5..=50, true;
     fail_high_delta = 28, 5..=50, true;
+    asp_fail_high_reduction = 3, 0..=5, true;
+
+    // Time Management (values are divided by 1000)
+    tm_base = 60, 50..=75, true;
+    tm_mult = 50, 30..=65, true;
+    tm_fm_mult = 35, 20..=50, true;
+    tm_hard_scale = 750, 500..=1000, true;
+    tm_inc_scale = 750, 500..=1000, true;
+    tm_cyclic_soft_scale = 1000, 500..=2000, true;
+    tm_cyclic_hard_scale = 5000, 2000..=8000, true;
+
+    // Node Time Scaling
+    node_tm_base = 2977, 2500..=3500, true;
+    node_tm_mult = 2495, 2000..=3000, true;
+    node_tm_min = 553, 450..=750, true;
+
+    // Score Trend Time Scaling
+    score_tm_base = 750, 500..=1000, true;
+    score_tm_mult = 45, 0..=100, true;
+    score_tm_min = 700, 400..=900, true;
+    score_tm_max = 1500, 1000..=2000, true;
+
+    // Move Stability Time Scaling
+    move_tm_base = 1200, 1000..=1500, true;
+    move_tm_mult = 50, 10..=150, true;
+    move_tm_min = 850, 500..=1000, true;
 
     // TT Cutoffs
     tt_cutoff_quiet_scale = 188, 50..=500, true;
     tt_cutoff_quiet_offset = 54, 5..=150, true;
     tt_cutoff_quiet_max = 1167, 800..=1800, true;
+    tt_cutoff_halfmove = 90, 70..=99, true;
+
+    // TT Replacement
+    tt_age_penalty = 4, 1..=8, true;
+    tt_replace_depth_margin = 4, 0..=8, true;
+    tt_replace_pv_bonus = 2, 0..=4, true;
+
+    // Evaluation Difference History
+    eval_hist_depth = 6, 2..=12, true;
+    eval_hist_scale = 10, 1..=30, true;
+    eval_hist_min = -65, -300..=0, true;
+    eval_hist_max = 200, 1..=500, true;
 
     // Hindsight
     hindsight_ext_reduction = 3167, 2100..=4600, true;
+    hindsight_ext_eval = 0, -200..=200, true;
+    hindsight_red_depth = 2, 2..=6, true;
     hindsight_red_reduction = 2081, 1024..=3048, true;
     hindsight_red_eval = 214, 5..=500, true;
 
     // Razoring
     razoring_offset = 237, 100..=400, true;
     razoring_scale = 262, 100..=400, true;
+    razoring_max_alpha = 2000, 500..=4000, true;
 
     // RFP
     rfp_scale_1 = 93, 40..=140, true;
@@ -105,22 +148,40 @@ tunable_params! {
     rfp_t = 666, 500..=900, true;
 
     // NMP
+    nmp_depth = 3, 2..=6, true;
     nmp_offset = 217, 100..=400, true;
     nmp_scale = 1274, 800..=1500, true;
     nmp_improving = 65, 35..=100, true;
     nmp_r_scale = 134, 40..=300, true;
+    nmp_base_r = 6, 3..=9, true;
+    nmp_r_div = 640, 400..=900, true;
+    nmp_verify_depth = 14, 8..=20, true;
+    nmp_verify_scale = 768, 256..=1024, true;
 
     // ProbCut
+    probcut_depth = 3, 2..=6, true;
+    probcut_reduction = 3, 1..=6, true;
     probcut_margin = 262, 100..=400, true;
     probcut_improving = 50, 0..=100, true;
 
+    // Internal Iterative Reduction
+    iir_depth = 4, 2..=8, true;
+    iir_reduction = 1, 0..=2, true;
+
     // Singular Extensions
+    se_depth = 5, 4..=8, true;
+    se_tt_depth = 3, 1..=5, true;
+    se_depth_offset = 1, 0..=3, true;
+    se_depth_div = 2, 2..=4, true;
+    se_margin_scale = 1024, 512..=2048, true;
+    se_margin_ttpv = 1024, 0..=2048, true;
     se_double_base = 9, 5..=30, true;
     se_double_pv = 142, 50..=300, true;
     se_double_new_pv = 55, 10..=100, true;
     se_triple_base = 104, 50..=200, true;
     se_triple_pv = 358, 250..=450, true;
     se_triple_new_pv = 66, 10..=200, true;
+    se_neg_ext = 3, 1..=4, true;
 
     // LMP
     lmp_base1 = 2896, 2000..=4500, true;
@@ -128,11 +189,13 @@ tunable_params! {
     lmp_improving = 266, 150..=450, true;
 
     // FP
+    fp_depth = 14, 8..=20, true;
     fp_scale = 76, 40..=200, true;
     fp_offset = 162, 50..=350, true;
     fp_history = 57, 15..=150, true;
 
     // HP
+    hp_depth = 6, 3..=10, true;
     hp_scale = -1464, -2000..=-500, true;
 
     // Main Search SEE Pruning
@@ -149,6 +212,8 @@ tunable_params! {
     main_see_max = 0, -100..=0, true;
 
     // LMR
+    lmr_depth = 2, 2..=5, true;
+    lmr_move_count = 1, 1..=5, true;
     lmr_quiet_base = 6048, 2550..=8550, true;
     lmr_noisy_base = 1546, -3050..=4050, true;
 
@@ -157,6 +222,8 @@ tunable_params! {
 
     lmr_improving = 202, 100..=400, true;
     lmr_ttpv = 1240, 600..=1800, true;
+    lmr_ttpv_score = 600, 0..=1200, true;
+    lmr_ttpv_depth = 600, 0..=1200, true;
     lmr_tt_score = 474, 250..=600, true;
     lmr_tt_depth = 294, 150..=500, true;
     lmr_history = 440, 300..=800, true;
@@ -167,6 +234,19 @@ tunable_params! {
     lmr_cutnode_no_tt = 1984, 1000..=3000, true;
     lmr_direct_check = 859, 400..=1400, true;
     lmr_offset = 333, 0..=1024, true;
+    lmr_fail_highs = 500, 0..=1500, true;
+    lmr_fail_high_count = 2, 0..=5, true;
+    lmr_deeper_margin = 50, 10..=150, true;
+    lmr_shallower_margin = 8, 0..=30, true;
+
+    // History Weights for Pruning and Reductions (divided by 1024)
+    search_history_quiet = 1024, 512..=1536, true;
+    search_history_cont1 = 1024, 512..=1536, true;
+    search_history_cont2 = 1024, 512..=1536, true;
+    search_history_noisy = 1024, 512..=1536, true;
+
+    // Cutoff Score Softening
+    cutoff_soften_weight = 1, 1..=4, true;
 
     // Quiet History
     hist_quiet_bonus_mult = 294, 150..=500,   true;
@@ -199,10 +279,13 @@ tunable_params! {
 
     // Correction History
     corr_hist_base = 201, 50..=400,        true;
+    corr_hist_div  = 128, 80..=180,       true;
     corr_hist_min  = -4419, -6000..=-2000, true;
     corr_hist_max  = 2508, 1000..=5000,    true;
+    corr_div = 64, 50..=90, true;
 
     // Qsearch
+    qsearch_lmp        = 3, 2..=6, true;
     qsearch_see        = -82, -400..=150, true;
     qsearch_hist_bonus =  119,   50..=300,  true;
     qsearch_standpat_t = 800, 500..=1024, true;
@@ -216,9 +299,11 @@ tunable_params! {
 
     // Move Picker
     mp_see_base = 59, 40..=100, true;
+    mp_see_div = 4, 2..=8, true;
 
     // Score Noisy
     score_queen_promo = 5129, 2500..=10000, true;
+    score_noisy_div = 8, 4..=16, true;
 
     // Score Quiet
     score_quiet        = 1024, 500..=1500,   true;
@@ -243,6 +328,7 @@ tunable_params! {
     mat_scale_rook   = 660,   600..=800,      true;
     mat_scale_queen  = 1234,  1000..=1500,    true;
     mat_scale_base   = 24301, 10000..=40000,  true;
+    eval_halfmove_scale = 200, 101..=300, true;
 
     // Piece Values
     value_pawn   = 105,    50..=150,     true;

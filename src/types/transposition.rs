@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicPtr, AtomicU8, AtomicUsize, Ordering};
 
+use crate::tools::parameters::*;
 use crate::types::{Score, from_tt, is_decisive, moves::Move};
 
 const TT_DEFAULT_SIZE: usize = 16;
@@ -190,7 +191,7 @@ impl TranspositionTable {
                     break;
                 }
 
-                let quality = entry.depth as i32 - 4 * entry.relative_age(tt_age);
+                let quality = entry.depth as i32 - tt_age_penalty() * entry.relative_age(tt_age);
                 if quality < worst_quality {
                     index = i;
                     worst_quality = quality;
@@ -210,7 +211,10 @@ impl TranspositionTable {
         }
 
         // Don't replace entry if this is true
-        if same_key && depth + 4 + 2 * pv as i32 <= entry.depth() && entry.flags.age() == tt_age {
+        if same_key
+            && depth + tt_replace_depth_margin() + tt_replace_pv_bonus() * pv as i32 <= entry.depth()
+            && entry.flags.age() == tt_age
+        {
             return;
         }
 

@@ -1,3 +1,5 @@
+use crate::tools::parameters::*;
+use crate::types::*;
 use crate::{
     search::{
         data::{Report, SearchData, Status},
@@ -6,8 +8,6 @@ use crate::{
     },
     types::{stack::Stack, stackvec::StackVec},
 };
-use crate::tools::parameters::*;
-use crate::types::*;
 
 pub mod data;
 pub mod movepicker;
@@ -46,8 +46,8 @@ pub fn search_runner(data: &mut SearchData) {
     data.pv.clear(0);
     data.time.start_clock();
 
-    // The first iteration uses a full window; tuning starts with the reset below.
-    let mut delta = 24;
+    // The first iteration uses a full window.
+    let mut delta = init_delta();
     let mut alpha = -Score::INFINITY;
     let mut beta = Score::INFINITY;
 
@@ -101,7 +101,7 @@ pub fn search_runner(data: &mut SearchData) {
             alpha = (beta - delta).max(alpha);
             beta = (score + delta).min(Score::INFINITY);
             delta += fail_high_delta() * delta / 128;
-            reduction = (reduction + 1).min(3);
+            reduction = (reduction + 1).min(asp_fail_high_reduction());
             continue;
         }
 
@@ -135,11 +135,15 @@ pub fn search_runner(data: &mut SearchData) {
 
         let multiplier = || {
             let ratio = data.root_moves[0].nodes as f32 / data.nodes() as f32;
-            let node_tm = (2.977 - ratio * 2.495).max(0.553);
+            let node_tm = (node_tm_base() as f32 / 1000.0 - ratio * (node_tm_mult() as f32 / 1000.0))
+                .max(node_tm_min() as f32 / 1000.0);
 
             let diff = (data.prev_score - best_score) as f32;
-            let score_trend = (0.75 + 0.045 * diff).clamp(0.7, 1.5);
-            let m_stability = (1.2000 - 0.0500 * move_stability as f32).max(0.8500);
+            let score_trend = (score_tm_base() as f32 / 1000.0 + (score_tm_mult() as f32 / 1000.0) * diff)
+                .clamp(score_tm_min() as f32 / 1000.0, score_tm_max() as f32 / 1000.0);
+            let m_stability = (move_tm_base() as f32 / 1000.0
+                - (move_tm_mult() as f32 / 1000.0) * move_stability as f32)
+                .max(move_tm_min() as f32 / 1000.0);
 
             node_tm * score_trend * m_stability
         };
@@ -258,7 +262,7 @@ pub fn search<Node: NodeType>(
             data.quiet_history.update(data.board.threats(), stm, tt_move, bonus);
         }
 
-        if data.board.state.half_move_clock < 90 {
+        if (data.board.state.half_move_clock as i32) < tt_cutoff_halfmove() {
             return tt_score;
         }
     }
@@ -314,9 +318,9 @@ pub fn search<Node: NodeType>(
 
     if !Node::ROOT && !in_check && !excluded && data.stack[ply - 1].eval != Score::NONE {
         // Update History Based on Evaluation Difference
-        if data.stack[ply - 1].m.is_quiet() && depth < 6 {
-            let value = 10 * -(static_eval + data.stack[ply - 1].eval);
-            let bonus = value.clamp(-65, 200);
+        if data.stack[ply - 1].m.is_quiet() && depth < eval_hist_depth() {
+            let value = eval_hist_scale() * -(static_eval + data.stack[ply - 1].eval);
+            let bonus = value.clamp(eval_hist_min(), eval_hist_max());
             data.quiet_history
                 .update(data.stack[ply - 1].threats, !stm, data.stack[ply - 1].m, bonus);
         }
@@ -326,13 +330,13 @@ pub fn search<Node: NodeType>(
             && data.stack[ply - 1]
                 .reduction
                 .is_some_and(|r| r >= hindsight_ext_reduction())
-            && static_eval + data.stack[ply - 1].eval <= 0
+            && static_eval + data.stack[ply - 1].eval <= hindsight_ext_eval()
         {
             depth += 1;
         }
 
         // Hindsight Reduction
-        if depth >= 2
+        if depth >= hindsight_red_depth()
             && data.stack[ply - 1]
                 .reduction
                 .is_some_and(|r| r >= hindsight_red_reduction())
@@ -348,7 +352,7 @@ pub fn search<Node: NodeType>(
         && !in_check
         && tt_bound.is_none_or(|b| b != Bound::Lower)
         && static_eval < alpha - razoring_offset() - razoring_scale() * depth * depth
-        && alpha < 2000
+        && alpha < razoring_max_alpha()
     {
         return quiesce::<Node>(data, alpha, beta, ply);
     }
@@ -367,7 +371,7 @@ pub fn search<Node: NodeType>(
 
     // Null Move Pruning
     if cutnode
-        && depth >= 3
+        && depth >= nmp_depth()
         && !excluded
         && !in_check
         && ply as i32 >= data.nmp_min_ply
@@ -376,7 +380,7 @@ pub fn search<Node: NodeType>(
         && static_eval >= beta + (nmp_offset() - nmp_scale() * depth / 128 - nmp_improving() * improving as i32).max(0)
         && !data.stack[ply - 1].m.is_null()
     {
-        let r = 6 + depth * nmp_r_scale() / 640;
+        let r = nmp_base_r() + depth * nmp_r_scale() / nmp_r_div();
         data.stack[ply].conthistory = data.stack.sentinel();
         data.stack[ply].contcorrhistory = data.stack.sentinel();
         data.stack[ply].m = Move::NONE;
@@ -393,11 +397,12 @@ pub fn search<Node: NodeType>(
         }
 
         if score >= beta && !is_win(score) && !is_loss(score) {
-            if depth <= 14 || data.nmp_min_ply > 0 {
+            // Large tuned reductions can reach quiescence before verification.
+            if depth <= nmp_verify_depth() || depth <= r || data.nmp_min_ply > 0 {
                 return score;
             }
 
-            data.nmp_min_ply = ply as i32 + (depth - r) * 3 / 4;
+            data.nmp_min_ply = ply as i32 + (depth - r) * nmp_verify_scale() / 1024;
             let verified_score = search::<NonPV>(data, depth - r, beta - 1, beta, ply, true);
             data.nmp_min_ply = 0;
 
@@ -413,7 +418,7 @@ pub fn search<Node: NodeType>(
 
     // Prob Cut
     let probcut_beta = beta + probcut_margin() - probcut_improving() * improving as i32;
-    if depth >= 3
+    if depth >= probcut_depth()
         && !is_decisive(beta)
         && tt_move.is_none_or(|m| !m.is_quiet())
         && tt_score.is_none_or(|s| s >= probcut_beta && !is_decisive(s))
@@ -433,7 +438,7 @@ pub fn search<Node: NodeType>(
             data.make_move(m, ply);
 
             let mut score = -quiesce::<NonPV>(data, -probcut_beta, -probcut_beta + 1, ply + 1);
-            let probcut_depth = (depth - 3).max(1);
+            let probcut_depth = (depth - probcut_reduction()).max(1);
 
             if score >= probcut_beta {
                 score = -search::<NonPV>(
@@ -470,24 +475,25 @@ pub fn search<Node: NodeType>(
     }
 
     // Internal Iterative Reduction (IIR)
-    if !Node::ROOT && depth >= 4 && tt_entry.is_none() {
-        depth -= 1;
+    if !Node::ROOT && depth >= iir_depth() && tt_entry.is_none() {
+        depth = (depth - iir_reduction()).max(1);
     }
 
     // Singular Extensions (SE)
     let mut extension = 0;
     if !Node::ROOT
         && !excluded
-        && depth >= 5
-        && tt_depth.is_some_and(|d| d >= depth - 3)
+        && depth >= se_depth()
+        && tt_depth.is_some_and(|d| d >= depth - se_tt_depth())
         && let Some(tt_move) = tt_move
         && let Some(tt_bound) = tt_bound
         && let Some(tt_score) = tt_score
         && !is_decisive(tt_score)
         && tt_bound != Bound::Upper
     {
-        let singular_depth = (depth - 1) / 2;
-        let singular_margin = depth + depth * (tt_pv && !Node::PV) as i32;
+        let singular_depth = (depth - se_depth_offset()) / se_depth_div();
+        let singular_margin =
+            depth * se_margin_scale() / 1024 + depth * se_margin_ttpv() / 1024 * (tt_pv && !Node::PV) as i32;
         let singular_beta = tt_score - singular_margin;
 
         data.stack[ply].excluded = tt_move;
@@ -513,7 +519,7 @@ pub fn search<Node: NodeType>(
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
-            extension -= 3;
+            extension -= se_neg_ext();
         }
     }
 
@@ -542,17 +548,19 @@ pub fn search<Node: NodeType>(
         let is_direct_check = data.board.is_direct_check(m);
         let is_quiet = m.is_quiet();
         let history = if is_quiet {
-            data.quiet_history.get(data.board.threats(), stm, m)
-                + data.conthistory(m, ply, 1)
-                + data.conthistory(m, ply, 2)
+            search_history_quiet() * data.quiet_history.get(data.board.threats(), stm, m) / 1024
+                + search_history_cont1() * data.conthistory(m, ply, 1) / 1024
+                + search_history_cont2() * data.conthistory(m, ply, 2) / 1024
         } else {
             let captured = data.board.piece_at_square(m.capture_square()).map(|p| p.kind());
-            data.noisy_history.get(
-                data.board.piece_at_square(m.from()),
-                m.to(),
-                captured,
-                data.board.threats(),
-            )
+            search_history_noisy()
+                * data.noisy_history.get(
+                    data.board.piece_at_square(m.from()),
+                    m.to(),
+                    captured,
+                    data.board.threats(),
+                )
+                / 1024
         };
 
         if !Node::ROOT && !is_loss(best_score) {
@@ -572,7 +580,7 @@ pub fn search<Node: NodeType>(
             if !in_check
                 && !is_direct_check
                 && is_quiet
-                && depth < 14
+                && depth < fp_depth()
                 && static_eval + fp_scale() * depth + fp_offset() + fp_history() * history / 1024 <= alpha
             {
                 skip_quiets = true;
@@ -580,7 +588,7 @@ pub fn search<Node: NodeType>(
             }
 
             // History Pruning (HP)
-            if !in_check && is_quiet && depth <= 6 && history < hp_scale() * depth {
+            if !in_check && is_quiet && depth <= hp_depth() && history < hp_scale() * depth {
                 continue;
             }
 
@@ -608,19 +616,19 @@ pub fn search<Node: NodeType>(
         let mut score = -Score::INFINITY;
 
         // Late Move Reductions (LMR)
-        if depth >= 2 && move_count > 1 {
+        if depth >= lmr_depth() && move_count as i32 > lmr_move_count() {
             let mut r = data.lmr.base[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
             r -= lmr_corrplexity() * correction.abs() / 1024;
             r += lmr_cutnode() * cutnode as i32;
             r += lmr_cutnode_no_tt() * (cutnode && tt_move.is_none()) as i32;
             r -= lmr_ttpv() * tt_was_pv as i32;
-            r -= 600 * (tt_pv && tt_score.is_some_and(|s| s > alpha)) as i32;
-            r -= 600 * (tt_pv && tt_depth.is_some_and(|d| d >= depth)) as i32;
+            r -= lmr_ttpv_score() * (tt_pv && tt_score.is_some_and(|s| s > alpha)) as i32;
+            r -= lmr_ttpv_depth() * (tt_pv && tt_depth.is_some_and(|d| d >= depth)) as i32;
             r -= lmr_direct_check() * is_direct_check as i32;
             r += lmr_improving() * !improving as i32;
             r += lmr_tt_score() * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += lmr_tt_depth() * (tt_depth.is_some_and(|d| d < depth)) as i32;
-            r += 500 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
+            r += lmr_fail_highs() * (data.stack[ply + 1].num_fail_highs > lmr_fail_high_count()) as i32;
             r -= lmr_history() * history / 4096;
             r += lmr_offset();
 
@@ -632,8 +640,8 @@ pub fn search<Node: NodeType>(
             data.stack[ply].reduction = None;
 
             if score > alpha {
-                let do_deeper = score > best_score + 50;
-                let do_shallower = score < best_score + 8;
+                let do_deeper = score > best_score + lmr_deeper_margin();
+                let do_shallower = score < best_score + lmr_shallower_margin();
 
                 new_depth += do_deeper as i32 - do_shallower as i32;
 
@@ -782,7 +790,7 @@ pub fn search<Node: NodeType>(
     }
 
     if best_score >= beta && !is_decisive(best_score) && !is_decisive(beta) {
-        best_score = (best_score * depth + beta) / (depth + 1);
+        best_score = (best_score * depth + beta * cutoff_soften_weight()) / (depth + cutoff_soften_weight());
     }
 
     if !excluded {
@@ -939,7 +947,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
         if !is_loss(best_score) {
             // Late Move Pruning (LMP)
-            if move_count >= 3 && !data.board.is_direct_check(m) {
+            if move_count >= qsearch_lmp() && !data.board.is_direct_check(m) {
                 break;
             }
 
