@@ -25,7 +25,7 @@ impl Default for UCISettings {
             soft_nodes: false,
             frc: false,
             report: Report::Full,
-            overhead: 50,
+            overhead: 100,
         }
     }
 }
