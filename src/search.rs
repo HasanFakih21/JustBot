@@ -184,9 +184,8 @@ pub fn search<Node: NodeType>(
         return quiesce::<Node>(data, alpha, beta, ply);
     }
 
-    let draw_score = Score::draw(data);
-    if !Node::ROOT && alpha < draw_score && data.board.upcoming_repetition(ply as usize) {
-        alpha = draw_score;
+    if !Node::ROOT && alpha < Score::DRAW && data.board.upcoming_repetition(ply as usize) {
+        alpha = Score::DRAW;
         if alpha >= beta {
             return alpha;
         }
@@ -199,13 +198,13 @@ pub fn search<Node: NodeType>(
     if !Node::ROOT {
         // Check for draws
         if data.board.is_draw() {
-            return Score::draw(data);
+            return Score::DRAW;
         }
 
         // Prevent from going too deep
         if ply >= MAX_PLY as isize - 1 {
             if in_check {
-                return Score::draw(data);
+                return Score::DRAW;
             } else {
                 return data.network.evaluate(&data.board);
             }
@@ -712,7 +711,7 @@ pub fn search<Node: NodeType>(
         if in_check {
             return -Score::MATE + ply as i32;
         } else {
-            return Score::draw(data);
+            return Score::DRAW;
         }
     }
 
@@ -802,16 +801,15 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         data.sel_depth = data.sel_depth.max(ply as i32);
     }
 
-    let draw_score = Score::draw(data);
-    if !Node::ROOT && alpha < draw_score && data.board.upcoming_repetition(ply as usize) {
-        alpha = draw_score;
+    if alpha < Score::DRAW && data.board.upcoming_repetition(ply as usize) {
+        alpha = Score::DRAW;
         if alpha >= beta {
             return alpha;
         }
     }
 
     if data.board.is_draw() {
-        return Score::draw(data);
+        return Score::DRAW;
     }
 
     if data.id == 0 && data.time.hard_limit(data) {
@@ -842,7 +840,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
     if ply >= MAX_PLY as isize - 1 {
         if in_check {
-            return Score::draw(data);
+            return Score::DRAW;
         } else {
             return data.network.evaluate(&data.board);
         }
