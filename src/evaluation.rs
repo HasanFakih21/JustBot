@@ -2,7 +2,7 @@ use std::cmp::max;
 
 use crate::attacks::BETWEEN;
 use crate::board::Board;
-use crate::types::{BitBoard, Piece, Square, cuckoo};
+use crate::types::{BitBoard, Piece, Square, ZOBRIST, cuckoo};
 
 impl Board {
     // Only checks for the current side to move
@@ -38,12 +38,12 @@ impl Board {
         let occ = self.all_occupancy();
         let original_key = self.state.keys.full;
 
-        let mut other = original_key ^ prev_key(1);
+        let mut other = original_key ^ prev_key(1) ^ ZOBRIST.side();
 
         for d in (3..=half_moves).step_by(2) {
             let current_key = prev_key(d);
 
-            other ^= current_key ^ prev_key(d - 1);
+            other ^= current_key ^ prev_key(d - 1) ^ ZOBRIST.side();
             if other != 0 {
                 continue;
             }
