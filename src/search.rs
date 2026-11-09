@@ -45,7 +45,7 @@ pub fn search_runner(data: &mut SearchData) {
     data.pv.clear(0);
     data.time.start_clock();
 
-    let mut delta = 24;
+    let mut delta = 23;
     let mut alpha = -Score::INFINITY;
     let mut beta = Score::INFINITY;
 
@@ -148,7 +148,7 @@ pub fn search_runner(data: &mut SearchData) {
         }
 
         reduction = 0;
-        delta = 24;
+        delta = 23;
         alpha = (score - delta).max(-Score::INFINITY);
         beta = (score + delta).min(Score::INFINITY);
     }
