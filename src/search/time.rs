@@ -34,19 +34,19 @@ impl TimeManager {
 
         match limit {
             Limit::Fischer(main, inc) => {
-                let soft_scale = 0.062 - 0.049 * (-0.036 * full_moves as f64).exp();
-                let hard_scale = 0.733;
+                let soft_scale = 0.062 - 0.049 * (-0.035 * full_moves as f64).exp();
+                let hard_scale = 0.731;
                 let max_time = main.saturating_sub(overhead);
 
-                let soft = (soft_scale * max_time as f64 + inc as f64 * 0.773) as u64;
-                let hard = (hard_scale * max_time as f64 + inc as f64 * 0.773) as u64;
+                let soft = (soft_scale * max_time as f64 + inc as f64 * 0.769) as u64;
+                let hard = (hard_scale * max_time as f64 + inc as f64 * 0.769) as u64;
 
                 soft_bound = Some(Duration::from_millis(soft.min(max_time)));
                 hard_bound = Some(Duration::from_millis(hard.min(max_time)));
             }
             Limit::Cyclic(main, inc, moves) => {
                 let max_time = main.saturating_sub(overhead);
-                let base = (max_time as f64 / moves as f64) + inc as f64 * 0.773;
+                let base = (max_time as f64 / moves as f64) + inc as f64 * 0.769;
 
                 soft_bound = Some(Duration::from_millis(((1.0 * base) as u64).min(max_time)));
                 hard_bound = Some(Duration::from_millis(((5.0 * base) as u64).min(max_time)));

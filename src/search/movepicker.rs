@@ -107,7 +107,7 @@ impl MovePicker {
 
             // Bonus for promotions
             if mv.kind().is_queen_promotion() {
-                score += 4940;
+                score += 4968;
             }
 
             let piece = data.board.piece_at_square(mv.from());
@@ -117,7 +117,7 @@ impl MovePicker {
                 score += see::value(p)
             }
 
-            score += data.noisy_history.get(piece, to, captured, threats) / 8;
+            score += data.noisy_history.get(piece, to, captured, threats) / 9;
             entry.score = score;
         }
     }
@@ -131,12 +131,12 @@ impl MovePicker {
             let piece = data.board.piece_at_square(mv.from());
             let to = mv.to();
 
-            entry.score = 1015 * data.quiet_history.get(threats, side, mv) / 1024
-                + 1128 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
-                + 1569 * data.conthistory(mv, ply, 1) / 1024
-                + 1086 * data.conthistory(mv, ply, 2) / 1024
-                + 1062 * data.conthistory(mv, ply, 4) / 1024
-                + 9683 * data.board.is_direct_check(mv) as i32;
+            entry.score = data.quiet_history.get(threats, side, mv)
+                + 1124 * data.pawn_history.get(data.board.state.keys.pawn, piece, to) / 1024
+                + 1573 * data.conthistory(mv, ply, 1) / 1024
+                + 1096 * data.conthistory(mv, ply, 2) / 1024
+                + 1077 * data.conthistory(mv, ply, 4) / 1024
+                + 9704 * data.board.is_direct_check(mv) as i32;
         }
     }
 

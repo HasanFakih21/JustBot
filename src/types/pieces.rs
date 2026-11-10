@@ -62,9 +62,9 @@ impl Piece {
         match self {
             Self::Pawn => 110,
             Self::Knight => 320,
-            Self::Bishop => 335,
-            Self::Rook => 503,
-            Self::Queen => 915,
+            Self::Bishop => 334,
+            Self::Rook => 505,
+            Self::Queen => 916,
             Self::King => 0,
         }
     }
