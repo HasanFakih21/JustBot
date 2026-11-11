@@ -7,6 +7,9 @@ use crate::{
     types::{stack::Stack, stackvec::StackVec},
 };
 
+#[cfg(feature = "stats")]
+use crate::track;
+
 use crate::types::*;
 
 pub mod data;
@@ -606,6 +609,7 @@ pub fn search<Node: NodeType>(
             r += 283 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r += 508 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
             r -= 451 * history / 4096;
+            r -= (150 * static_eval / 1024).clamp(-1500, 1500);
             r += 432;
 
             let reduction = r / 1024;
