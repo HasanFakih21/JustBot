@@ -278,7 +278,7 @@ pub fn search<Node: NodeType>(
         raw_eval = e.eval();
         static_eval = raw_eval + correction;
     } else {
-        raw_eval = data.network.evaluate(&data.board);
+        raw_eval = quiesce::<Node>(data, alpha, beta, ply);
         static_eval = raw_eval + correction;
     };
 
