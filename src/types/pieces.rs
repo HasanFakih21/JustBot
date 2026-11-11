@@ -60,11 +60,11 @@ impl Piece {
 
     pub const fn value(&self) -> i32 {
         match self {
-            Self::Pawn => 110,
-            Self::Knight => 320,
+            Self::Pawn => 109,
+            Self::Knight => 321,
             Self::Bishop => 335,
-            Self::Rook => 503,
-            Self::Queen => 915,
+            Self::Rook => 512,
+            Self::Queen => 923,
             Self::King => 0,
         }
     }
