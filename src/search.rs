@@ -7,6 +7,9 @@ use crate::{
     types::{stack::Stack, stackvec::StackVec},
 };
 
+#[cfg(feature = "stats")]
+use crate::track;
+
 use crate::types::*;
 
 pub mod data;
