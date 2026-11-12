@@ -499,6 +499,8 @@ pub fn search<Node: NodeType>(
             extension = 1
                 + (singular_score < singular_beta - double_margin) as i32
                 + (singular_score < singular_beta - triple_margin) as i32;
+
+            data.update_conthistories(data.board.piece_at_square(tt_move.from()), tt_move.to(), ply, 300);
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
