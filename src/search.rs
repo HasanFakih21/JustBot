@@ -564,7 +564,7 @@ pub fn search<Node: NodeType>(
                 && !is_direct_check
                 && is_quiet
                 && depth < 14
-                && static_eval + 75 * depth + 158 + 63 * history / 1024 + 150 * correction.abs() / 1024 <= alpha
+                && static_eval + 75 * depth + 158 + 63 * history / 1024 + 450 * correction.abs() / 1024 <= alpha
             {
                 skip_quiets = true;
                 continue;
