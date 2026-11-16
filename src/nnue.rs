@@ -40,9 +40,9 @@ mod simd {
 
 const SCALE: i32 = 400;
 
-const L1: usize = 1024;
-const L2: usize = 16;
-const L3: usize = 32;
+const L1: usize = 2048;
+const L2: usize = 32;
+const L3: usize = 64;
 
 const Q0: i16 = 255;
 const Q: i16 = 64;
