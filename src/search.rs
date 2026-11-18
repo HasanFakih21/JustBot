@@ -409,7 +409,7 @@ pub fn search<Node: NodeType>(
 
     // Prob Cut
     let probcut_beta = beta + 263 - 53 * improving as i32;
-    if depth >= 3
+    if !Node::PV
         && !is_decisive(beta)
         && tt_move.is_none_or(|m| !m.is_quiet())
         && tt_score.is_none_or(|s| s >= probcut_beta && !is_decisive(s))
