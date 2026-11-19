@@ -1,4 +1,5 @@
 use crate::{
+    evaluation::adjust_eval,
     search::{
         data::{Report, SearchData, Status},
         movepicker::{MovePicker, Stage},
@@ -154,6 +155,10 @@ pub fn search_runner(data: &mut SearchData) {
         delta = 25;
         alpha = (score - delta).max(-Score::INFINITY);
         beta = (score + delta).min(Score::INFINITY);
+
+        let optimism = 150 * data.root_moves[0].average_score / (data.root_moves[0].average_score.abs() + 100);
+        data.optimism[data.board.state.side_to_move] = optimism;
+        data.optimism[!data.board.state.side_to_move] = -optimism;
     }
 
     if matches!(data.report, Report::Minimal | Report::Full) {
@@ -279,10 +284,10 @@ pub fn search<Node: NodeType>(
         && e.eval() != Score::NONE
     {
         raw_eval = e.eval();
-        static_eval = raw_eval + correction;
+        static_eval = adjust_eval(data, raw_eval, correction);
     } else {
         raw_eval = data.network.evaluate(&data.board);
-        static_eval = raw_eval + correction;
+        static_eval = adjust_eval(data, raw_eval, correction);
     };
 
     data.stack[ply].eval = static_eval;
@@ -664,6 +669,12 @@ pub fn search<Node: NodeType>(
                     } else if score >= beta {
                         root_move.display_score = beta;
                         root_move.lowerbound = true;
+                    } else {
+                        if root_move.average_score == -Score::INFINITY {
+                            root_move.average_score = score;
+                        } else {
+                            root_move.average_score = (root_move.average_score + score) / 2;
+                        }
                     }
 
                     root_move.pv.commit(&data.pv.inner[1][..data.pv.len[1]]);
@@ -862,11 +873,11 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         && e.eval() != Score::NONE
     {
         raw_eval = e.eval();
-        static_eval = raw_eval + data.correction(ply);
+        static_eval = adjust_eval(data, raw_eval, data.correction(ply));
         best_score = static_eval;
     } else {
         raw_eval = data.network.evaluate(&data.board);
-        static_eval = raw_eval + data.correction(ply);
+        static_eval = adjust_eval(data, raw_eval, data.correction(ply));
         best_score = static_eval
     };
 

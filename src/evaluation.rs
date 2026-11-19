@@ -2,6 +2,8 @@ use std::cmp::max;
 
 use crate::attacks::BETWEEN;
 use crate::board::Board;
+#[cfg(not(feature = "datagen"))]
+use crate::search::data::SearchData;
 use crate::types::{BitBoard, Piece, Square, ZOBRIST, cuckoo};
 
 impl Board {
@@ -85,15 +87,29 @@ impl Board {
     pub fn is_draw(&self) -> bool {
         self.draw_by_fifty_moves() || self.detect_repetition()
     }
+}
 
-    pub fn scale_eval(&self, static_eval: i32) -> i32 {
-        let mut material = 0;
-        for piece in Piece::ALL {
-            material += self.state.pieces[piece].count_bits() as i32 * piece_scale(piece);
-        }
-
-        static_eval * (24058 + material) / 32768 * (197 - self.state.half_move_clock as i32) / 197
+#[cfg(not(feature = "datagen"))]
+pub fn adjust_eval(data: &SearchData, raw_eval: i32, correction: i32) -> i32 {
+    let mut material = 0;
+    for piece in Piece::ALL {
+        material += data.board.state.pieces[piece].count_bits() as i32 * piece_scale(piece);
     }
+
+    let mut eval = (raw_eval * (24058 + material)
+        + data.optimism[data.board.state.side_to_move] * (2000 + material * 1000 / 1024))
+        / 32768;
+
+    eval *= (197 - data.board.state.half_move_clock as i32) / 197;
+
+    eval += correction;
+
+    eval
+}
+
+#[cfg(feature = "datagen")]
+pub fn adjust_eval(data: &SearchData, raw_eval: i32, correction: i32) -> i32 {
+    raw_eval + correction
 }
 
 pub fn piece_scale(piece: Piece) -> i32 {

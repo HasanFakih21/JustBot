@@ -144,10 +144,7 @@ impl Network {
             }
         }
 
-        let eval = self.output_transform(board);
-        #[cfg(not(feature = "datagen"))]
-        let eval = board.scale_eval(eval);
-        eval
+        self.output_transform(board)
     }
 
     pub fn output_transform(&self, board: &Board) -> i32 {
