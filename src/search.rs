@@ -608,6 +608,7 @@ pub fn search<Node: NodeType>(
             r += 480 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 283 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r += 508 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
+            r += 600 * data.stack[ply - 1].reduction.is_some_and(|r| r >= 3000) as i32;
             r -= 451 * history / 4096;
             r += 432;
 
