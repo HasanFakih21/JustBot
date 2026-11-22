@@ -355,6 +355,7 @@ pub fn search<Node: NodeType>(
         && !in_check
         && !excluded
         && static_eval >= beta + 90 * depth + 7 * depth * depth - 75 * improving as i32
+        && (data.board.threats() & data.board.state.occupancies[stm]).is_empty()
         && !is_decisive(beta)
         && !is_decisive(static_eval)
     {
