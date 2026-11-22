@@ -285,6 +285,19 @@ pub fn search<Node: NodeType>(
         static_eval = raw_eval + correction;
     };
 
+    let estimated_score = if !in_check
+        && !excluded
+        && let Some(tt_score) = tt_score
+        && tt_bound.is_some_and(|b| match b {
+            Bound::Upper => tt_score < static_eval,
+            Bound::Lower => tt_score > static_eval,
+            _ => true,
+        }) {
+        tt_score
+    } else {
+        static_eval
+    };
+
     data.stack[ply].eval = static_eval;
     data.stack[ply + 2].num_fail_highs = 0;
 
@@ -356,12 +369,12 @@ pub fn search<Node: NodeType>(
         && !excluded
         && static_eval >= beta + 90 * depth + 7 * depth * depth - 75 * improving as i32
         && !is_decisive(beta)
-        && !is_decisive(static_eval)
+        && !is_decisive(estimated_score)
     {
         return ilerp::<1024>(static_eval, beta, 665);
     }
 
-    // Null Move Pruning
+    // Null Move Pruning (NMP)
     if cutnode
         && depth >= 3
         && !excluded
