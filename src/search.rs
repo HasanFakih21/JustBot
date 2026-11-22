@@ -367,11 +367,11 @@ pub fn search<Node: NodeType>(
     if !tt_pv
         && !in_check
         && !excluded
-        && static_eval >= beta + 90 * depth + 7 * depth * depth - 75 * improving as i32
+        && estimated_score >= beta + 90 * depth + 7 * depth * depth - 75 * improving as i32
         && !is_decisive(beta)
         && !is_decisive(estimated_score)
     {
-        return ilerp::<1024>(static_eval, beta, 665);
+        return ilerp::<1024>(estimated_score, beta, 665);
     }
 
     // Null Move Pruning (NMP)
