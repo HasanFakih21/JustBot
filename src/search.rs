@@ -60,6 +60,7 @@ pub fn search_runner(data: &mut SearchData) {
     data.completed_depth = 0;
     data.root_depth = 0;
     data.sel_depth = 0;
+    data.root_complexity = 0;
 
     if data.root_moves.is_empty() {
         return;
@@ -141,8 +142,9 @@ pub fn search_runner(data: &mut SearchData) {
             let diff = (data.prev_score - best_score) as f32;
             let score_trend = (0.752 + 0.052 * diff).clamp(0.739, 1.581);
             let m_stability = (1.223 - 0.045 * move_stability as f32).max(0.84);
+            let root_complexity = (1.650 - 0.052 * data.root_complexity as f32).max(0.65);
 
-            node_tm * score_trend * m_stability
+            node_tm * score_trend * m_stability * root_complexity
         };
 
         if data.id == 0 && data.time.soft_limit(data, multiplier) {
@@ -648,6 +650,7 @@ pub fn search<Node: NodeType>(
             let nodes = data.nodes();
             if let Some(root_move) = data.root_moves.iter_mut().find(|rm| rm.m == m) {
                 root_move.nodes += nodes - initial_nodes;
+                data.root_complexity = (data.root_complexity + correction.abs()) / 2;
 
                 if move_count == 1 || score > alpha {
                     root_move.score = score;
