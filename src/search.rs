@@ -142,7 +142,7 @@ pub fn search_runner(data: &mut SearchData) {
             let diff = (data.prev_score - best_score) as f32;
             let score_trend = (0.752 + 0.052 * diff).clamp(0.739, 1.581);
             let m_stability = (1.223 - 0.045 * move_stability as f32).max(0.84);
-            let root_complexity = (1.650 - 0.052 * data.root_complexity as f32).max(0.65);
+            let root_complexity = (0.650 + 0.002 * data.root_complexity as f32).min(1.45);
 
             node_tm * score_trend * m_stability * root_complexity
         };
