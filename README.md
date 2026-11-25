@@ -14,7 +14,8 @@
 |                  |             |     CCRL      |              |            |    COPE    |            |
 | :--------------: | :---------: | :-----------: | :----------: | :--------: | :--------: | :--------: |
 |                  |  **40/15**  | **Blitz 2+1** | **40/2 FRC** | **Bullet** | **Rapid**  |  **DFRC**  |
-| [v0.5.0][v0.5.0] |     --      |  3703 [#32]   |      --      | 3679 [#16] | 3633 [#23] |     --     |
+| [v0.6.0][v0.6.0] |     --      |      --       |      --      |     --     |     --     |     --     |
+| [v0.5.0][v0.5.0] | 3575 [#48]  |  3705 [#36]   |  3909 [#38]  | 3669 [#17] | 3623 [#25] | 3636 [#23] |
 | [v0.4.0][v0.4.0] | 3518 [#72]  |      --       |  3862 [#36]  | 3601 [#25] | 3580 [#29] | 3600 [#24] |
 | [v0.3.0][v0.3.0] | 3418 [#115] |      --       |      --      | 3426 [#37] | 3467 [#40] |     --     |
 | [v0.2.0][v0.2.0] | 3124 [#226] |      --       |      --      |     --     |     --     |     --     |
@@ -25,8 +26,9 @@
 [v0.3.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.3.0
 [v0.4.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.4.0
 [v0.5.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.5.0
+[v0.6.0]: https://github.com/HasanFakih21/JustBot/releases/tag/v0.6.0
 
-You can find precompiled binaries for Linux, Windows and macOS [here](https://github.com/HasanFakih21/JustBot/releases)
+You can find pre-compiled binaries for Linux, Windows and macOS [here](https://github.com/HasanFakih21/JustBot/releases)
 
 - `avx512`: The fastest build, only compatible with newer CPUs
 - `avx2`: Usable on most modern CPUs
@@ -63,6 +65,7 @@ make
 |   Minimal    |  false  |   --    |                                                Minimal UCI output                                                 |
 |  SoftNodes   |  false  |   --    | When a node limit is set, it will finish the current depth after hitting the limit rather than stopping instantly |
 | UCI_ShowWDL  |  true   |   --    |                              Displays the win/draw/loss probabilities in UCI output                               |
+| MoveOverhead |   50    |  2000   |                                         Adds overhead to the time manager                                         |
 
 ## Acknowledgments
 
