@@ -354,7 +354,7 @@ pub fn search<Node: NodeType>(
     if !tt_pv
         && !in_check
         && !excluded
-        && static_eval >= beta + 90 * depth + 7 * depth * depth - 75 * improving as i32
+        && static_eval >= beta + 90 * depth + 7 * depth * depth - 75 * improving as i32 - 50 * correction.abs() / 128
         && !is_decisive(beta)
         && !is_decisive(static_eval)
     {
