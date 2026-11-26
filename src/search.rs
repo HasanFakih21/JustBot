@@ -605,6 +605,7 @@ pub fn search<Node: NodeType>(
             r -= 554 * (tt_pv && tt_depth.is_some_and(|d| d >= depth)) as i32;
             r -= 891 * is_direct_check as i32;
             r += 189 * !improving as i32;
+            r -= improvement.clamp(-300, 300);
             r += 480 * (tt_score.is_some_and(|s| s <= alpha)) as i32;
             r += 283 * (tt_depth.is_some_and(|d| d < depth)) as i32;
             r += 508 * (data.stack[ply + 1].num_fail_highs > 2) as i32;
