@@ -909,6 +909,8 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         alpha = best_score;
     }
 
+    let futility = static_eval + 300;
+
     let tt_move = tt_entry.map(|e| e.best_move()).filter(|m| !m.is_null());
 
     let mut move_picker = MovePicker::new(tt_move, None);
@@ -925,6 +927,11 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         move_count += 1;
 
         if !is_loss(best_score) {
+            // Futility Pruning (FP)
+            if futility <= alpha {
+                continue;
+            }
+
             // Late Move Pruning (LMP)
             if move_count >= 3 && !data.board.is_direct_check(m) {
                 break;
