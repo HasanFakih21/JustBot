@@ -466,7 +466,7 @@ pub fn search<Node: NodeType>(
     }
 
     // Internal Iterative Reduction (IIR)
-    if !Node::ROOT && depth >= 5 && tt_entry.is_none() {
+    if !Node::ROOT && depth >= 5 && tt_entry.is_none() && (Node::PV || cutnode) {
         depth -= 1;
     }
 
