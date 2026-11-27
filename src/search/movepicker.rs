@@ -136,6 +136,7 @@ impl MovePicker {
                 + 1573 * data.conthistory(mv, ply, 1) / 1024
                 + 1119 * data.conthistory(mv, ply, 2) / 1024
                 + 1063 * data.conthistory(mv, ply, 4) / 1024
+                + 1063 * data.conthistory(mv, ply, 6) / 1024
                 + 9644 * data.board.is_direct_check(mv) as i32;
         }
     }
