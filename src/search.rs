@@ -256,7 +256,14 @@ pub fn search<Node: NodeType>(
             && tt_move.is_quiet()
         {
             let bonus = (231 * depth - 53).min(1180);
+            let cont_bonus = (131 * depth - 33).min(1180);
             data.quiet_history.update(data.board.threats(), stm, tt_move, bonus);
+            data.update_conthistories(
+                data.board.piece_at_square(tt_move.from()),
+                tt_move.to(),
+                ply,
+                cont_bonus,
+            );
         }
 
         if data.board.state.half_move_clock < 91 {
