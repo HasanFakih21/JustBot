@@ -928,7 +928,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
         if !is_loss(best_score) {
             // Futility Pruning (FP)
-            if futility <= alpha {
+            if !in_check && futility <= alpha {
                 continue;
             }
 
