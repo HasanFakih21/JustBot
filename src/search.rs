@@ -1,4 +1,5 @@
 use crate::{
+    board::see,
     search::{
         data::{Report, SearchData, Status},
         movepicker::{MovePicker, Stage},
@@ -909,7 +910,7 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
         alpha = best_score;
     }
 
-    let futility = static_eval + 300;
+    let futility_base = static_eval + 300;
 
     let tt_move = tt_entry.map(|e| e.best_move()).filter(|m| !m.is_null());
 
@@ -928,6 +929,12 @@ pub fn quiesce<Node: NodeType>(data: &mut SearchData, mut alpha: i32, beta: i32,
 
         if !is_loss(best_score) {
             // Futility Pruning (FP)
+            let futility = if let OptionPiece::Some(piece) = data.board.piece_at_square(m.capture_square()) {
+                futility_base + see::value(piece.kind())
+            } else {
+                futility_base
+            };
+
             if !in_check && futility <= alpha {
                 continue;
             }
