@@ -692,6 +692,11 @@ pub fn search<Node: NodeType>(
                     break;
                 }
 
+                // Alpha-Raise Reduction
+                if !is_decisive(score) && depth > 2 {
+                    depth -= 1;
+                }
+
                 alpha = score;
             }
         }
