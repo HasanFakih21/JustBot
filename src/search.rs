@@ -503,7 +503,8 @@ pub fn search<Node: NodeType>(
                 + (singular_score < singular_beta - double_margin) as i32
                 + (singular_score < singular_beta - triple_margin) as i32;
 
-            data.update_conthistories(data.board.piece_at_square(tt_move.from()), tt_move.to(), ply, 300);
+            let bonus = (400 * depth).min(1569) - 177;
+            data.update_conthistories(data.board.piece_at_square(tt_move.from()), tt_move.to(), ply, bonus);
         }
         // Negative Extensions
         else if tt_score >= beta || cutnode {
