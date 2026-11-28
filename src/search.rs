@@ -632,6 +632,8 @@ pub fn search<Node: NodeType>(
             r -= 400 * improving as i32;
             r -= 451 * history / 4096;
             r -= 1793 * correction.abs() / 1024;
+            r += 1231 * cutnode as i32;
+            r += 1927 * (cutnode && tt_move.is_none()) as i32;
             r -= 3000 * (tt_move.is_some_and(|tt_move| tt_move == m) as i32);
 
             let reduced_depth = new_depth - (r >= 2400) as i32;
