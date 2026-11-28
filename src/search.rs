@@ -560,7 +560,7 @@ pub fn search<Node: NodeType>(
             }
 
             // Futility Pruning (FP)
-            let futility = static_eval + 75 * depth + 158 + 63 * history / 1024;
+            let futility = static_eval + 75 * depth + 63 * history / 1024 - 158;
             if !in_check && !is_direct_check && is_quiet && depth < 14 && futility <= alpha {
                 if !is_decisive(best_score) && best_score < futility {
                     best_score = futility;
