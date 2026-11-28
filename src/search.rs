@@ -628,7 +628,15 @@ pub fn search<Node: NodeType>(
                 }
             }
         } else if !Node::PV || move_count > 1 {
-            score = -search::<NonPV>(data, new_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
+            let mut r = LMR_TABLE[is_quiet as usize][depth.min(127) as usize][move_count.min(63)];
+            r -= 400 * improving as i32;
+            r -= 451 * history / 4096;
+            r -= 1793 * correction.abs() / 1024;
+            r -= 3000 * (tt_move.is_some_and(|tt_move| tt_move == m) as i32);
+
+            let reduced_depth = new_depth - (r >= 2400) as i32;
+
+            score = -search::<NonPV>(data, reduced_depth, -alpha - 1, -alpha, ply + 1, !cutnode);
         }
 
         // Principal Variation Search (PVS)
